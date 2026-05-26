@@ -1,8 +1,8 @@
 spring:
   datasource:
     url: jdbc:oracle:thin:@localhost:1521/XEPDB1
-    username: 여기에_DB계정입력        # 예: dev
-    password: 여기에_DB비밀번호입력    # 예: dev1234
+    username: 여기에_DB계정입력        # 예: dydrl
+    password: 여기에_DB비밀번호입력    # 예: dydrl1234
     driver-class-name: oracle.jdbc.OracleDriver
 
   mvc:
@@ -22,3 +22,9 @@ server:
 logging:
   level:
     com.erp: DEBUG
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /api-docs
