@@ -34,7 +34,7 @@ public class AuthService {
         }
 
         String loginId = (String) employee.get("LOGIN_ID");
-        String role = (String) employee.get("ROLE");
+        String role = (String) employee.get("ROLE_CODE");
 
         // 토큰 생성
         String accessToken = jwtTokenProvider.generateAccessToken(loginId, role);
@@ -46,7 +46,7 @@ public class AuthService {
                 .empId(((Number) employee.get("EMP_ID")).longValue())
                 .loginId((String) employee.get("LOGIN_ID"))
                 .empName((String) employee.get("EMP_NAME"))
-                .role((String) employee.get("ROLE"))
+                .role((String) employee.get("ROLE_CODE"))
                 .deptId(((Number) employee.get("DEPT_ID")).longValue())
                 .build();
     }

@@ -10,10 +10,10 @@
     LOGIN_ID,
     PASSWORD,
     EMP_NAME,
-    ROLE,
+    ROLE_CODE,
     STATUS
     FROM EMPLOYEE
     WHERE LOGIN_ID = #{loginId}    <!-- empNo → loginId -->
-    AND STATUS = 'Y'
+    AND STATUS = 'ACTIVE'
     </select>
 </mapper>

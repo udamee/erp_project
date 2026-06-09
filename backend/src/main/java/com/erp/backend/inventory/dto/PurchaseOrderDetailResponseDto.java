@@ -1,10 +1,12 @@
 package com.erp.backend.inventory.dto;
 
 import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 
 @Getter
+@Setter
 public class PurchaseOrderDetailResponseDto {
 
     private Long poDetailId;
