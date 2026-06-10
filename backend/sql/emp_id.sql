@@ -1,0 +1,5 @@
+CREATE SEQUENCE EMPLOYEE_SEQ
+    START WITH 1
+    INCREMENT BY 1
+    NOCACHE;
+--emp_id의 자동 증가를 위한 시퀀스 생성

@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.erp.backend.employee.mapper.EmployeeMapper">
+
+    <insert id="insertEmployee"
+            parameterType="com.erp.backend.employee.vo.EmployeeVO">
+
+        <selectKey keyProperty="empId"
+                   resultType="long"
+                   order="BEFORE">
+            SELECT EMPLOYEE_SEQ.NEXTVAL
+            FROM DUAL
+        </selectKey>
+
+        INSERT INTO EMPLOYEE (
+        EMP_ID,
+        LOGIN_ID,
+        PASSWORD,
+        EMP_NAME,
+        PHONE,
+        EMAIL,
+        DEPT_ID,
+        ROLE_CODE,
+        STATUS,
+        HIRE_DATE,
+        CREATED_AT,
+        UPDATED_AT
+        ) VALUES (
+        #{empId},
+        #{loginId},
+        #{password},
+        #{empName},
+        #{phone},
+        #{email},
+        #{deptId},
+        #{roleCode},
+        #{status},
+        #{hireDate},
+        SYSDATE,
+        SYSDATE
+        )
+    </insert>
+
+    <select id="findAllEmployees"
+            resultType="com.erp.backend.employee.dto.EmployeeResponseDto">
+        SELECT
+            E.EMP_ID AS empId,
+            E.LOGIN_ID AS loginId,
+            E.EMP_NAME AS empName,
+            E.PHONE AS phone,
+            E.EMAIL AS email,
+            E.DEPT_ID AS deptId,
+            D.DEPT_NAME AS deptName,
+            E.ROLE_CODE AS roleCode,
+            E.STATUS AS status,
+            E.HIRE_DATE AS hireDate,
+            E.CREATED_AT AS createdAt,
+            E.UPDATED_AT AS updatedAt
+        FROM EMPLOYEE E
+                 LEFT JOIN DEPARTMENT D
+                           ON E.DEPT_ID = D.DEPT_ID
+        ORDER BY E.EMP_ID DESC
+    </select>
+
+    <select id="findEmployeeById"
+            parameterType="long"
+            resultType="com.erp.backend.employee.dto.EmployeeResponseDto">
+        SELECT
+            E.EMP_ID AS empId,
+            E.LOGIN_ID AS loginId,
+            E.EMP_NAME AS empName,
+            E.PHONE AS phone,
+            E.EMAIL AS email,
+            E.DEPT_ID AS deptId,
+            D.DEPT_NAME AS deptName,
+            E.ROLE_CODE AS roleCode,
+            E.STATUS AS status,
+            E.HIRE_DATE AS hireDate,
+            E.CREATED_AT AS createdAt,
+            E.UPDATED_AT AS updatedAt
+        FROM EMPLOYEE E
+                 LEFT JOIN DEPARTMENT D
+                           ON E.DEPT_ID = D.DEPT_ID
+        WHERE E.EMP_ID = #{empId}
+    </select>
+
+    <update id="updateEmployee"
+            parameterType="com.erp.backend.employee.vo.EmployeeVO">
+        UPDATE EMPLOYEE
+        SET
+            PASSWORD = #{password},
+            EMP_NAME = #{empName},
+            PHONE = #{phone},
+            EMAIL = #{email},
+            DEPT_ID = #{deptId},
+            ROLE_CODE = #{roleCode},
+            STATUS = #{status},
+            HIRE_DATE = #{hireDate},
+            UPDATED_AT = SYSDATE
+        WHERE EMP_ID = #{empId}
+    </update>
+
+    <delete id="deleteEmployee"
+            parameterType="long">
+        DELETE FROM EMPLOYEE
+        WHERE EMP_ID = #{empId}
+    </delete>
+
+    <select id="countByLoginId"
+            parameterType="string"
+            resultType="int">
+        SELECT COUNT(*)
+        FROM EMPLOYEE
+        WHERE LOGIN_ID = #{loginId}
+    </select>
+
+</mapper>
