@@ -121,4 +121,10 @@ public class SalesService {
         salesMapper.insertAccountReceivable(accountReceivableVO);
     }
 
+    // 수금 처리
+    public void createPayment(PaymentVO paymentVO) {
+        salesMapper.insertPayment(paymentVO);
+        salesMapper.updateAccountReceivablePayment(paymentVO);
+    }
+
 }

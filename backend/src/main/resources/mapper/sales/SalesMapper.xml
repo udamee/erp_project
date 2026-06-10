@@ -215,4 +215,42 @@
             SYSDATE
         )
     </insert>
+
+    <!-- 수금 처리 -->
+    <insert id="insertPayment"
+            parameterType="com.erp.backend.sales.vo.PaymentVO">
+        INSERT INTO PAYMENT (
+            PAYMENT_ID,
+            AR_ID,
+            CUSTOMER_ID,
+            PAYMENT_DATE,
+            PAYMENT_AMOUNT,
+            PAYMENT_TYPE,
+            CREATED_BY,
+            CREATED_AT
+        ) VALUES (
+            PAYMENT_SEQ.NEXTVAL,
+            #{arId},
+            #{customerId},
+            #{paymentDate},
+            #{paymentAmount},
+            #{paymentType},
+            #{createdBy},
+            SYSDATE
+        )
+    </insert>
+
+    <!-- 미수금 차감 -->
+    <update id="updateAccountReceivablePayment"
+            parameterType="com.erp.backend.sales.vo.PaymentVO">
+        UPDATE ACCOUNT_RECEIVABLE
+        SET
+            PAID_AMOUNT = PAID_AMOUNT + #{paymentAmount},
+            REMAIN_AMOUNT = REMAIN_AMOUNT - #{paymentAmount},
+            STATUS = CASE
+                WHEN REMAIN_AMOUNT - #{paymentAmount} = 0 THEN 'PAID'
+                ELSE 'PARTIAL'
+            END
+        WHERE AR_ID = #{arId}
+    </update>
 </mapper>

@@ -150,4 +150,11 @@ public class SalesController {
         return ResponseEntity.ok("매출청구 등록 완료");
     }
 
+    @Operation(summary = "수금 처리")
+    @PostMapping("/payments")
+    public ResponseEntity<String> createPayment(@RequestBody PaymentVO paymentVO) {
+        salesService.createPayment(paymentVO);
+        return ResponseEntity.ok("수금 처리 완료");
+    }
+
 }

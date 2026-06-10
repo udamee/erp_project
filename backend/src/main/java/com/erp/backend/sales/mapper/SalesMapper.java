@@ -57,4 +57,9 @@ public interface SalesMapper {
     // 매출채권(미수금) 등록
     int insertAccountReceivable(AccountReceivableVO accountReceivableVO);
 
+    // 수금 처리
+    int insertPayment(PaymentVO paymentVO);
+
+    // 미수금 입금액/잔액 수정
+    int updateAccountReceivablePayment(PaymentVO paymentVO);
 }
