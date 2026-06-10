@@ -32,6 +32,7 @@ public interface SalesMapper {
     // 손익정산 (Settlement)
     List<SettlementVO> findAllSettlements(Map<String, Object> params);
 
+    // 상세조회
     // 매출청구 상세조회
     SalesInvoiceVO findSalesInvoiceById(Long salesInvoiceId);
 
@@ -49,5 +50,11 @@ public interface SalesMapper {
 
     // 손익정산 상세조회
     SettlementVO findSettlementById(Long settlementId);
+
+    // 매출청구 등록
+    int insertSalesInvoice(SalesInvoiceVO salesInvoiceVO);
+
+    // 매출채권(미수금) 등록
+    int insertAccountReceivable(AccountReceivableVO accountReceivableVO);
 
 }

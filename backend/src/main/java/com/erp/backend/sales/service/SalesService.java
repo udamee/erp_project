@@ -5,6 +5,7 @@ import com.erp.backend.sales.vo.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -102,4 +103,22 @@ public class SalesService {
     public SettlementVO getSettlement(Long settlementId) {
         return salesMapper.findSettlementById(settlementId);
     }
+
+
+    public void createSalesInvoice(SalesInvoiceVO salesInvoiceVO, AccountReceivableVO accountReceivableVO) {
+        // 매출청구 등록
+        salesMapper.insertSalesInvoice(salesInvoiceVO);
+        // 생성된 매출청구 ID를 미수금 정보에 설정
+        accountReceivableVO.setSalesInvoiceId(salesInvoiceVO.getSalesInvoiceId());
+        // 미수금 등록에 필요한 정보 설정
+        accountReceivableVO.setCustomerId(salesInvoiceVO.getCustomerId());
+        accountReceivableVO.setTotalAmount(salesInvoiceVO.getTotalAmount());
+        accountReceivableVO.setPaidAmount(BigDecimal.ZERO);
+        accountReceivableVO.setRemainAmount(salesInvoiceVO.getTotalAmount());
+        accountReceivableVO.setStatus("UNPAID");
+        accountReceivableVO.setDueDate(salesInvoiceVO.getIssueDate().plusDays(30));
+        // 미수금 등록
+        salesMapper.insertAccountReceivable(accountReceivableVO);
+    }
+
 }

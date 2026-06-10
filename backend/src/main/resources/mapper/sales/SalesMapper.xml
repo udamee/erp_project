@@ -162,4 +162,57 @@
         FROM SETTLEMENT
         WHERE SETTLEMENT_ID = #{settlementId}
     </select>
+
+    <!-- 매출청구 등록 -->
+    <insert id="insertSalesInvoice"
+            parameterType="com.erp.backend.sales.vo.SalesInvoiceVO">
+        <selectKey keyProperty="salesInvoiceId"
+                   resultType="int"
+                   order="BEFORE">
+            SELECT SALES_INVOICE_SEQ.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO SALES_INVOICE (
+            SALES_INVOICE_ID,
+            SO_ID,
+            CUSTOMER_ID,
+            ISSUE_DATE,
+            TOTAL_AMOUNT,
+            STATUS,
+            CREATED_AT
+        ) VALUES (
+            #{salesInvoiceId},
+            #{soId},
+            #{customerId},
+            #{issueDate},
+            #{totalAmount},
+            #{status},
+            SYSDATE
+        )
+    </insert>
+
+    <!-- 매출채권(미수금) 등록 -->
+    <insert id="insertAccountReceivable"
+            parameterType="com.erp.backend.sales.vo.AccountReceivableVO">
+        INSERT INTO ACCOUNT_RECEIVABLE (
+            AR_ID,
+            CUSTOMER_ID,
+            SALES_INVOICE_ID,
+            TOTAL_AMOUNT,
+            PAID_AMOUNT,
+            REMAIN_AMOUNT,
+            DUE_DATE,
+            STATUS,
+            CREATED_AT
+        ) VALUES (
+            ACCOUNT_RECEIVABLE_SEQ.NEXTVAL,
+            #{customerId},
+            #{salesInvoiceId},
+            #{totalAmount},
+            #{paidAmount},
+            #{remainAmount},
+            #{dueDate},
+            #{status},
+            SYSDATE
+        )
+    </insert>
 </mapper>

@@ -1,6 +1,7 @@
 package com.erp.backend.sales.controller;
 
 import com.erp.backend.common.ApiResponse;
+import com.erp.backend.sales.dto.SalesRequestDto;
 import com.erp.backend.sales.service.SalesService;
 import com.erp.backend.sales.vo.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -127,6 +128,26 @@ public class SalesController {
         return ResponseEntity.ok(
                 ApiResponse.success(salesService.getSettlement(settlementId))
         );
+    }
+
+    @Operation(summary = "매출청구 등록")
+    @PostMapping("/invoices")
+    public ResponseEntity<String> createSalesInvoice(@RequestBody SalesRequestDto requestDto) {
+        SalesInvoiceVO salesInvoiceVO = new SalesInvoiceVO();
+        AccountReceivableVO accountReceivableVO = new AccountReceivableVO();
+
+        salesInvoiceVO.setSoId(requestDto.getSoId());
+        salesInvoiceVO.setCustomerId(requestDto.getCustomerId());
+        salesInvoiceVO.setIssueDate(requestDto.getIssueDate());
+        salesInvoiceVO.setTotalAmount(requestDto.getTotalAmount());
+        salesInvoiceVO.setStatus(requestDto.getStatus());
+
+        salesService.createSalesInvoice(
+                salesInvoiceVO,
+                accountReceivableVO
+        );
+
+        return ResponseEntity.ok("매출청구 등록 완료");
     }
 
 }
