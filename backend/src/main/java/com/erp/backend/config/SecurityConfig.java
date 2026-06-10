@@ -5,6 +5,7 @@ import com.erp.backend.auth.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -34,6 +35,13 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/api-docs/**").permitAll()
                         // ADMIN 전용
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
+                        // 발주 승인, 반려
+                        .requestMatchers(HttpMethod.PUT, "/api/purchase-orders/*/approve")
+                        .hasAnyRole("MANAGER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/purchase-orders/*/reject")
+                        .hasAnyRole("MANAGER", "ADMIN")
+
                         // 나머지는 인증 필요
                         .anyRequest().authenticated()
                 )

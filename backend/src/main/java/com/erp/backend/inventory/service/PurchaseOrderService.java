@@ -110,4 +110,68 @@ public class PurchaseOrderService {
             purchaseOrderMapper.insertPurchaseOrderDetail(detailParams);
         }
     }
+
+    // 발주 승인
+    @Transactional
+    public void approvePurchaseOrder (Long poId, Long approveEmpId, String roleCode) {
+
+        // 발주 존재 여부 확인
+        Map<String, Object> po = purchaseOrderMapper.findPoStatusById(poId);
+        if (po == null){
+            throw new CustomException(ErrorCode.PURCHASE_ORDER_NOT_FOUND);
+        }
+        // 상태 검사
+        String status = (String) po.get("STATUS");
+        if (!"REQUESTED".equals(status)){
+            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
+        }
+        // 본인 발주 승인 방지 (ADMIN 제외)
+        Long requestEmpId = ((Number) po.get("REQUEST_EMP_ID")).longValue();
+        if (!"ADMIN".equals(roleCode) &&requestEmpId.equals(approveEmpId)){
+            throw new CustomException(ErrorCode.SELF_APPROVE_NOT_ALLOWED);
+        }
+
+        // 승인 처리
+        Map<String, Object> params = new HashMap<>();
+        params.put("poId", poId);
+        params.put("approveEmpId", approveEmpId);
+        int result = purchaseOrderMapper.approvePurchaseOrder(params);
+        if (result == 0){
+            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
+        }
+    }
+
+
+    // 발주 반려
+    @Transactional
+    public void rejectPurchaseOrder (Long poId, Long approveEmpId,
+                                     String roleCode, String rejectReason) {
+
+        // 발주 존재 여부 확인
+        Map<String, Object> po = purchaseOrderMapper.findPoStatusById(poId);
+        if (po == null){
+            throw new CustomException(ErrorCode.PURCHASE_ORDER_NOT_FOUND);
+        }
+        // 상태 검사
+        String status = (String) po.get("STATUS");
+        if (!"REQUESTED".equals(status)){
+            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
+        }
+        // 본인 발주 반려 방지
+        Long requestEmpId = ((Number) po.get("REQUEST_EMP_ID")).longValue();
+        if (!"ADMIN".equals(roleCode) &&requestEmpId.equals(approveEmpId)){
+            throw new CustomException(ErrorCode.SELF_APPROVE_NOT_ALLOWED);
+        }
+
+        // 반려 처리
+        Map<String, Object> params = new HashMap<>();
+        params.put("poId", poId);
+        params.put("approveEmpId", approveEmpId);
+        params.put("rejectReason", rejectReason);
+        int result = purchaseOrderMapper.rejectPurchaseOrder(params);
+        if (result == 0){
+            throw new CustomException(ErrorCode.INVALID_ORDER_STATUS);
+        }
+    }
+
 }

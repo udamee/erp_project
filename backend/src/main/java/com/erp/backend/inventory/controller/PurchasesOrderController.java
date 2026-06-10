@@ -2,6 +2,7 @@ package com.erp.backend.inventory.controller;
 
 import com.erp.backend.common.ApiResponse;
 import com.erp.backend.common.AuthUitil;
+import com.erp.backend.inventory.dto.PurchaseOrderApproveRequestDto;
 import com.erp.backend.inventory.dto.PurchaseOrderReqeustDto;
 import com.erp.backend.inventory.dto.PurchaseOrderResponseDto;
 import com.erp.backend.inventory.service.PurchaseOrderService;
@@ -10,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -68,4 +70,40 @@ public class PurchasesOrderController {
         return ResponseEntity.ok(ApiResponse.success("발주가 등록되었습니다.",null));
     }
 
+
+    @Operation(summary = "발주 승인 (MANAGER)")
+    @PutMapping("/{poId}/approve")
+    public ResponseEntity<ApiResponse<Void>> approvePurchaseOrder(
+            @PathVariable Long poId,
+            @AuthenticationPrincipal String loginId,
+            Authentication authentication) {
+
+        Long empId = authUtil.getEmpId(loginId);
+
+        String roleCode = authentication.getAuthorities().stream()
+                .findFirst()
+                .map(a -> a.getAuthority().replace("ROLE_", ""))
+                .orElse("");
+
+        purchaseOrderService.approvePurchaseOrder(poId, empId, roleCode);
+        return ResponseEntity.ok(ApiResponse.success("발주가 승인되었습니다.",null));
+    }
+
+    @Operation(summary = "발주 반려 (MANAGER)")
+    @PutMapping("/{poId}/reject")
+    public ResponseEntity<ApiResponse<Void>> rejectPurchaseOrder(
+            @PathVariable Long poId,
+            @Valid @RequestBody PurchaseOrderApproveRequestDto requestDto,
+            @AuthenticationPrincipal String loginId, Authentication authentication) {
+
+        Long empId = authUtil.getEmpId(loginId);
+
+        String roleCode = authentication.getAuthorities().stream()
+                .findFirst()
+                .map(a -> a.getAuthority().replace("ROLE_", ""))
+                .orElse("");
+
+        purchaseOrderService.rejectPurchaseOrder(poId, empId, roleCode,requestDto.getRejectReason());
+        return ResponseEntity.ok(ApiResponse.success("발주가 반려되었습니다.",null));
+    }
 }

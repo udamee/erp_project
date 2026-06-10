@@ -163,4 +163,37 @@
         WHERE SUPPLIER_ID = #{supplierId}
             AND STATUS = 'REQUESTED'
     </select>
+
+
+    <!-- 발주 상태 조회 -->
+    <select id="findPoStatusById" parameterType="Long" resultType="map">
+        SELECT PO_ID,
+            REQUEST_EMP_ID,
+            STATUS
+        FROM PURCHASE_ORDER
+        WHERE PO_ID = #{poId}
+    </select>
+
+    <!-- 발주 승인 -->
+    <update id="approvePurchaseOrder" parameterType="map">
+        UPDATE PURCHASE_ORDER
+        SET STATUS = 'APPROVED',
+            APPROVE_EMP_ID = #{approveEmpId},
+            APPROVE_DATE = SYSDATE,
+            UPDATED_AT = SYSDATE
+        WHERE PO_ID = #{poId}
+            AND STATUS = 'REQUESTED'
+    </update>
+
+    <!-- 발주 반려 -->
+    <update id="rejectPurchaseOrder" parameterType="map">
+        UPDATE PURCHASE_ORDER
+        SET STATUS         = 'REJECTED',
+            APPROVE_EMP_ID = #{approveEmpId},
+            MEMO           = #{rejectReason},
+            UPDATED_AT     = SYSDATE
+        WHERE PO_ID  = #{poId}
+            AND STATUS = 'REQUESTED'
+    </update>
+
 </mapper>

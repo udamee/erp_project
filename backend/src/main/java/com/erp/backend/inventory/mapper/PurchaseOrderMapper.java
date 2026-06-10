@@ -31,4 +31,11 @@ public interface PurchaseOrderMapper {
     Map<String, Object> findProductById(Long productId);  // 의약품 존재여부 확인
     int countRequestedPo(Long supplierId);               // 중복 발주 확인
 
+    // 발주 단건 조회 (승인,반려용)
+    Map<String, Object> findPoStatusById(Long poId);
+    // 발주 승인
+    int approvePurchaseOrder(Map<String, Object> params);
+    // 발주 반려
+    int rejectPurchaseOrder(Map<String, Object> params);
+
 }
