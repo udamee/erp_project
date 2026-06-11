@@ -2,10 +2,7 @@ package com.erp.backend.inventory.service;
 
 import com.erp.backend.common.CustomException;
 import com.erp.backend.common.ErrorCode;
-import com.erp.backend.inventory.dto.PurchaseOrderDetailDto;
-import com.erp.backend.inventory.dto.PurchaseOrderDetailResponseDto;
-import com.erp.backend.inventory.dto.PurchaseOrderReqeustDto;
-import com.erp.backend.inventory.dto.PurchaseOrderResponseDto;
+import com.erp.backend.inventory.dto.*;
 import com.erp.backend.inventory.mapper.PurchaseOrderMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -57,7 +54,7 @@ public class PurchaseOrderService {
 
     // 발주 등록
     @Transactional
-    public void createPurchaseOrder(PurchaseOrderReqeustDto requestDto, Long requestEmpId){
+    public void createPurchaseOrder(PurchaseOrderRequestDto requestDto, Long requestEmpId){
 
         // 공급처 유효성 검사
         Map<String, Object> supplier = purchaseOrderMapper.findSupplierById(requestDto.getSupplierId());

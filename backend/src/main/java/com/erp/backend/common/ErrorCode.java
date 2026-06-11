@@ -31,7 +31,11 @@ public enum ErrorCode {
 
     PURCHASE_ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "발주를 찾을 수 없습니다."),
     INVALID_ORDER_STATUS(HttpStatus.BAD_REQUEST, "처리할 수 없는 발주 상태입니다."),
-    SELF_APPROVE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "본인이 기안한 발주는 승인 할 수 없습니다.");
+    SELF_APPROVE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "본인이 기안한 발주는 승인 할 수 없습니다."),
+
+    ALREADY_RECEIVED(HttpStatus.BAD_REQUEST,"이미 입고 처리된 발주입니다."),
+    INVALID_EXPIRY_DATE(HttpStatus.BAD_REQUEST, "유효기간이 만료된 의약품입니다.")
+    ;
 
     private final HttpStatus status;
     private final String message;

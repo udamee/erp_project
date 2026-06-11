@@ -4,12 +4,11 @@ import com.erp.backend.auth.mapper.AuthMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
-public class AuthUitil {
+public class AuthUtil {
 
     private final AuthMapper authMapper;
 

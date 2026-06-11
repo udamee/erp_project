@@ -9,6 +9,7 @@ import java.util.Date;
 @Setter
 public class PurchaseOrderResponseDto {
 
+    // 발주 응답
     private Long poId;
     private Long supplierId;
     private String supplierName;

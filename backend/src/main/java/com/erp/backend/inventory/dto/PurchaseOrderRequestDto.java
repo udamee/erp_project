@@ -7,7 +7,8 @@ import lombok.Getter;
 import java.util.List;
 
 @Getter
-public class PurchaseOrderReqeustDto {
+public class PurchaseOrderRequestDto {
+    // 발주 등록 요청
 
     @NotNull(message = "공급처를 선택해주세요.")
     private Long supplierId;

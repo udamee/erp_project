@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 
 @Getter
 public class PurchaseOrderDetailDto {
+    // 발주 품목 요청
 
     @NotNull(message = "의약품을 선택해주세요.")
     private Long productId;

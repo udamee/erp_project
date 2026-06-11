@@ -4,18 +4,19 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.Date;
 
 @Getter
 @Setter
-public class PurchaseOrderDetailResponseDto {
-    // 발주 품목 응답
+public class ReceivingDetailResponseDto {
 
-    private Long poDetailId;
+    private Long receivingDetailId;
     private Long productId;
-    private String productName;
     private String productCode;
+    private String productName;
     private String unit;
-    private Integer orderQty;
+    private String lotNo;
+    private Date expityDate;
+    private Integer receivedQty;
     private BigDecimal unitPrice;
-    private BigDecimal amount;
 }

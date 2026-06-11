@@ -1,9 +1,9 @@
 package com.erp.backend.inventory.controller;
 
 import com.erp.backend.common.ApiResponse;
-import com.erp.backend.common.AuthUitil;
+import com.erp.backend.common.AuthUtil;
 import com.erp.backend.inventory.dto.PurchaseOrderApproveRequestDto;
-import com.erp.backend.inventory.dto.PurchaseOrderReqeustDto;
+import com.erp.backend.inventory.dto.PurchaseOrderRequestDto;
 import com.erp.backend.inventory.dto.PurchaseOrderResponseDto;
 import com.erp.backend.inventory.service.PurchaseOrderService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,7 +25,7 @@ import java.util.Map;
 public class PurchasesOrderController {
 
     private final PurchaseOrderService purchaseOrderService;
-    private final AuthUitil  authUtil;
+    private final AuthUtil authUtil;
 
     @Operation(summary = "공급처 목록 조회")
     @GetMapping("/suppliers")
@@ -62,7 +62,7 @@ public class PurchasesOrderController {
     @Operation(summary = "발주 등록 (STAFF)")
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> createPurchaseOrder(
-            @Valid @RequestBody PurchaseOrderReqeustDto requestDto,
+            @Valid @RequestBody PurchaseOrderRequestDto requestDto,
             @AuthenticationPrincipal String loginId) {
 
         Long empId = authUtil.getEmpId(loginId); // loginID로 empId 조회
