@@ -13,4 +13,5 @@ public class SalesOrderDetailVO {
     Integer orderQty;
     BigDecimal unitPrice;
     BigDecimal amount;
+    String productName;
 }

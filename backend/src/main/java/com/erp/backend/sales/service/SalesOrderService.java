@@ -2,13 +2,10 @@ package com.erp.backend.sales.service;
 
 import com.erp.backend.common.CustomException;
 import com.erp.backend.common.ErrorCode;
-import com.erp.backend.sales.Util.OrderStatus;
+import com.erp.backend.sales.util.OrderStatus;
 import com.erp.backend.sales.dto.SalesOrderRequestDTO;
 import com.erp.backend.sales.mapper.SalesOrderMapper;
-import com.erp.backend.sales.vo.ProductVO;
-import com.erp.backend.sales.vo.SalesOrderAmountCheckVO;
-import com.erp.backend.sales.vo.SalesOrderDetailVO;
-import com.erp.backend.sales.vo.SalesOrderVO;
+import com.erp.backend.sales.vo.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,32 +14,33 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+
 @Service
 @RequiredArgsConstructor
 public class SalesOrderService {
 
     private final SalesOrderMapper salesOrderMapper;
-    public ProductVO findProductLotStocksByProductId(int productId){
-        return salesOrderMapper.findProductLotStocksByProductId(productId);
+    public List<ProductVO> findProductLotsByProductId(int productId){
+        return salesOrderMapper.findProductLotsById(productId);
     }
-    public List<ProductVO> findAvailableLotStocksByProductId(int productId){
-        return salesOrderMapper.findAvailableLotStocksByProductId(productId);
+    public List<ProductVO> findAvailableProducts(int productId){
+        return salesOrderMapper.findAvailableProductLotsByProductId(productId);
     }
-    public List<SalesOrderVO> findRequestOrderById(int salesOrderId){
+    public List<SalesOrderVO> findRequestOrder(int salesOrderId){
         return salesOrderMapper.findRequestOrderById(salesOrderId);
     }
     public List<SalesOrderVO> findAllOrderStatusList(){
-        return salesOrderMapper.findAllOrderStatusList();
+        return salesOrderMapper.findAllOrderStatus();
     }
-    public SalesOrderVO findSalesOrderHeaderById(SalesOrderVO salesOrderVO){
-        return salesOrderMapper.findOrderHeaderById(salesOrderVO);
+    public SalesOrderVO findSalesOrderHeaderById(int soId){
+        return salesOrderMapper.findOrderHeaderById(soId);
     }
-    public SalesOrderVO findOrderDetailListByOrderId(SalesOrderVO salesOrderVO){
-        SalesOrderVO order = salesOrderMapper.findOrderHeaderById(salesOrderVO);
+    public SalesOrderVO findOrderDetailListByOrderId(int soId){
+        SalesOrderVO order = salesOrderMapper.findOrderHeaderById(soId);
         if (order == null) {
             return null;
         }
-        List<SalesOrderDetailVO> details = salesOrderMapper.findOrderDetailListByOrderId(salesOrderVO);
+        List<SalesOrderDetailVO> details = salesOrderMapper.findOrderDetailListByOrderId(order.getSoId());
         order.setDetailList(details);
         return order;
     }
@@ -54,25 +52,35 @@ public class SalesOrderService {
         salesOrderVO.setSoId(orderId);
         salesOrderVO.setCustomerId(requestDTO.getCustomerId());
         salesOrderVO.setReqEmployeeId(requestDTO.getEmployeeId());
+        ProductVO productVO = salesOrderMapper.findActiveProduct(requestDTO.getProductId());
+        if(productVO==null){
+            throw new CustomException(ErrorCode.NOT_FOUND);
+        }
+//        BigDecimal requestedAmount = productVO.getStandardSalesPrice().multiply(BigDecimal.valueOf(requestDTO.getOrderQty()));
         salesOrderVO.setTotalAmount(requestDTO.getAmount());
         salesOrderVO.setOrderDate(LocalDateTime.now());
         salesOrderVO.setStatus(OrderStatus.REQUESTED.name());
-        ProductVO productVO = salesOrderMapper.checkProductById(requestDTO.getProductId());
-        if(requestDTO.getOrderQty() < salesOrderMapper.checkAvailableLot(productVO.getProductId())){
+
+        if(requestDTO.getOrderQty() > salesOrderMapper.findAvailableQtyByProductId(productVO.getProductId())){
             throw new CustomException(ErrorCode.SALES_NOT_AVAILABLE_STOCK);
         }
         int result = salesOrderMapper.makeSalesOrder(salesOrderVO);
-        if (result == 1){
-            int detailId = salesOrderMapper.currentSalesOrderDetailSeq();
-            SalesOrderDetailVO salesOrderDetailVO = new SalesOrderDetailVO();
-            salesOrderDetailVO.setSoDetailId(detailId);
-            salesOrderDetailVO.setSoId(orderId);
-            salesOrderDetailVO.setProductId(requestDTO.getProductId());
-            salesOrderDetailVO.setOrderQty(requestDTO.getOrderQty());
-            salesOrderDetailVO.setUnitPrice(productVO.getStandardSalesPrice());
-            salesOrderDetailVO.setAmount(productVO.getStandardSalesPrice().multiply(BigDecimal.valueOf(requestDTO.getOrderQty())));
-            salesOrderMapper.makeSalesOrderDetail(salesOrderDetailVO);
+        if (result != 1){
+            throw new CustomException(ErrorCode.SALES_ORDER_FAILED);
         }
+        int detailId = salesOrderMapper.currentSalesOrderDetailSeq();
+        SalesOrderDetailVO salesOrderDetailVO = new SalesOrderDetailVO();
+        salesOrderDetailVO.setSoDetailId(detailId);
+        salesOrderDetailVO.setSoId(orderId);
+        salesOrderDetailVO.setProductId(requestDTO.getProductId());
+        salesOrderDetailVO.setOrderQty(requestDTO.getOrderQty());
+        salesOrderDetailVO.setUnitPrice(productVO.getStandardSalesPrice());
+        salesOrderDetailVO.setAmount(productVO.getStandardSalesPrice().multiply(BigDecimal.valueOf(requestDTO.getOrderQty())));
+        int detailResult =salesOrderMapper.makeSalesOrderDetail(salesOrderDetailVO);
+        if (detailResult != 1){
+            throw new CustomException(ErrorCode.SALES_ORDER_FAILED);
+        }
+        //실패시 로직 추가 필요
     }
 
     @Transactional
@@ -87,14 +95,44 @@ public class SalesOrderService {
         if(salesOrderMapper.approveRequest(salesOrderVO)!=1){
             throw new CustomException(ErrorCode.SALES_APPROVE_FAILED);
         }
-        return salesOrderMapper.findOrderHeaderById(salesOrderVO);
+        return salesOrderMapper.findOrderHeaderById(salesOrderVO.getSoId());
     }
 
     public SalesOrderAmountCheckVO verifyAmount(int salesId){
         return salesOrderMapper.verifySalesOrderTotal(salesId);
     }
 
-    public int existsRequestedOrderDetail(int salesOrderId){
-        return salesOrderMapper.existsRequestedOrderDetail(salesOrderId);
+    public void existsRequestedOrderDetail(int salesOrderId){
+        System.out.println(salesOrderMapper.existsRequestedOrderWithDetail(salesOrderId));
     }
+
 }
+
+//재고차감
+//INVENTORYLOT
+//1.인벤토리에서 해당 로트를 조회해서 차감(현재고,수정날짜수정)
+//2.현재고가 0 이하로 떨어질시(상태수정)
+//STOCKMOVEMENT
+//1.변동이력생성(변동재고,변동전재고,변동후재고,변동사유,변동사유연관일렬번호,작업처리자,변동데이터생성일,변동데이터수정일)
+//SHIPMENT
+//1.출고헤더생성
+//SHIPMENTDETAIL
+//1.출고상세데이터생성
+
+
+//출고
+//SHIPMENT
+//SHIPMENTDETAIL
+
+//→ 재고 차감
+//→ 출고상세 생성
+//→ 주문 상태를 APPROVED 또는 SHIPPED 계열로 변경
+
+//주문승인/출고
+//→ 주문 상태가 REQUESTED인지 확인
+//→ 현재 로트 재고를 FOR UPDATE로 조회
+//→ FEFO로 배정 가능 여부 최종 확인
+//→ 부족하면 승인 실패
+//→ 충분하면 로트별 차감 계획 생성
+//→ 재고 차감
+//→ 출고상세/주문상태 반영
