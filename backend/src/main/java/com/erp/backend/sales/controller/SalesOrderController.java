@@ -5,8 +5,8 @@ import com.erp.backend.common.ApiResponse;
 import com.erp.backend.sales.dto.SalesOrderListResponseDTO;
 import com.erp.backend.sales.dto.SalesOrderRequestDTO;
 import com.erp.backend.sales.service.SalesOrderService;
-import com.erp.backend.sales.util.OrderStatus;
 import com.erp.backend.sales.vo.*;
+import lombok.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,77 +25,64 @@ public class SalesOrderController {
         this.salesOrderService = salesOrderService;
     }
 
+    //주문전체조회
     @GetMapping
     public ResponseEntity<ApiResponse<List<SalesOrderListResponseDTO>>> findAllSalesOrders(@RequestParam(required = false) String status){
         List<SalesOrderListResponseDTO> orders = salesOrderService.findAllSalesOrders(status);
-        return ResponseEntity.ok(ApiResponse.success(orders.size()+"의건이 조회되었습니다.",orders));
+        return ResponseEntity.ok(ApiResponse.success(orders.size()+"의건이 조회되었습니다",orders));
     }
 
-    @GetMapping("/productLots")
-    public ResponseEntity<List<ProductVO>> findProductLot(@RequestParam int productId){
-        List<ProductVO> result = salesOrderService.findProductLotsByProductId(productId);
-        return ResponseEntity.ok(result);
-    }
-
-    @GetMapping("/products/available-lots")
-    public ResponseEntity<List<ProductVO>> findAvailableLotStock(@RequestParam int productId){
-        List<ProductVO> item = salesOrderService.findAvailableProducts(productId);
-        return ResponseEntity.ok(item);
-    }
-
-    @GetMapping("/{salesOrderId}/status")
-    public ResponseEntity<List<SalesOrderVO>> findRequestOrder(@PathVariable int salesOrderId){
-        List<SalesOrderVO> orders = salesOrderService.findRequestOrder(salesOrderId);
-        return ResponseEntity.ok(orders);
-    }
-
+    //주문 조회 1건
     @GetMapping("/{salesOrderId}")
-    public ResponseEntity<SalesOrderVO> findSimpleOrderHeader(@PathVariable Integer salesOrderId){
-        SalesOrderVO order = salesOrderService.findSalesOrderHeaderById(salesOrderId);
-        return ResponseEntity.ok(order);
+    public ResponseEntity<ApiResponse<SalesOrderVO>> findSalesOrder(@PathVariable Integer salesOrderId){
+        SalesOrderVO order = salesOrderService.findSalesOrderById(salesOrderId);
+        return ResponseEntity.ok(ApiResponse.success(order.getSoId()+"의 주문이 조회되었습니다",order));
     }
 
+    //상품별 로트조회
+    @GetMapping("/productLots")
+    public ResponseEntity<ApiResponse<List<ProductVO>>> findProductLot(@RequestParam int productId){
+        List<ProductVO> result = salesOrderService.findProductLotsByProductId(productId);
+        return ResponseEntity.ok(ApiResponse.success(result.size()+"개의 로트가 조회되었습니다",result));
+    }
+
+    //상품별 이용가능한 로트조회
+    @GetMapping("/products/available-lots")
+    public ResponseEntity<ApiResponse<List<ProductVO>>> findAvailableLotStock(@RequestParam int productId){
+        List<ProductVO> item = salesOrderService.findAvailableProducts(productId);
+        return ResponseEntity.ok(ApiResponse.success(item.size()+"개의 로트가 이용가능합니다",item));
+    }
+
+    //주문상세조회
     @GetMapping("/{salesOrderId}/details")
-    public ResponseEntity<SalesOrderVO> findSimpleOrderDetailList(@PathVariable Integer salesOrderId){
-        SalesOrderVO order = salesOrderService.findOrderDetailListByOrderId(salesOrderId);
-        return ResponseEntity.ok(order);
+    public ResponseEntity<ApiResponse<SalesOrderVO>> findSalesOrderDetailList(@PathVariable Integer salesOrderId){
+        SalesOrderVO order = salesOrderService.findSalesOrderWithDetails(salesOrderId);
+        return ResponseEntity.ok(ApiResponse.success(order.getDetailList().size()+"개의 상세정보가 조회되었습니다",order));
     }
 
+    //주문생성
     @PostMapping
-    public ResponseEntity<Void> makeOrder(@RequestBody SalesOrderRequestDTO requestDTO){
-        salesOrderService.makeOrder(requestDTO);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<ApiResponse<SalesOrderVO>> makeOrder(@RequestBody SalesOrderRequestDTO requestDTO){
+        SalesOrderVO responseVO = new SalesOrderVO();
+        responseVO.setSoId(salesOrderService.makeOrder(requestDTO));
+        return ResponseEntity.ok(ApiResponse.success("주문이 생성되었습니다",responseVO));
     }
 
+    //주문승인
     @PatchMapping("/{salesOrderId}/approve")
-    public ResponseEntity<SalesOrderVO> approveRequest(@PathVariable int salesOrderId,@RequestBody SalesOrderRequestDTO requestDTO){
+    public ResponseEntity<ApiResponse<SalesOrderVO>> approveRequest(@PathVariable int salesOrderId,@RequestBody @NonNull SalesOrderRequestDTO request){
         SalesOrderVO salesOrderVO = new SalesOrderVO();
         salesOrderVO.setSoId(salesOrderId);
-        salesOrderVO.setAppEmployeeId(requestDTO.getEmployeeId());
+        salesOrderVO.setAppEmployeeId(request.getEmployeeId());
         SalesOrderVO updateSalesOrder = salesOrderService.approveRequest(salesOrderVO);
-        System.out.println(updateSalesOrder);
-        return ResponseEntity.ok(updateSalesOrder);
+        return ResponseEntity.ok(ApiResponse.success("주문이 승인되었습니다",updateSalesOrder));
     }
 
+    //주문금액검증
     @GetMapping("/{salesOrderId}/amount-check")
-    public ResponseEntity<SalesOrderAmountCheckVO> checkView(@PathVariable int salesOrderId){
+    public ResponseEntity<ApiResponse<SalesOrderAmountCheckVO>> checkView(@PathVariable int salesOrderId){
         SalesOrderAmountCheckVO salesOrderAmountCheckVO = salesOrderService.verifyAmount(salesOrderId);
-        return ResponseEntity.ok(salesOrderAmountCheckVO);
+        return ResponseEntity.ok(ApiResponse.success("액수가 일치합니다",salesOrderAmountCheckVO));
     }
-
-    @GetMapping("/lots")
-    public ResponseEntity<List<ItemLotVO>> availableLots(){
-        return ResponseEntity.ok().build();
-    }
-
-//    @GetMapping("/status")
-//    public ResponseEntity<Void> checkStatus(@RequestParam int salesOrderId,@RequestParam String status){
-//        salesOrderService.findStatus(salesOrderId,"");
-//        return ResponseEntity.ok().build();
-//    }
-
-
-
-
 
 }

@@ -54,10 +54,10 @@ public class SalesOrderService {
     public List<SalesOrderVO> findAllOrderStatusList(){
         return salesOrderMapper.findAllOrderStatus();
     }
-    public SalesOrderVO findSalesOrderHeaderById(int soId){
+    public SalesOrderVO findSalesOrderById(int soId){
         return salesOrderMapper.findOrderHeaderById(soId);
     }
-    public SalesOrderVO findOrderDetailListByOrderId(int soId){
+    public SalesOrderVO findSalesOrderWithDetails(int soId){
         SalesOrderVO order = salesOrderMapper.findOrderHeaderById(soId);
         if (order == null) {
             return null;
@@ -68,7 +68,7 @@ public class SalesOrderService {
     }
 
     @Transactional
-    public void makeOrder(SalesOrderRequestDTO requestDTO){
+    public Integer makeOrder(SalesOrderRequestDTO requestDTO){
         int orderId = salesOrderMapper.currentSalesOrderSeq();
         SalesOrderVO salesOrderVO = new SalesOrderVO();
         salesOrderVO.setSoId(orderId);
@@ -102,6 +102,7 @@ public class SalesOrderService {
             throw new CustomException(ErrorCode.SALES_ORDER_FAILED);
         }
         //실패시 로직 추가 필요
+        return orderId;
     }
 
     @Transactional
