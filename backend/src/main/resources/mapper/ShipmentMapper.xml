@@ -119,7 +119,9 @@
             so.order_date,
             sh.shipment_date,
             sh.shipped_emp_id,
-            em.emp_name,
+            em.emp_name as employeeName,
+            sh.memo,
+            sh.created_at,
             sh.status
         FROM
             shipment sh
@@ -129,6 +131,18 @@
         ON cu.customer_id = so.customer_id
         JOIN employee em
         ON em.emp_id = sh.shipped_emp_id
+        <where>
+        <if test="salesOrderId != null">
+            AND sh.so_id=#{salesOrderId}
+        </if>
+        <if test="status != null and status != ''">
+            AND sh.status=UPPER(#{status})
+        </if>
+        <if test="employeeName != null and employeeName != ''">
+            AND em.emp_name=#{employeeName}
+        </if>
+        </where>
+        ORDER BY sh.shipment_id
     </select>
     <select id="findShipment">
         SELECT
@@ -137,12 +151,15 @@
             shipped_emp_id,
             shipment_date,
             status,
-            memo,
             created_at
         FROM
             shipment
-        WHERE
+        <where>
             shipment_id=#{shipmentId}
+            <if test="isShipped != null and isShipped eq true">
+                AND status='SHIPPED'
+            </if>
+        </where>
     </select>
     <update id="updateShippingStatus">
         UPDATE shipment
@@ -153,7 +170,7 @@
         AND
             status='SHIPPED'
     </update>
-    <select id="findShipmentDetail" resultType="ShipmentDetailVO">
+    <select id="findShipmentDetails" resultType="ShipmentDetailVO">
         SELECT
             sh.shipment_id,
             sdh.shipment_detail_id,
@@ -186,6 +203,9 @@
         ON il.inventory_lot_id=sdh.inventory_lot_id
         WHERE
             sh.shipment_id=#{shipmentId}
+        <if test="status != null and status !=''">
+            AND sh.status=UPPER(#{status})
+        </if>
     </select>
     <select id="trackProductHistory" resultType="StockMovementVO">
         SELECT * FROM stock_movement WHERE movement_id=#{moveId}
@@ -217,7 +237,7 @@
         AND
             so.status='APPROVED'
     </select>
-    <select id="preventDuplicatedShipment">
+    <select id="preventDuplicatingShipment">
         SELECT
             shipment_id,
             shipment_date,

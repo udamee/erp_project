@@ -12,8 +12,6 @@ import java.util.List;
 
 @Mapper
 public interface ShipmentMapper {
-    int test1();
-
     int currentStockMovementSeq();
     int updateInventory(@Param("inventoryId") int inventoryId,@Param("currentQty") int currentQty, @Param("updateAt")LocalDateTime updateDate);
     int changeStockMovement(StockMovementVO stockMovementVO);
@@ -27,6 +25,8 @@ public interface ShipmentMapper {
     StockMovementVO trackProductHistory(int moveId);
     SalesOrderVO verifySalesOrderStatus(int salesOrderId);
     List<SalesOrderDetailVO> findApprovedSalesOrderDetails(int salesOrderId);
-    ShipmentVO preventDuplicatedShipment(int salesOrderId);
-    List<ShipmentDetailVO> findShipmentDetail(int shipmentDetailId);
+    ShipmentVO preventDuplicatingShipment(int salesOrderId);
+    List<ShipmentDetailVO> findShipmentDetails(int shipmentId,String status);
+    List<ShipmentVO> findShipmentList(@Param("salesOrderId") Integer salesOrderId,@Param("status") String status,@Param("employeeName") String employeeName);
+    ShipmentVO findShipment(int shipmentId,boolean isShipped);
 }

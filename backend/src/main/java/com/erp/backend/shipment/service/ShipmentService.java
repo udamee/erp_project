@@ -30,22 +30,17 @@ public class ShipmentService {
     private final ShipmentMapper shipmentMapper;
     private final SalesOrderMapper salesOrderMapper;
 
-    public int testMapper(){
-        System.out.print(shipmentMapper.test1());
-        return shipmentMapper.test1();
-    }
-
     public SalesOrderVO verifySalesOrderStatus(int salesOrderId){
         return shipmentMapper.verifySalesOrderStatus(salesOrderId);
     }
 
-    public ShipmentVO preventDuplicatedShipment(int salesOrderId){
-        return shipmentMapper.preventDuplicatedShipment(salesOrderId);
+    public ShipmentVO preventDuplicatingShipment(int salesOrderId){
+        return shipmentMapper.preventDuplicatingShipment(salesOrderId);
     }
 
-    public List<ShipmentDetailVO> findShipmentDetail(int shipmentId){
-        return shipmentMapper.findShipmentDetail(shipmentId);
-    }
+//    public List<ShipmentDetailVO> findShipmentDetail(int shipmentId){
+//        return shipmentMapper.findShipmentDetails(shipmentId);
+//    }
 
     public int arrangeShipmentHeader(ShipmentVO shipmentVO){
         return shipmentMapper.arrangeShipmentHeader(shipmentVO);
@@ -53,6 +48,10 @@ public class ShipmentService {
 
     public int arrangeShipmentDetail(ShipmentDetailVO shipmentDetailVO){
         return shipmentMapper.arrangeShipmentDetail(shipmentDetailVO);
+    }
+
+    public List<ShipmentVO> findShipments(Integer salesOrderId, String status, String employeeName){
+        return shipmentMapper.findShipmentList(salesOrderId,status,employeeName);
     }
 
     public int updateShippingStatus(String status,int shipmentId){
@@ -65,7 +64,7 @@ public class ShipmentService {
         if(order==null){
             throw new CustomException(ErrorCode.SALES_APPROVE_FAILED);
         }
-        ShipmentVO duplicatedShipmentVO = preventDuplicatedShipment(salesOrderId);
+        ShipmentVO duplicatedShipmentVO = preventDuplicatingShipment(salesOrderId);
         if(duplicatedShipmentVO!=null){
             throw new CustomException(ErrorCode.SHIPMENT_ALREADY_EXISTS);
         }
@@ -174,7 +173,7 @@ public class ShipmentService {
         return shipmentMapper.decreaseInventory(stockMovementVO);
     }
 
-    public List<ShipmentDetailVO> findShipmentDetails(int shipmentDetailId){
-        return shipmentMapper.findShipmentDetail(shipmentDetailId);
+    public List<ShipmentDetailVO> findShipmentDetails(int shipmentId,String status){
+        return shipmentMapper.findShipmentDetails(shipmentId,status);
     }
 }

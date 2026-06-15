@@ -1,9 +1,9 @@
 package com.erp.backend.shipment.controller;
 
-import com.erp.backend.sales.dto.SalesOrderRequestDTO;
-import com.erp.backend.sales.vo.SalesOrderDetailVO;
+import com.erp.backend.shipment.Util.ShipmentStatus;
 import com.erp.backend.shipment.service.ShipmentService;
 import com.erp.backend.shipment.vo.ShipmentDetailVO;
+import com.erp.backend.shipment.vo.ShipmentVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,24 +21,16 @@ public class ShipmentController {
         this.shipmentService = shipmentService;
     }
 
-    @GetMapping("/")
-    public ResponseEntity<Integer> testMethod(){
-        return ResponseEntity.ok(shipmentService.testMapper());
+    @GetMapping
+    public ResponseEntity<List<ShipmentVO>> getShipments(@RequestParam(required = false) Integer salesOrderId,
+                                                         @RequestParam(required = false) String status,
+                                                         @RequestParam(required = false) String employeeName){
+        return ResponseEntity.ok(shipmentService.findShipments(salesOrderId,status,employeeName));
     }
 
-    @PostMapping("/testController/{salesId}")
-    public ResponseEntity<Void> testControllerAPI(@RequestBody SalesOrderRequestDTO request, @PathVariable int salesId){
-        SalesOrderDetailVO salesOrderDetailVO = new SalesOrderDetailVO();
-        salesOrderDetailVO.setSoId(salesId);
-        salesOrderDetailVO.setProductId(request.getProductId());
-        salesOrderDetailVO.setOrderQty(request.getOrderQty());
-//        shipmentService.allocateLots(salesOrderDetailVO);
-        return ResponseEntity.ok().build();
-    }
-
-    @GetMapping("/{shipmentId}/detail")
-    public ResponseEntity<List<ShipmentDetailVO>> findDetails(@PathVariable int shipmentId){
-        return ResponseEntity.ok(shipmentService.findShipmentDetails(shipmentId));
+    @GetMapping("/{shipmentId}")
+    public ResponseEntity<List<ShipmentDetailVO>> getShipmentDetails(@PathVariable int shipmentId, @RequestParam(required = false)String status){
+        return ResponseEntity.ok(shipmentService.findShipmentDetails(shipmentId,status));
     }
 
     @PostMapping("/process")

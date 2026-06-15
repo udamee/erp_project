@@ -11,9 +11,10 @@ public class ShipmentVO {
     private Integer shipmentId;
     private Integer soId;
     private Integer shippedEmpId;
+    private String employeeName;
     private LocalDateTime shipmentDate;
     private String status;
     private String memo;
     private LocalDateTime createdAt;
-    private List<ShipmentDetailVO> details;
+//    private List<ShipmentDetailVO> details;
 }
