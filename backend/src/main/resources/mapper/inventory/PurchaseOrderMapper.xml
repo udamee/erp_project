@@ -5,10 +5,10 @@
 
     <!-- 공급처 목록 조회 -->
     <select id="findAllSuppliers" resultType="map">
-        SELECT SUPPLIER_ID    AS supplierId,
-               SUPPLIER_NAME  AS supplierName,
-               MANAGER_NAME   AS managerName,
-               PHONE          AS phone
+        SELECT SUPPLIER_ID    AS "supplierId",
+               SUPPLIER_NAME  AS "supplierName",
+               MANAGER_NAME   AS "managerName",
+               PHONE          AS "phone"
         FROM SUPPLIER
         WHERE STATUS = 'ACTIVE'
         ORDER BY SUPPLIER_NAME
@@ -16,18 +16,16 @@
 
     <!-- 의약품 목록 조회 -->
     <select id="findAllProducts" resultType="map">
-        SELECT P.PRODUCT_ID                 AS productId,
-        P.PRODUCT_CODE               AS productCode,
-        P.PRODUCT_NAME               AS productName,
-        C.CATEGORY_NAME              AS categoryName,
-        P.UNIT                       AS unit,
-        P.STANDARD_PURCHASE_PRICE    AS standardPurchasePrice,
-        P.STANDARD_SALES_PRICE       AS standardSalesPrice,
-        P.IS_PRESCRIPTION            AS isPrescription,
-        P.STORAGE_TYPE               AS storageType,
-        P.STATUS                     AS status
+        SELECT P.PRODUCT_ID              AS "productId",
+        P.PRODUCT_CODE            AS "productCode",
+        P.PRODUCT_NAME            AS "productName",
+        P.UNIT                    AS "unit",
+        P.STANDARD_PURCHASE_PRICE AS "standardPurchasePrice",
+        P.STANDARD_SALES_PRICE    AS "standardSalesPrice",
+        P.IS_PRESCRIPTION         AS "isPrescription",
+        P.STORAGE_TYPE            AS "storageType",
+        P.STATUS                  AS "status"
         FROM PRODUCT P
-        LEFT JOIN MEDICINE_CATEGORY C ON P.CATEGORY_ID = C.CATEGORY_ID
         WHERE P.STATUS = 'ACTIVE'
         ORDER BY P.PRODUCT_NAME
     </select>
@@ -35,14 +33,14 @@
     <!-- 발주 목록 조회 -->
     <select id="findAllPurchaseOrders" parameterType="map" resultType="com.erp.backend.inventory.dto.PurchaseOrderResponseDto">
         SELECT PO.PO_ID             AS poId,
-        S.SUPPLIER_NAME      AS supplierName,
-        RE.EMP_NAME          AS requestEmpName,
-        AE.EMP_NAME          AS approveEmpName,
-        PO.PO_DATE           AS poDate,
-        PO.APPROVE_DATE      AS approveDate,
-        PO.STATUS            AS status,
-        PO.TOTAL_AMOUNT      AS totalAmount,
-        PO.MEMO              AS memo
+        S.SUPPLIER_NAME      AS "supplierName",
+        RE.EMP_NAME          AS "requestEmpName",
+        AE.EMP_NAME          AS "approveEmpName",
+        PO.PO_DATE           AS "poDate",
+        PO.APPROVE_DATE      AS "approveDate",
+        PO.STATUS            AS "status",
+        PO.TOTAL_AMOUNT      AS "totalAmount",
+        PO.MEMO              AS "memo"
         FROM PURCHASE_ORDER PO
         JOIN SUPPLIER S         ON PO.SUPPLIER_ID    = S.SUPPLIER_ID
         JOIN EMPLOYEE RE        ON PO.REQUEST_EMP_ID = RE.EMP_ID
@@ -113,7 +111,7 @@
             SYSDATE,
             'REQUESTED',
             #{totalAmount},
-            #{memo},
+            #{memo, jdbcType=VARCHAR},
             SYSDATE
         )
     </insert>
