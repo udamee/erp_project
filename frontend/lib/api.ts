@@ -93,6 +93,14 @@ export interface ReceivingDetailInput {
   unitPrice: number;
 }
 
+export interface PageResult<T> {
+  list: T[];
+  total: number;
+  page: number;
+  size: number;
+  totalPages: number;
+}
+
 // ===== API 함수 =====
 
 export const purchaseOrderApi = {
@@ -115,6 +123,15 @@ export const purchaseOrderApi = {
   approve: (poId: number) => api.put<void>(`/api/purchase-orders/${poId}/approve`),
   reject: (poId: number, rejectReason: string) =>
     api.put<void>(`/api/purchase-orders/${poId}/reject`, { rejectReason }),
+  listPaging: (status: string, page: number, size = 10) => {
+    const params = new URLSearchParams();
+    if (status) params.set("status", status);
+    params.set("page", String(page));
+    params.set("size", String(size));
+    return api.get<PageResult<PurchaseOrder>>(`/api/purchase-orders/paging?${params}`);
+  },
+  statusCounts: () =>
+    api.get<Record<string, number>>("/api/purchase-orders/status-counts"),
 };
 
 export const receivingApi = {
