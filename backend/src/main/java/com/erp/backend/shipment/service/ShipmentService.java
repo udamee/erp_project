@@ -171,9 +171,23 @@ public class ShipmentService {
         stockMovementVO.setInventoryLotId(lotId);
         stockMovementVO.setQuantity(assignedQty);
         return shipmentMapper.decreaseInventory(stockMovementVO);
+    public SalesOrderRequestVO verifyingSalesOrderStatusBySoId(int salesOrderId){
+        return shipmentMapper.verifyingSalesOrderStatusBySoId(salesOrderId);
     }
 
     public List<ShipmentDetailVO> findShipmentDetails(int shipmentId,String status){
         return shipmentMapper.findShipmentDetails(shipmentId,status);
+    }
+
+    public List<ShipmentResultVO> findShipmentResult(int shipmentId){
+        return shipmentMapper.findShipmentResult(shipmentId);
+    }
+
+    public List<StockMovementSearchVO> searchStockMovementHistory(StockMovementSearchVO stockMovementSearchVO){
+        return shipmentMapper.searchStockMovement(stockMovementSearchVO);
+    }
+
+    public List<ShipmentHistoryVO> searchShipmentHistory(int salesOrderId) {
+        return shipmentMapper.searchShipmentHistory(salesOrderId);
     }
 }
