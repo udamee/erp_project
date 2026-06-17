@@ -3,16 +3,18 @@ package com.erp.backend.auth.controller;
 import com.erp.backend.auth.dto.ChangePasswordRequestDto;
 import com.erp.backend.auth.dto.LoginRequestDto;
 import com.erp.backend.auth.dto.LoginResponseDto;
-import com.erp.backend.auth.dto.RefreshTokenRequestDto;
+import com.erp.backend.auth.dto.LoginResult;
 import com.erp.backend.auth.dto.SignupRequestDto;
 import com.erp.backend.auth.service.AuthService;
 import com.erp.backend.common.ApiResponse;
+import com.erp.backend.auth.jwt.CookieUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,13 +25,17 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final CookieUtil cookieUtil;
 
     @Operation(summary = "로그인")
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<LoginResponseDto>> login(
             @Valid @RequestBody LoginRequestDto requestDto) {
-        LoginResponseDto response = authService.login(requestDto);
-        return ResponseEntity.ok(ApiResponse.success("로그인 성공", response));
+        LoginResult result = authService.login(requestDto);
+        ResponseCookie refreshCookie = cookieUtil.createRefreshTokenCookie(result.refreshToken());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                .body(ApiResponse.success("로그인 성공", result.response()));
     }
 
     @Operation(summary = "회원 가입")
@@ -42,22 +48,28 @@ public class AuthController {
     @Operation(summary = "액세스 토큰 재발급")
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<LoginResponseDto>> refreshToken(
-            @Valid @RequestBody RefreshTokenRequestDto dto) {
-        return ResponseEntity.ok(ApiResponse.success("토큰 재발급 성공",
-                authService.refreshToken(dto.getRefreshToken())));
+            @CookieValue(name = CookieUtil.REFRESH_TOKEN, required = false) String refreshToken) {
+        LoginResult result = authService.refreshToken(refreshToken);
+        ResponseCookie refreshCookie = cookieUtil.createRefreshTokenCookie(result.refreshToken());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+                .body(ApiResponse.success("토큰 재발급 성공", result.response()));
     }
 
     @Operation(summary = "로그아웃")
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<Void>> logout(@Valid @RequestBody RefreshTokenRequestDto dto) {
-        authService.logout(dto.getRefreshToken());
-        return ResponseEntity.ok(ApiResponse.success("로그아웃 성공", null));
+    public ResponseEntity<ApiResponse<Void>> logout(
+            @CookieValue(name = CookieUtil.REFRESH_TOKEN, required = false) String refreshToken) {
+        authService.logout(refreshToken);
+        ResponseCookie clearCookie = cookieUtil.clearRefreshTokenCookie();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, clearCookie.toString())
+                .body(ApiResponse.success("로그아웃 성공", null));
     }
 
     @Operation(summary = "비밀번호 변경")
     @PatchMapping("/password")
-    public
-    ResponseEntity<ApiResponse<Void>> changePassword(
+    public ResponseEntity<ApiResponse<Void>> changePassword(
             @AuthenticationPrincipal Long empId,
             @Valid @RequestBody ChangePasswordRequestDto dto) {
         authService.changePassword(empId, dto);
