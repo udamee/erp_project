@@ -26,7 +26,11 @@ public interface ShipmentMapper {
     SalesOrderVO verifySalesOrderStatus(int salesOrderId);
     List<SalesOrderDetailVO> findApprovedSalesOrderDetails(int salesOrderId);
     ShipmentVO preventDuplicatingShipment(int salesOrderId);
-    List<ShipmentDetailVO> findShipmentDetails(int shipmentId,String status);
+    List<ShipmentDetailVO> findShipmentDetails(@Param("shipmentId") int shipmentId,@Param("status") String status);
     List<ShipmentVO> findShipmentList(@Param("salesOrderId") Integer salesOrderId,@Param("status") String status,@Param("employeeName") String employeeName);
     ShipmentVO findShipment(int shipmentId,boolean isShipped);
+    SalesOrderRequestVO verifyingSalesOrderStatusBySoId(int salesOrderId);
+    List<ShipmentHistoryVO> searchShipmentHistory(int salesOrderId);
+    List<StockMovementSearchVO> searchStockMovement(StockMovementSearchVO stockMovementSearchVO);
+    List<ShipmentResultVO> findShipmentResult(int shipmentId);
 }

@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Getter
 @Setter
@@ -20,5 +21,5 @@ public class StockMovementVO {
     private LocalDateTime createdAt;
     private String reason;
     private Integer employeeId;
-    private LocalDateTime updateAt;
+    private LocalTime updatedAt;
 }

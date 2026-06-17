@@ -1,9 +1,8 @@
 package com.erp.backend.shipment.controller;
 
-import com.erp.backend.shipment.Util.ShipmentStatus;
+import com.erp.backend.common.ApiResponse;
 import com.erp.backend.shipment.service.ShipmentService;
-import com.erp.backend.shipment.vo.ShipmentDetailVO;
-import com.erp.backend.shipment.vo.ShipmentVO;
+import com.erp.backend.shipment.vo.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -37,5 +36,25 @@ public class ShipmentController {
     public ResponseEntity<Void> processShipment(@RequestParam Integer salesOrderId,@RequestParam Integer employeeId){
         shipmentService.processShipment(salesOrderId,employeeId);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{salesOrderId}/verify")
+    public ResponseEntity<ApiResponse<SalesOrderRequestVO>> verify(@PathVariable Integer salesOrderId){
+        return ResponseEntity.ok(ApiResponse.success("OK",shipmentService.verifyingSalesOrderStatusBySoId(salesOrderId)));
+    }
+
+    @GetMapping("/result")
+    public ResponseEntity<ApiResponse<List<ShipmentResultVO>>> findShipmentResult(@RequestBody int shipmentId){
+        return ResponseEntity.ok(ApiResponse.success("OK",shipmentService.findShipmentResult(shipmentId)));
+    }
+
+    @PostMapping("/stock-movement")
+    public ResponseEntity<ApiResponse<List<StockMovementSearchVO>>> searchStockMovementHistory(@RequestBody StockMovementSearchVO stockMovementSearchVO){
+        return ResponseEntity.ok(ApiResponse.success("OK",shipmentService.searchStockMovementHistory(stockMovementSearchVO)));
+    }
+
+    @GetMapping("/history/search")
+    public ResponseEntity<ApiResponse<List<ShipmentHistoryVO>>> searchShipmentHistory(@RequestParam int salesOrderId){
+        return ResponseEntity.ok(ApiResponse.success("OK",shipmentService.searchShipmentHistory(salesOrderId)));
     }
 }
