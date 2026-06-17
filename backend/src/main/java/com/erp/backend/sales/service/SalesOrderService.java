@@ -22,6 +22,8 @@ import java.util.List;
 public class SalesOrderService {
 
     private final SalesOrderMapper salesOrderMapper;
+
+    //주문상태에 따른 전체주문조회
     public List<SalesOrderListResponseDTO> findAllSalesOrders(String status){
         List<SalesOrderVO> salesOrderList = salesOrderMapper.findAllSalesOrders(status);
         List<SalesOrderListResponseDTO> list = new ArrayList<>();
@@ -42,21 +44,27 @@ public class SalesOrderService {
         }
         return list;
     }
+    //특정상품의 전체로트 조회
     public List<ProductVO> findProductLotsByProductId(int productId){
         return salesOrderMapper.findProductLotsById(productId);
     }
+    //특정상품의 출고조건 만족 로트조회
     public List<ProductVO> findAvailableProducts(int productId){
         return salesOrderMapper.findAvailableProductLotsByProductId(productId);
     }
+    //주문요청에 따른 상태조회
     public List<SalesOrderVO> findRequestOrder(int salesOrderId){
         return salesOrderMapper.findRequestOrderById(salesOrderId);
     }
+    //주문상태 목록 조회
     public List<SalesOrderVO> findAllOrderStatusList(){
         return salesOrderMapper.findAllOrderStatus();
     }
+    //1건 주문 조회
     public SalesOrderVO findSalesOrderById(int soId){
         return salesOrderMapper.findOrderHeaderById(soId);
     }
+    //1건 주문상세목록 조회
     public SalesOrderVO findSalesOrderWithDetails(int soId){
         SalesOrderVO order = salesOrderMapper.findOrderHeaderById(soId);
         if (order == null) {
@@ -67,6 +75,7 @@ public class SalesOrderService {
         return order;
     }
 
+    //주문생성
     @Transactional
     public Integer makeOrder(SalesOrderRequestDTO requestDTO){
         int orderId = salesOrderMapper.currentSalesOrderSeq();
@@ -104,6 +113,7 @@ public class SalesOrderService {
         return orderId;
     }
 
+    //승인요청
     @Transactional
     public SalesOrderVO approveRequest(SalesOrderVO salesOrderVO){
         int exists = existsRequestedOrderDetail(salesOrderVO.getSoId());
@@ -123,41 +133,14 @@ public class SalesOrderService {
         return salesOrderMapper.findOrderHeaderById(salesOrderVO.getSoId());
     }
 
+    //주문서 금액 검사
     public SalesOrderAmountCheckVO verifyAmount(int salesId){
         return salesOrderMapper.verifySalesOrderTotal(salesId);
     }
 
+    //상세주문 존재여부 확인
     public int existsRequestedOrderDetail(int salesOrderId){
         return salesOrderMapper.existsRequestedOrderWithDetail(salesOrderId);
     }
 
 }
-
-//재고차감
-//INVENTORYLOT
-//1.인벤토리에서 해당 로트를 조회해서 차감(현재고,수정날짜수정)
-//2.현재고가 0 이하로 떨어질시(상태수정)
-//STOCKMOVEMENT
-//1.변동이력생성(변동재고,변동전재고,변동후재고,변동사유,변동사유연관일렬번호,작업처리자,변동데이터생성일,변동데이터수정일)
-//SHIPMENT
-//1.출고헤더생성
-//SHIPMENTDETAIL
-//1.출고상세데이터생성
-
-
-//출고
-//SHIPMENT
-//SHIPMENTDETAIL
-
-//→ 재고 차감
-//→ 출고상세 생성
-//→ 주문 상태를 APPROVED 또는 SHIPPED 계열로 변경
-
-//주문승인/출고
-//→ 주문 상태가 REQUESTED인지 확인
-//→ 현재 로트 재고를 FOR UPDATE로 조회
-//→ FEFO로 배정 가능 여부 최종 확인
-//→ 부족하면 승인 실패
-//→ 충분하면 로트별 차감 계획 생성
-//→ 재고 차감
-//→ 출고상세/주문상태 반영

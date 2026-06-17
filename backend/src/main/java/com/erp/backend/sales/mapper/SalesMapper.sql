@@ -1,4 +1,4 @@
-//특정 약품의 로트별 재고 상세 조회
+//--특정 약품의 로트별 재고 상세 조회
 select
     p.PRODUCT_ID,
     p.product_code as "약품코드",
@@ -17,7 +17,7 @@ from product p join inventory_lot il
 where
     p.PRODUCT_ID = 4;
 
-//특정 약품 로트의 출고가능 조회
+//--특정 약품 로트의 출고가능 조회
 select
     p.PRODUCT_ID,
     p.product_code as "약품코드",
@@ -44,7 +44,7 @@ where
 order by
     il.expiry_date asc;
 
-//개별 상품 가용수량 재고 조회
+//--개별 상품 가용수량 재고 조회
 select
     p.product_id,
     p.product_code as "약품코드",
@@ -85,7 +85,7 @@ from sales_order_detail sod
 where
     so.so_id = 20;
 
-//주문상세 건수(존재여부) 확인
+//--주문상세 건수(존재여부) 확인
 SELECT 1
 FROM dual
 WHERE EXISTS (
@@ -97,7 +97,7 @@ WHERE EXISTS (
       AND so.status = 'REQUESTED'
 );
 
-//주문 토탈금액 일치 여부 확인 뷰
+//--주문 토탈금액 일치 여부 확인 뷰
 create or replace view v_sales_order as
 select
     so.so_id,
@@ -127,7 +127,7 @@ group by
     so.status,
     so.total_amount;
 
-//주문 기준 출고 가능 로트 후보 조회
+//--주문 기준 출고 가능 로트 후보 조회
 SELECT
     so.so_id,
     sod.so_detail_id,
@@ -208,7 +208,7 @@ insert into sales_order_detail (
              100,
              1000
          );
-//주문 접수 상태 조회 쿼리
+//--주문 접수 상태 조회 쿼리
 select
     so.so_id,
     so.status
@@ -220,7 +220,7 @@ where
     so.status='REQUESTED';
 
 
-//주문 조회용 상세미포한 단순 쿼리
+//--주문 조회용 상세미포한 단순 쿼리
 select
     so.so_id,
     so.customer_id,
@@ -245,7 +245,7 @@ from sales_order so
 where
     so.so_id=1234
 
-//주문 조회용 상세포함 단건 쿼리
+//--주문 조회용 상세포함 단건 쿼리
 select
     so.so_id,
     so.customer_id,
@@ -274,7 +274,7 @@ where
     so.so_id=1234
         //기존 주문 상태 확인 쿼리
 
-//주문 승인 조회용 단순조회쿼리
+//--주문 승인 조회용 단순조회쿼리
 select so.so_id,
        cu.customer_id,
        cu.customer_name,
@@ -291,7 +291,7 @@ from sales_order so
 where so.status='REQUESTED'
   and so.so_id=4;
 
-//주문 승인 조회용 상세조회쿼리
+//--주문 승인 조회용 상세조회쿼리
 select cu.customer_id,
        cu.customer_name,
        cu.customer_type,
@@ -320,7 +320,7 @@ from sales_order so
 where so.status = 'REQUESTED'
   and so.so_id = 4;
 
-//주문 승인 쿼리
+//--주문 승인 쿼리
 update sales_order
 set
     approve_emp_id=400,

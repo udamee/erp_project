@@ -28,10 +28,12 @@ public class ShipmentService {
     private final ShipmentMapper shipmentMapper;
     private final SalesOrderMapper salesOrderMapper;
 
+    //주문 출고 승인여부 확인
     private SalesOrderVO verifySalesOrderStatus(int salesOrderId){
         return shipmentMapper.verifySalesOrderStatus(salesOrderId);
     }
 
+    //중복 출고 확인 및 금지
     private ShipmentVO preventDuplicatingShipment(int salesOrderId){
         return shipmentMapper.preventDuplicatingShipment(salesOrderId);
     }
@@ -40,21 +42,37 @@ public class ShipmentService {
 //        return shipmentMapper.findShipmentDetails(shipmentId);
 //    }
 
+    //출고 정보 생성
     private int arrangeShipmentHeader(ShipmentVO shipmentVO){
         return shipmentMapper.arrangeShipmentHeader(shipmentVO);
     }
 
+    //출고 상세정보 생성
     private int arrangeShipmentDetail(ShipmentDetailVO shipmentDetailVO){
         return shipmentMapper.arrangeShipmentDetail(shipmentDetailVO);
     }
 
+    //출고 목록조회(주문번호,상태,담장자명)
     public List<ShipmentVO> findShipments(Integer salesOrderId, String status, String employeeName){
         return shipmentMapper.findShipmentList(salesOrderId,status,employeeName);
     }
 
+    //출고 상태 변경
     public int updateShippingStatus(String status,int shipmentId){
         return shipmentMapper.updateShippingStatus(status,shipmentId);
     }
+
+    /*승인돈 주문 FEFO에 따른 재고 차감
+     *
+     *승인된 주문 기준 출고를 생성하고
+     *주문 상태를 확인 FEFO를 배정 뒤 출고상세,재고이력,재고차감 처리
+     *
+     * 출고 처리 흐름
+     * 1. verifySalesOrderStatus: 주문 승인 상태 확인
+     * 2. preventDuplicatingShipment: 중복 출고 여부 확인
+     * 3. allocateLots: FEFO 기준 로트 배정
+     * 4. applyShipmentAllocation: 출고 상세 생성, 재고 이력 생성, 재고 차감 처리
+     */
 
     @Transactional
     public void processShipment(Integer salesOrderId, Integer employeeId){
@@ -78,7 +96,7 @@ public class ShipmentService {
         if(headerInserted!=1){
             throw new CustomException(ErrorCode.NOT_FOUND);
         }
-        List<SalesOrderDetailVO> salesOrderDetails = shipmentMapper.findApprovedSalesOrderDetails(salesOrderId);
+        List<SalesOrderDetailVO> salesOrderDetails = shipmentMapper.findSalesOrderDetailsForShipment(salesOrderId);
         if(salesOrderDetails==null || salesOrderDetails.isEmpty()){
             throw new CustomException(ErrorCode.NOT_FOUND);
         }
@@ -92,6 +110,9 @@ public class ShipmentService {
         }
     }
 
+    //주문 상세 수량을 FEFO기준으로 로트에 배정
+    //
+    //가용 재고를 확인한 뒤 유통기한이 빠른 순서로 출고수량을 배정
     private Map<Integer,Integer> allocateLots(SalesOrderDetailVO salesOrderdetailVO) {
         int productId = salesOrderdetailVO.getProductId();
         //현재 배정이 가능한 수량인지 확인
@@ -119,6 +140,7 @@ public class ShipmentService {
         return allocatableLots;
     }
 
+    //배정된 로트 기준으로 출고 상세,재고 이력생성, 재고 차감 처리
     private void applyShipmentAllocation(Map<Integer,Integer> allocatableLots,SalesOrderDetailVO salesOrderdetailVO,Integer shipmentId,Integer employeeId){
         int productId = salesOrderdetailVO.getProductId();
         int detailId = salesOrderdetailVO.getSoDetailId();
@@ -130,6 +152,8 @@ public class ShipmentService {
             decreaseInventory(lotId,assignedQty);
         }
     }
+
+    //출고 상세 데이터 생성
     private int insertShipmentDetail(Integer shipmentId,Integer detailId,Integer lotId,Integer productId,Integer assignedQty){
         int shipmentDetailId = shipmentMapper.currentShipmentDetailSeq();
         ShipmentDetailVO shipmentDetailVO = new ShipmentDetailVO();
@@ -145,6 +169,8 @@ public class ShipmentService {
         }
         return shipmentDetailId;
     }
+
+    //재고 변동 이력 기록
     private void insertStockMovement(Integer shipmentDetailId, Integer employeeId, Integer lotId, Integer assignedQty){
         int movementId = shipmentMapper.currentStockMovementSeq();
         StockMovementVO stockMovementVO = new StockMovementVO();
@@ -160,6 +186,8 @@ public class ShipmentService {
             throw new CustomException(ErrorCode.STCOKMOVEMENT_FAILED);
         }
     }
+
+    //출고수량 반영 로트재고 차감
     private void decreaseInventory(Integer lotId,Integer assignedQty){
         StockMovementVO stockMovementVO = new StockMovementVO();
         stockMovementVO.setInventoryLotId(lotId);
@@ -170,22 +198,27 @@ public class ShipmentService {
         }
     }
 
+    //주문의 출고 가능 상태 조회
     public SalesOrderRequestVO verifyingSalesOrderStatusBySoId(int salesOrderId){
         return shipmentMapper.verifyingSalesOrderStatusBySoId(salesOrderId);
     }
 
+    //출고의 상세 목록 상태에따라 조회
     public List<ShipmentDetailVO> findShipmentDetails(int shipmentId,String status){
         return shipmentMapper.findShipmentDetails(shipmentId,status);
     }
 
+    //출고의 처리 결과를 조회
     public List<ShipmentResultVO> findShipmentResult(int shipmentId){
         return shipmentMapper.findShipmentResult(shipmentId);
     }
 
+    //재고 변동 이력을 조회
     public List<StockMovementSearchVO> searchStockMovementHistory(StockMovementSearchVO stockMovementSearchVO){
         return shipmentMapper.searchStockMovement(stockMovementSearchVO);
     }
 
+    //출고 이력 조회
     public List<ShipmentHistoryVO> searchShipmentHistory(int salesOrderId) {
         return shipmentMapper.searchShipmentHistory(salesOrderId);
     }
