@@ -127,18 +127,9 @@ public class ShipmentService {
         for(Map.Entry<Integer,Integer> lot:allocatableLots.entrySet()){
             Integer lotId = lot.getKey();
             Integer assignedQty = lot.getValue();
-            int detailInserted = insertShipmentDetail(shipmentId,detailId,lotId,productId,assignedQty);
-            if(detailInserted!=1){
-                throw new CustomException(ErrorCode.NOT_FOUND);
-            }
-            int movementInserted = insertStockMovement(shipmentId,employeeId,lotId,assignedQty);
-            if(movementInserted!=1){
-                throw new CustomException(ErrorCode.NOT_FOUND);
-            }
-            int decreased = decreaseInventory(lotId,assignedQty);
-            if(decreased!=1){
-                throw new CustomException(ErrorCode.SALES_NOT_AVAILABLE_STOCK);
-            }
+            int shipmentDetailId = insertShipmentDetail(shipmentId,detailId,lotId,productId,assignedQty);
+            insertStockMovement(shipmentDetailId,employeeId,lotId,assignedQty);
+            decreaseInventory(lotId,assignedQty);
         }
     }
     private int insertShipmentDetail(Integer shipmentId,Integer detailId,Integer lotId,Integer productId,Integer assignedQty){
@@ -150,27 +141,37 @@ public class ShipmentService {
         shipmentDetailVO.setInventoryLotId(lotId);
         shipmentDetailVO.setProductId(productId);
         shipmentDetailVO.setShippedQty(assignedQty);
-        return shipmentMapper.arrangeShipmentDetail(shipmentDetailVO);
+        int inserted = shipmentMapper.arrangeShipmentDetail(shipmentDetailVO);
+        if(inserted!=1){
+            throw new CustomException(ErrorCode.SHIPMENT_DETAIL_FAILED);
+        }
+        return shipmentDetailId;
     }
-    private int insertStockMovement(Integer shipmentId, Integer employeeId, Integer lotId, Integer assignedQty){
+    private void insertStockMovement(Integer shipmentDetailId, Integer employeeId, Integer lotId, Integer assignedQty){
         int movementId = shipmentMapper.currentStockMovementSeq();
         StockMovementVO stockMovementVO = new StockMovementVO();
         stockMovementVO.setMovementId(movementId);
         stockMovementVO.setMovementType(MovementType.OUT.name());
         stockMovementVO.setQuantity(assignedQty);
-        stockMovementVO.setSourceType(SourceType.SALES_SHIPMENT.name());
-        stockMovementVO.setSourceId(shipmentId);
+        stockMovementVO.setSourceType(SourceType.SHIPMENT_DETAIL.name());
+        stockMovementVO.setSourceId(shipmentDetailId);
         stockMovementVO.setEmployeeId(employeeId);
         stockMovementVO.setInventoryLotId(lotId);
-        //날짜를 DB에서 입력하도록 바꿔야함
-        stockMovementVO.setUpdateAt(LocalDateTime.now());
-        return shipmentMapper.changeStockMovement(stockMovementVO);
+        int result = shipmentMapper.changeStockMovement(stockMovementVO);
+        if(result!=1){
+            throw new CustomException(ErrorCode.STCOKMOVEMENT_FAILED);
+        }
     }
-    private int decreaseInventory(Integer lotId,Integer assignedQty){
+    private void decreaseInventory(Integer lotId,Integer assignedQty){
         StockMovementVO stockMovementVO = new StockMovementVO();
         stockMovementVO.setInventoryLotId(lotId);
         stockMovementVO.setQuantity(assignedQty);
-        return shipmentMapper.decreaseInventory(stockMovementVO);
+        int result = shipmentMapper.decreaseInventory(stockMovementVO);
+        if(result!=1){
+            throw new CustomException(ErrorCode.SALES_NOT_AVAILABLE_STOCK);
+        }
+    }
+
     public SalesOrderRequestVO verifyingSalesOrderStatusBySoId(int salesOrderId){
         return shipmentMapper.verifyingSalesOrderStatusBySoId(salesOrderId);
     }
