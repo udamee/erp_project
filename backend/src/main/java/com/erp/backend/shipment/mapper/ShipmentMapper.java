@@ -1,9 +1,7 @@
 package com.erp.backend.shipment.mapper;
 import com.erp.backend.sales.vo.SalesOrderDetailVO;
 import com.erp.backend.sales.vo.SalesOrderVO;
-import com.erp.backend.shipment.vo.ShipmentDetailVO;
-import com.erp.backend.shipment.vo.ShipmentVO;
-import com.erp.backend.shipment.vo.StockMovementVO;
+import com.erp.backend.shipment.vo.*;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 

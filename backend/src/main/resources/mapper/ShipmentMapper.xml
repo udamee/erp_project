@@ -251,4 +251,208 @@
             AND
                 sh.so_id=#{salesOrderId}
     </select>
+    <select id="checkApproval" resultType="SalesOrderVO">
+        SELECT
+            *
+        FROM
+            sales_order
+        WHERE
+            status='APPROVED'
+        AND NOT EXISTS (
+            SELECT 1
+            FROM shipment sh
+            WHERE sh.so_id=so_id
+        )
+    </select>
+    <select id="verifyingSalesOrderStatusBySoId" resultType="SalesOrderRequestVO">
+        SELECT
+            so.so_id,
+            so.customer_id,
+            so.request_emp_id,
+            so.approve_emp_id,
+            so.order_date,
+            so.approve_date,
+            so.status,
+            so.created_at,
+            so.updated_at,
+            sod.so_detail_id,
+            sod.order_qty,
+            sod.product_id,
+            pr.product_name,
+            pr.safety_qty,
+            pr.maker_name,
+            NVL(SUM(il.current_qty),0) as available_qty
+        FROM sales_order so
+                 join sales_order_detail sod on so.so_id=sod.so_id
+                 join product pr on pr.product_id=sod.product_id
+                 left join inventory_lot il on il.product_id=sod.product_id
+            AND il.status='NORMAL'
+            AND il.current_qty>0
+            AND il.expiry_date>=SYSDATE+30
+        WHERE
+            so.so_id=${soId}
+          AND
+            so.status='APPROVED'
+          AND
+            pr.status='ACTIVE'
+          AND NOT EXISTS (
+            SELECT 1
+            FROM shipment sh
+            WHERE sh.so_id=so.so_id
+        )
+        GROUP BY (
+                  so.so_id,
+                  so.customer_id,
+                  so.request_emp_id,
+                  so.approve_emp_id,
+                  so.order_date,
+                  so.approve_date,
+                  so.status,
+                  so.created_at,
+                  so.updated_at,
+                  sod.so_detail_id,
+                  sod.product_id,
+                  sod.order_qty,
+                  pr.product_name,
+                  pr.safety_qty,
+                  pr.maker_name)
+    </select>
+    <select id="findShipmentResult" resultType="ShipmentResultVO">
+        SELECT
+            sh.shipment_id,
+            sod.so_id,
+            sod.so_detail_id,
+            pr.product_name,
+            il.lot_no,
+            shd.shipment_detail_id,
+            shd.inventory_lot_id,
+            smv.before_qty,
+            smv.after_qty,
+            sh.shipment_date,
+            shd.shipped_qty,
+            smv.qty,
+            smv.created_at,
+            smv.created_by
+        FROM shipment_detail shd
+        JOIN shipment sh
+            ON sh.shipment_id=shd.shipment_id
+        JOIN sales_order_detail sod
+            ON sod.so_detail_id=shd.so_detail_id
+            AND sod.so_id=sh.so_id
+        JOIN product pr
+            ON pr.product_id=sod.product_id
+        JOIN inventory_lot il ON
+            il.inventory_lot_id=shd.inventory_lot_id
+        JOIN stock_movement smv
+            ON smv.source_id=shd.shipment_detail_id
+            AND smv.source_type='SHIPMENT_DETAIL'
+            AND smv.movement_type='OUT'
+           <if test="shipmentId != null">
+               AND sh.shipment_id=#{shipmentId}
+           </if>
+            ORDER BY shd.shipment_detail_id
+    </select>
+    <select id="searchShipmentHistory" resultType="ShipmentHistoryVO">
+        SELECT
+            so.so_id as sales_order_id,
+            sh.shipment_id,
+            sd.shipped_qty,
+            sh.shipment_date,
+            pr.product_id,
+            il.inventory_lot_id,
+            il.lot_no,
+            sm.movement_type,
+            pr.product_name,
+            sm.source_type,
+            sm.before_qty,
+            sm.qty as movement_qty,
+            sm.after_qty
+        FROM shipment sh
+                 join sales_order so on so.so_id=sh.so_id
+                 join shipment_detail sd on sd.shipment_id=sh.shipment_id
+                 join stock_movement sm on sm.source_id=sd.shipment_detail_id
+                 join inventory_lot il on il.inventory_lot_id=sd.inventory_lot_id
+                 join sales_order_detail sod on sod.so_detail_id=sd.so_detail_id
+            and sod.so_id=so.so_id
+                 join product pr on pr.product_id = sod.product_id
+        WHERE
+            sm.movement_type='OUT'
+          AND
+            sm.source_type='SHIPMENT_DETAIL'
+          AND
+            so.status='SHIPPED'
+          AND
+            sh.status='SHIPPED'
+        <if test="salesOrderId != null">
+            AND so.so_id=#{salesOrderId}
+        </if>
+        ORDER BY
+            so.so_id,
+            sh.shipment_id
+    </select>
+    <select id="searchStockMovement" resultType="StockMovementSearchVO">
+        SELECT
+            pro.product_id,
+            pro.product_name,
+            il.inventory_lot_id,
+            il.lot_no,
+            <if test="shipmentId != null">
+                shd.shipment_id,
+            </if>
+            <if test="receivingId != null">
+                rc.receiving_id,
+            </if>
+            smv.movement_id,
+            smv.movement_type,
+            smv.source_type,
+            smv.source_id,
+            smv.before_qty,
+            smv.qty,
+            smv.after_qty,
+            smv.created_at
+        FROM
+            stock_movement smv
+            JOIN inventory_lot il
+            ON il.inventory_lot_id = smv.inventory_lot_id
+            JOIN product pro
+            ON pro.product_id=il.product_id
+        <if test="shipmentId != null">
+            LEFT JOIN shipment_detail shd
+            ON smv.source_type='SHIPMENT_DETAIL'
+            AND smv.source_id=shd.shipment_detail_id
+        </if>
+        <if test="receivingId != null">
+            LEFT JOIN receiving rc
+            ON smv.source_type='RECEIVING'
+            AND smv.source_id=rc.receiving_id
+        </if>
+        <where>
+            <if test="productName != null and productName != ''">
+                AND pro.product_name=#{productName}
+            </if>
+            <if test="lotNo != null and lotNo != ' '">
+                AND il.lot_no=#{lotNo}
+            </if>
+            <if test="sourceType != null and sourceType != ''">
+                AND smv.source_type=#{sourceType}
+            </if>
+            <if test="sourceId != null">
+                AND smv.source_id=#{sourceId}
+            </if>
+            <if test="shipmentId != null">
+                AND shd.shipment_id=#{shipmentId}
+            </if>
+            <if test="receivingId != null">
+                AND rc.receiving_id=#{receivingId}
+            </if>
+            <if test="startDate != null">
+                AND smv.created_at >= #{startDate}
+            </if>
+            <if test="endDate != null">
+                AND smv.created_at <![CDATA[<=]]> #{endDate}
+            </if>
+        </where>
+        ORDER BY
+        smv.created_at DESC
+    </select>
 </mapper>

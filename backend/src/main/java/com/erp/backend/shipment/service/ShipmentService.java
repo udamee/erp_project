@@ -7,13 +7,11 @@ import com.erp.backend.sales.util.OrderStatus;
 import com.erp.backend.sales.vo.ItemLotVO;
 import com.erp.backend.sales.vo.SalesOrderDetailVO;
 import com.erp.backend.sales.vo.SalesOrderVO;
-import com.erp.backend.shipment.Util.MovementType;
-import com.erp.backend.shipment.Util.ShipmentStatus;
-import com.erp.backend.shipment.Util.SourceType;
+import com.erp.backend.shipment.util.MovementType;
+import com.erp.backend.shipment.util.ShipmentStatus;
+import com.erp.backend.shipment.util.SourceType;
 import com.erp.backend.shipment.mapper.ShipmentMapper;
-import com.erp.backend.shipment.vo.ShipmentDetailVO;
-import com.erp.backend.shipment.vo.ShipmentVO;
-import com.erp.backend.shipment.vo.StockMovementVO;
+import com.erp.backend.shipment.vo.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,11 +28,11 @@ public class ShipmentService {
     private final ShipmentMapper shipmentMapper;
     private final SalesOrderMapper salesOrderMapper;
 
-    public SalesOrderVO verifySalesOrderStatus(int salesOrderId){
+    private SalesOrderVO verifySalesOrderStatus(int salesOrderId){
         return shipmentMapper.verifySalesOrderStatus(salesOrderId);
     }
 
-    public ShipmentVO preventDuplicatingShipment(int salesOrderId){
+    private ShipmentVO preventDuplicatingShipment(int salesOrderId){
         return shipmentMapper.preventDuplicatingShipment(salesOrderId);
     }
 
@@ -42,11 +40,11 @@ public class ShipmentService {
 //        return shipmentMapper.findShipmentDetails(shipmentId);
 //    }
 
-    public int arrangeShipmentHeader(ShipmentVO shipmentVO){
+    private int arrangeShipmentHeader(ShipmentVO shipmentVO){
         return shipmentMapper.arrangeShipmentHeader(shipmentVO);
     }
 
-    public int arrangeShipmentDetail(ShipmentDetailVO shipmentDetailVO){
+    private int arrangeShipmentDetail(ShipmentDetailVO shipmentDetailVO){
         return shipmentMapper.arrangeShipmentDetail(shipmentDetailVO);
     }
 
