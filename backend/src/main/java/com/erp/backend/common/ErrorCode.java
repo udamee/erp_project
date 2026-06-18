@@ -43,8 +43,23 @@ public enum ErrorCode {
     SELF_APPROVE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "본인이 기안한 발주는 승인 할 수 없습니다."),
 
     ALREADY_RECEIVED(HttpStatus.BAD_REQUEST,"이미 입고 처리된 발주입니다."),
-    INVALID_EXPIRY_DATE(HttpStatus.BAD_REQUEST, "유효기간이 만료된 의약품입니다.")
-    ;
+    INVALID_EXPIRY_DATE(HttpStatus.BAD_REQUEST, "유효기간이 만료된 의약품입니다."),
+
+    // 주문
+    SALES_ORDER_FAILED(HttpStatus.BAD_REQUEST,"주문을 요청할 수 없습니다"),
+    SALES_NOT_AVAILABLE_STOCK(HttpStatus.BAD_REQUEST,"재고가 부족합니다."),
+    SALES_NOT_AMOUNT_MATCHED(HttpStatus.BAD_REQUEST,"금액이 일치하지 않습니다"),
+    SALES_APPROVE_FAILED(HttpStatus.BAD_REQUEST,"승인이 되지 않았습니다"),
+    SALES_LOT_ALLOCATE_FAILED(HttpStatus.CONFLICT,"로트번호 배정 작업이 실패했습니다"),
+
+    // 배송
+    SHIPMENT_ALREADY_EXISTS(HttpStatus.CONFLICT,"이미 배정된 배송이 있습니다."),
+    SHIPMENT_NOT_FOUND(HttpStatus.NOT_FOUND,"배송중인 주문이 없습니다."),
+    SHIPMENT_DETAIL_FAILED(HttpStatus.BAD_REQUEST,"배송 세부내역 생성에 실패했습니다"),
+
+    // 재고
+    STCOKMOVEMENT_FAILED(HttpStatus.BAD_REQUEST,"재고변동이력 생성에 실패했습니다.");
+
 
     private final HttpStatus status;
     private final String message;

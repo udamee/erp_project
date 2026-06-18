@@ -1,0 +1,176 @@
+package com.erp.backend.sales.service;
+
+import com.erp.backend.common.CustomException;
+import com.erp.backend.common.ErrorCode;
+import com.erp.backend.sales.dto.SalesOrderDetailRequestDTO;
+import com.erp.backend.sales.dto.SalesOrderListResponseDTO;
+import com.erp.backend.sales.util.OrderStatus;
+import com.erp.backend.sales.dto.SalesOrderRequestDTO;
+import com.erp.backend.sales.mapper.SalesOrderMapper;
+import com.erp.backend.sales.vo.*;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+
+@Service
+@RequiredArgsConstructor
+public class SalesOrderService {
+
+    private final SalesOrderMapper salesOrderMapper;
+
+    //주문상태에 따른 전체주문조회
+    public List<SalesOrderListResponseDTO> findAllSalesOrders(String status){
+        List<SalesOrderVO> salesOrderList = salesOrderMapper.findAllSalesOrders(status);
+        List<SalesOrderListResponseDTO> list = new ArrayList<>();
+        for(SalesOrderVO salesOrderVO:salesOrderList) {
+            SalesOrderListResponseDTO salesOrderListResponseDTO = new SalesOrderListResponseDTO();
+            salesOrderListResponseDTO.setSo_id(salesOrderVO.getSoId());
+            salesOrderListResponseDTO.setCustomer_name(salesOrderVO.getCustomerName());
+            salesOrderListResponseDTO.setReq_employee_name(salesOrderVO.getReqEmployeeName());
+            salesOrderListResponseDTO.setApp_employee_name(salesOrderVO.getAppEmployeeName());
+            salesOrderListResponseDTO.setOrder_date(salesOrderVO.getOrderDate());
+            salesOrderListResponseDTO.setStatus(salesOrderVO.getStatus());
+            salesOrderListResponseDTO.setApprove_date(salesOrderVO.getApproveDate());
+            salesOrderListResponseDTO.setTotal_amount(salesOrderVO.getTotalAmount());
+            salesOrderListResponseDTO.setMemo(salesOrderVO.getMemo());
+            salesOrderListResponseDTO.setCreated_at(salesOrderVO.getCreatedAt());
+            salesOrderListResponseDTO.setUpdated_at(salesOrderVO.getUpdatedAt());
+            list.add(salesOrderListResponseDTO);
+        }
+        return list;
+    }
+    //특정상품의 전체로트 조회
+    public List<ProductVO> findProductLotsByProductId(int productId){
+        return salesOrderMapper.findProductLotsById(productId);
+    }
+    //특정상품의 출고조건 만족 로트조회
+    public List<ProductVO> findAvailableProducts(int productId){
+        return salesOrderMapper.findAvailableProductLotsByProductId(productId);
+    }
+    //주문요청에 따른 상태조회
+    public List<SalesOrderVO> findRequestOrder(int salesOrderId){
+        return salesOrderMapper.findRequestOrderById(salesOrderId);
+    }
+    //주문상태 목록 조회
+    public List<SalesOrderVO> findAllOrderStatusList(){
+        return salesOrderMapper.findAllOrderStatus();
+    }
+    //1건 주문 조회
+    public SalesOrderVO findSalesOrderById(int soId){
+        return salesOrderMapper.findOrderHeaderById(soId);
+    }
+    //1건 주문상세목록 조회
+    public SalesOrderVO findSalesOrderWithDetails(int soId){
+        SalesOrderVO order = salesOrderMapper.findOrderHeaderById(soId);
+        if (order == null) {
+            return null;
+        }
+        List<SalesOrderDetailVO> details = salesOrderMapper.findOrderDetailListByOrderId(order.getSoId());
+        order.setDetailList(details);
+        return order;
+    }
+
+    //주문생성
+    @Transactional
+    public SalesOrderVO makeOrder(SalesOrderRequestDTO requestDTO){
+        if(requestDTO==null){
+            throw new CustomException(ErrorCode.NOT_FOUND);
+        }
+        if(requestDTO.getDetails() == null || requestDTO.getDetails().isEmpty()){
+            throw new CustomException(ErrorCode.SALES_ORDER_FAILED);
+        }
+
+        int orderId = salesOrderMapper.currentSalesOrderSeq();
+        SalesOrderVO salesOrderVO = new SalesOrderVO();
+        salesOrderVO.setSoId(orderId);
+        salesOrderVO.setCustomerId(requestDTO.getCustomerId());
+        salesOrderVO.setReqEmployeeId(requestDTO.getEmployeeId());
+        salesOrderVO.setOrderDate(LocalDateTime.now());
+        salesOrderVO.setStatus(OrderStatus.REQUESTED.name());
+        salesOrderVO.setCreatedAt(LocalDateTime.now());
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        List<SalesOrderDetailVO> detailList = new ArrayList<>();
+        for(SalesOrderDetailRequestDTO detailRequest:requestDTO.getDetails()){
+            if(detailRequest.getProductId()==null||detailRequest.getOrderQty()==null){
+                throw new CustomException(ErrorCode.SALES_ORDER_FAILED);
+            }
+            if(detailRequest.getOrderQty()<=0){
+                throw new CustomException(ErrorCode.SALES_ORDER_FAILED);
+            }
+            ProductVO productVO = salesOrderMapper.findActiveProduct(detailRequest.getProductId());
+            if(productVO==null){
+                throw new CustomException(ErrorCode.NOT_FOUND);
+            }
+            BigDecimal unitPrice = productVO.getStandardSalesPrice();
+            if(unitPrice==null){
+                throw new CustomException(ErrorCode.SALES_ORDER_FAILED);
+            }
+            BigDecimal detailAmount = unitPrice.multiply(BigDecimal.valueOf(detailRequest.getOrderQty()));
+            int detailId = salesOrderMapper.currentSalesOrderDetailSeq();
+            System.out.print("------------------"+detailId);
+            SalesOrderDetailVO salesOrderDetailVO = new SalesOrderDetailVO();
+            salesOrderDetailVO.setSoDetailId(detailId);
+            salesOrderDetailVO.setSoId(orderId);
+            salesOrderDetailVO.setProductId(detailRequest.getProductId());
+            salesOrderDetailVO.setOrderQty(detailRequest.getOrderQty());
+            salesOrderDetailVO.setUnitPrice(unitPrice);
+            salesOrderDetailVO.setAmount(detailAmount);
+            detailList.add(salesOrderDetailVO);
+            totalAmount = totalAmount.add(detailAmount);
+        }
+        salesOrderVO.setTotalAmount(totalAmount);
+        int result = salesOrderMapper.makeSalesOrder(salesOrderVO);
+        if (result != 1){
+            throw new CustomException(ErrorCode.SALES_ORDER_FAILED);
+        }
+        for(SalesOrderDetailVO salesOrderDetailVO:detailList){
+            int detailResult =salesOrderMapper.makeSalesOrderDetail(salesOrderDetailVO);
+            if (detailResult != 1){
+                throw new CustomException(ErrorCode.SALES_ORDER_FAILED);
+            }
+        }
+        SalesOrderAmountCheckVO amountCheckVO = salesOrderMapper.verifySalesOrderTotal(orderId);
+        if(amountCheckVO==null || !"Y".equals(amountCheckVO.getHeaderAmountMatched())
+        || !"Y".equals(amountCheckVO.getDetailAmountMatched())){
+            throw new CustomException(ErrorCode.SALES_ORDER_FAILED);
+        }
+        return findSalesOrderWithDetails(orderId);
+    }
+
+    //승인요청
+    @Transactional
+    public SalesOrderVO approveRequest(SalesOrderVO salesOrderVO){
+        int exists = existsRequestedOrderDetail(salesOrderVO.getSoId());
+        if(exists != 1){
+            throw new CustomException(ErrorCode.SALES_APPROVE_FAILED);
+        }
+        SalesOrderAmountCheckVO salesOrderAmountCheckVO;
+        salesOrderAmountCheckVO=verifyAmount(salesOrderVO.getSoId());
+        if(salesOrderAmountCheckVO == null || !salesOrderAmountCheckVO.amountMatched()){
+            throw new CustomException(ErrorCode.SALES_NOT_AMOUNT_MATCHED);
+        }
+        salesOrderVO.setStatus(OrderStatus.APPROVED.name());
+        salesOrderVO.setApproveDate(LocalDateTime.now());
+        if(salesOrderMapper.approveRequest(salesOrderVO)!=1){
+            throw new CustomException(ErrorCode.SALES_APPROVE_FAILED);
+        }
+        return salesOrderMapper.findOrderHeaderById(salesOrderVO.getSoId());
+    }
+
+    //주문서 금액 검사
+    public SalesOrderAmountCheckVO verifyAmount(int salesId){
+        return salesOrderMapper.verifySalesOrderTotal(salesId);
+    }
+
+    //상세주문 존재여부 확인
+    public int existsRequestedOrderDetail(int salesOrderId){
+        return salesOrderMapper.existsRequestedOrderWithDetail(salesOrderId);
+    }
+
+}
