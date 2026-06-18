@@ -290,7 +290,7 @@
                  left join inventory_lot il on il.product_id=sod.product_id
             AND il.status='NORMAL'
             AND il.current_qty>0
-            AND il.expiry_date>=SYSDATE+30
+            AND il.expiry_date>=SYSDATE+11
         WHERE
             so.so_id=${soId}
           AND
@@ -456,5 +456,38 @@
         </where>
         ORDER BY
         smv.created_at DESC
+    </select>
+    <select id="findShippableProductForShipment" resultType="ProductStockCheckVO" parameterType="int">
+        SELECT
+            p.product_id AS productId,
+            p.product_name AS productName,
+            NVL(SUM(
+                    CASE
+                        WHEN il.status = 'NORMAL'
+                            AND il.current_qty > 0
+                            AND il.expiry_date >= TRUNC(SYSDATE) + 11
+                            THEN il.current_qty
+                        ELSE 0
+                        END
+                ), 0) AS availableQty,
+            NVL(p.safety_qty, 0) AS safetyQty,
+            NVL(SUM(
+                    CASE
+                        WHEN il.status = 'NORMAL'
+                            AND il.current_qty > 0
+                            AND il.expiry_date >= TRUNC(SYSDATE) + 11
+                            THEN il.current_qty
+                        ELSE 0
+                        END
+                ), 0) - NVL(p.safety_qty, 0) AS shippableQty
+        FROM product p
+                 LEFT JOIN inventory_lot il
+                           ON il.product_id = p.product_id
+        WHERE p.product_id = #{productId}
+          AND p.status = 'ACTIVE'
+        GROUP BY
+            p.product_id,
+            p.product_name,
+            p.safety_qty
     </select>
 </mapper>

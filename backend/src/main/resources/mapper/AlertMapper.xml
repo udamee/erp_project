@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.erp.backend.notification.mapper.AlertMapper">
+    <select id="findSafetyStockCheckByProductId" resultType="StockAlertCheckVO">
+        SELECT
+            p.product_id,
+            p.product_name,
+            NVL(p.safety_qty, 0) AS safety_qty,
+            NVL(SUM(il.current_qty), 0) AS available_qty
+        FROM product p
+                 LEFT JOIN inventory_lot il
+                           ON p.product_id = il.product_id
+                               AND il.status = 'NORMAL'
+                               AND il.current_qty > 0
+                               AND il.expiry_date >= TRUNC(SYSDATE) + 11
+        WHERE p.product_id = #{productId}
+          AND p.status = 'ACTIVE'
+        GROUP BY
+            p.product_id,
+            p.product_name,
+            p.safety_qty
+    </select>
+    <select id="existsUnreadSafetyStockAlert" resultType="int">
+        SELECT COUNT(*)
+        FROM alert
+        WHERE product_id = #{productId}
+          AND alert_type = 'SAFETY_STOCK_LOW'
+          AND is_read = 'N'
+    </select>
+    <insert id="insertSafetyStockAlert" parameterType="StockAlertCheckVO">
+        INSERT INTO alert (
+            alert_id,
+            product_id,
+            alert_type,
+            message,
+            is_read,
+            created_at
+        )
+        VALUES (
+                   SEQ_ALERT.NEXTVAL,
+                   #{productId},
+                   'SAFETY_STOCK_LOW',
+                   #{message},
+                   'N',
+                   SYSTIMESTAMP
+               )
+    </insert>
+    <select id="findExpirySoonLotsByProductId" resultType="NotificationItemLotVO">
+        SELECT
+            p.product_id,
+            p.product_name,
+            il.inventory_lot_id,
+            il.lot_no,
+            il.expiry_date,
+            il.current_qty
+        FROM product p
+                 JOIN inventory_lot il
+                      ON p.product_id = il.product_id
+        WHERE p.product_id = #{productId}
+          AND p.status = 'ACTIVE'
+          AND il.status = 'NORMAL'
+          AND il.current_qty > 0
+          AND il.expiry_date BETWEEN TRUNC(SYSDATE) AND TRUNC(SYSDATE) + 30
+    </select>
+    <select id="findLotsForExpiryCheck" resultType="NotificationItemLotVO">
+        SELECT
+        p.product_id,
+        p.product_name,
+        il.inventory_lot_id,
+        il.lot_no,
+        il.expiry_date,
+        il.current_qty
+        FROM product p
+        JOIN inventory_lot il
+        ON p.product_id = il.product_id
+        WHERE p.status = 'ACTIVE'
+        AND il.status = 'NORMAL'
+        AND il.current_qty > 0
+        AND il.expiry_date <![CDATA[<=]]> TRUNC(SYSDATE) + 30
+    </select>
+    <select id="existsUnreadAlert" resultType="int">
+        SELECT COUNT(*)
+        FROM alert
+        WHERE alert_type = #{alertType}
+        AND is_read = 'N'
+        AND product_id = #{productId}
+        <if test="inventoryLotId != null">
+            AND inventory_lot_id = #{inventoryLotId}
+        </if>
+        <if test="inventoryLotId == null">
+            AND inventory_lot_id IS NULL
+        </if>
+    </select>
+    <select id="">
+        SELECT SEQ_ALERT.nextVal FROM dual;
+    </select>
+    <insert id="insertAlert" parameterType="AlertVO">
+        INSERT INTO alert (
+            alert_id,
+            product_id,
+            <if test="inventoryLotId != null">
+                inventory_lot_id,
+            </if>
+            alert_type,
+            message,
+            is_read,
+            created_at
+        )
+        VALUES (
+                   SEQ_ALERT.NEXTVAL,
+                   #{productId},
+                    <if test="inventoryLotId != null">
+                        #{inventoryLotId},
+                    </if>
+                   #{alertType},
+                   #{message},
+                   'N',
+                   SYSTIMESTAMP
+               )
+    </insert>
+</mapper>

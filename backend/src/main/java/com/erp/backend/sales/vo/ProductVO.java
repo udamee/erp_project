@@ -19,5 +19,6 @@ public class ProductVO {
     Integer currentQty;
     String location;
     String lotStatus;
+    Integer safetyQty;
     BigDecimal standardSalesPrice;
 }

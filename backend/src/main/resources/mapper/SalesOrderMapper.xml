@@ -276,4 +276,10 @@
             il.lot_no
         FOR UPDATE OF il.current_qty WAIT 5
     </select>
+    <select id="findSafetyQtyByProductId" resultType="int" parameterType="int">
+        SELECT NVL(p.safety_qty, 0)
+        FROM product p
+        WHERE p.product_id = #{productId}
+          AND p.status = 'ACTIVE'
+    </select>
 </mapper>

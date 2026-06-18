@@ -113,7 +113,6 @@ public class SalesOrderService {
             }
             BigDecimal detailAmount = unitPrice.multiply(BigDecimal.valueOf(detailRequest.getOrderQty()));
             int detailId = salesOrderMapper.currentSalesOrderDetailSeq();
-            System.out.print("------------------"+detailId);
             SalesOrderDetailVO salesOrderDetailVO = new SalesOrderDetailVO();
             salesOrderDetailVO.setSoDetailId(detailId);
             salesOrderDetailVO.setSoId(orderId);

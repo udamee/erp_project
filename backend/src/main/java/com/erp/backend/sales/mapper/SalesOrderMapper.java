@@ -41,4 +41,7 @@ public interface SalesOrderMapper {
     SalesOrderAmountCheckVO verifySalesOrderTotal(int salesOrderId);
     //FEFO 기준 출고가능 로트 목록 조회
     List<ItemLotVO> findAvailableLotByProductId(int productId);
+
+    //안전재고 수량 조회
+    int findSafetyQtyByProductId(int productId);
 }
