@@ -58,12 +58,8 @@ public class SecurityConfig {
                         .hasAnyRole("MANAGER", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/purchase-orders/*/reject")
                         .hasAnyRole("MANAGER", "ADMIN")
-
-                        // ADMIN 전용
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                                .anyRequest().permitAll()
                         // STORE 허용
-//                        .requestMatchers("/api/sales/**").permitAll()
+                        .requestMatchers("/api/sales/**").permitAll()
                         // 나머지는 인증 필요
                         .anyRequest().authenticated())
                 .addFilterBefore(new JwtAuthFilter(jwtTokenProvider),
