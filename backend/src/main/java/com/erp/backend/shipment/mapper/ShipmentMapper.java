@@ -45,7 +45,7 @@ public interface ShipmentMapper {
     //출고 정보 조회
     ShipmentVO findShipment(int shipmentId,boolean isShipped);
     //출고 가능 상태 정보 조회
-    SalesOrderRequestVO verifyingSalesOrderStatusBySoId(int salesOrderId);
+    List<SalesOrderRequestVO> verifyingSalesOrderStatusBySoId(int salesOrderId);
     //출고 이력 조회
     List<ShipmentHistoryVO> searchShipmentHistory(int salesOrderId);
     //재고 변동 이력 조회

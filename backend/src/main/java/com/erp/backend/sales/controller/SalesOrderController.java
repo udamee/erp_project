@@ -36,7 +36,7 @@ public class SalesOrderController {
     @GetMapping("/{salesOrderId}")
     public ResponseEntity<ApiResponse<SalesOrderVO>> findSalesOrder(@PathVariable Integer salesOrderId){
         SalesOrderVO order = salesOrderService.findSalesOrderById(salesOrderId);
-        return ResponseEntity.ok(ApiResponse.success(order.getSoId()+"의 주문이 조회되었습니다",order));
+        return ResponseEntity.ok(ApiResponse.success("주문번호 "+order.getSoId()+" 의 주문이 조회되었습니다",order));
     }
 
     //상품별 로트조회
@@ -69,7 +69,7 @@ public class SalesOrderController {
 
     //주문승인
     @PatchMapping("/{salesOrderId}/approve")
-    public ResponseEntity<ApiResponse<SalesOrderVO>> approveRequest(@PathVariable int salesOrderId,@RequestBody @NonNull SalesOrderRequestDTO request){
+    public ResponseEntity<ApiResponse<SalesOrderVO>> approveRequest(@PathVariable int salesOrderId,@RequestBody SalesOrderRequestDTO request){
         SalesOrderVO salesOrderVO = new SalesOrderVO();
         salesOrderVO.setSoId(salesOrderId);
         salesOrderVO.setAppEmployeeId(request.getEmployeeId());

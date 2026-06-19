@@ -80,10 +80,10 @@ public class SalesOrderService {
     @Transactional
     public SalesOrderVO makeOrder(SalesOrderRequestDTO requestDTO){
         if(requestDTO==null){
-            throw new CustomException(ErrorCode.NOT_FOUND);
+            throw new CustomException(ErrorCode.PRODUCT_NOT_FOUND);
         }
         if(requestDTO.getDetails() == null || requestDTO.getDetails().isEmpty()){
-            throw new CustomException(ErrorCode.SALES_ORDER_FAILED);
+            throw new CustomException(ErrorCode.SALES_ORDER_REQUEST_INVALID);
         }
 
         int orderId = salesOrderMapper.currentSalesOrderSeq();
@@ -113,7 +113,6 @@ public class SalesOrderService {
             }
             BigDecimal detailAmount = unitPrice.multiply(BigDecimal.valueOf(detailRequest.getOrderQty()));
             int detailId = salesOrderMapper.currentSalesOrderDetailSeq();
-            System.out.print("------------------"+detailId);
             SalesOrderDetailVO salesOrderDetailVO = new SalesOrderDetailVO();
             salesOrderDetailVO.setSoDetailId(detailId);
             salesOrderDetailVO.setSoId(orderId);
@@ -146,17 +145,38 @@ public class SalesOrderService {
     //승인요청
     @Transactional
     public SalesOrderVO approveRequest(SalesOrderVO salesOrderVO){
-        int exists = existsRequestedOrderDetail(salesOrderVO.getSoId());
-        if(exists != 1){
+        if (salesOrderVO == null || salesOrderVO.getSoId() == null) {
             throw new CustomException(ErrorCode.SALES_APPROVE_FAILED);
         }
+
+        SalesOrderVO order = salesOrderMapper.findOrderHeaderById(salesOrderVO.getSoId());
+        if(order == null){
+            throw new CustomException(ErrorCode.NOT_FOUND);
+        }
+        if (OrderStatus.APPROVED.name().equals(order.getStatus())){
+            throw new CustomException(ErrorCode.SALES_ALREADY_APPROVED);
+        }
+        if (OrderStatus.SHIPPED.name().equals(order.getStatus())){
+            throw new CustomException(ErrorCode.SALES_APPROVE_FAILED);
+        }
+        if (!OrderStatus.REQUESTED.name().equals(order.getStatus())){
+            throw new CustomException(ErrorCode.SALES_ORDER_FAILED);
+        }
+
+        int exists = countRequestedOrderDetail(salesOrderVO.getSoId());
+        if(exists < 1){
+            throw new CustomException(ErrorCode.SALES_APPROVE_FAILED);
+        }
+
         SalesOrderAmountCheckVO salesOrderAmountCheckVO;
         salesOrderAmountCheckVO=verifyAmount(salesOrderVO.getSoId());
+
         if(salesOrderAmountCheckVO == null || !salesOrderAmountCheckVO.amountMatched()){
             throw new CustomException(ErrorCode.SALES_NOT_AMOUNT_MATCHED);
         }
         salesOrderVO.setStatus(OrderStatus.APPROVED.name());
         salesOrderVO.setApproveDate(LocalDateTime.now());
+
         if(salesOrderMapper.approveRequest(salesOrderVO)!=1){
             throw new CustomException(ErrorCode.SALES_APPROVE_FAILED);
         }
@@ -169,7 +189,7 @@ public class SalesOrderService {
     }
 
     //상세주문 존재여부 확인
-    public int existsRequestedOrderDetail(int salesOrderId){
+    public int countRequestedOrderDetail(int salesOrderId){
         return salesOrderMapper.existsRequestedOrderWithDetail(salesOrderId);
     }
 

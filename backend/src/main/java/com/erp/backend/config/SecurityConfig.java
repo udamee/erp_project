@@ -59,7 +59,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/purchase-orders/*/reject")
                         .hasAnyRole("MANAGER", "ADMIN")
                         // STORE 허용
-                        .requestMatchers("/api/sales/**").permitAll()
+                        .requestMatchers("/api/sales-order/**").permitAll()
+                        .requestMatchers("/api/shipment/**").permitAll()
                         .requestMatchers("/api/settlement/**").permitAll()
                         // 나머지는 인증 필요
                         .anyRequest().authenticated())
