@@ -44,6 +44,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             List<GrantedAuthority> authorities = new ArrayList<>();
             authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
 
+            List<String> exAuths = jwtTokenProvider.getExceptionAuths(token); // ex 클레임 추출
+            if (exAuths != null) {
+                exAuths.forEach(code -> authorities.add(new SimpleGrantedAuthority(code)));
+            }
+
             if ("ADMIN".equals(role)) {
                 // ADMIN holds every department authority
                 authorities.add(new SimpleGrantedAuthority("DEPT_HR"));

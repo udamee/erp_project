@@ -26,7 +26,7 @@
     </select>
     <insert id="insertEmployee">
         INSERT INTO EMPLOYEE (EMP_ID, LOGIN_ID, PASSWORD, EMP_NAME, DEPT_ID, PHONE, EMAIL, ROLE_CODE , STATUS)
-        VALUES (EMP_SEQ.NEXTVAL, #{dto.loginId}, #{encodedPassword}, #{dto.empName}, #{dto.deptId}, #{dto.phone}, #{dto.email}, 'EMPLOYEE', 'PENDING')
+        VALUES (EMP_SEQ.NEXTVAL, #{dto.loginId}, #{encodedPassword}, #{dto.empName}, #{dto.deptId}, #{dto.phone}, #{dto.email}, 'STAFF', 'PENDING')
     </insert>
     <!-- 회원가입 중복 체크 : STATUS 무관하게 LOGIN_ID 존재 여부 -->
     <select id="existsEmployeeByLoginId" resultType="boolean">
@@ -41,4 +41,11 @@
             UPDATED_AT = SYSDATE
         WHERE EMP_ID = #{empId}
     </update>
+    <select id="findExceptionAuths" resultType="string">
+        SELECT exception_auth
+        FROM DEPT_ROLE_EXCEPTION
+        WHERE DEPT_CODE = #{deptCode}
+          AND ROLE_CODE = #{roleCode}
+          AND USE_YN = 'Y'
+    </select>
 </mapper>

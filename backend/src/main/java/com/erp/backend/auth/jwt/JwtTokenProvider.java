@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -29,12 +30,13 @@ public class JwtTokenProvider {
     }
 
     // Access Token 생성
-    public String generateAccessToken(Long empId, String deptcode,String role) {
+    public String generateAccessToken(Long empId, String deptcode, String role, List<String> exAuths) {
         return Jwts.builder()
                 .subject(String.valueOf(empId))
                 .claim("dept", deptcode)
                 .claim("role", role)
                 .claim("type", "access")
+                .claim("ex", exAuths)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + accessTokenExpiration))
                 .signWith(secretKey)
@@ -65,6 +67,16 @@ public class JwtTokenProvider {
 
     // 토큰에서 부서 추출
     public String getDeptCode(String token) { return getClaims(token).get("dept", String.class) ;}
+
+    // 토큰에서 예외 권한 코드 목록 추출
+    @SuppressWarnings("unchecked")
+    public List<String> getExceptionAuths(String token) {
+        Object ex = getClaims(token).get("ex");
+        if (ex instanceof List<?> list) {
+            return list.stream().map(String::valueOf).toList();
+        }
+        return List.of();
+    }
 
     // 토큰 유효성 검사
     public boolean validateToken(String token) {

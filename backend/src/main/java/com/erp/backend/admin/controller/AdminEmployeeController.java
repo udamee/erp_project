@@ -40,4 +40,11 @@ public class AdminEmployeeController {
         adminEmployeeService.reject(empId);
         return ResponseEntity.ok(ApiResponse.success("사원 가입 승인 거절", null));
     }
+
+    @Operation(summary = "직원 삭제")
+    @DeleteMapping("/{empId}")
+    public ResponseEntity<ApiResponse<Void>> deleteEmployee(@PathVariable Long empId) {
+        adminEmployeeService.deleteEmployee(empId);
+        return ResponseEntity.ok(ApiResponse.success("사원 삭제 완료", null));
+    }
 }

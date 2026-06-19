@@ -28,6 +28,14 @@ public enum ErrorCode {
     // 사원
     EMPLOYEE_NOT_FOUND(HttpStatus.NOT_FOUND, "사원을 찾을 수 없습니다."),
     EMPLOYEE_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 존재하는 사원입니다."),
+    INVALID_ROLE(HttpStatus.BAD_REQUEST, "유효하지 않은 역할입니다."),
+    INVALID_STATUS(HttpStatus.BAD_REQUEST, "유효하지 않은 계정 상태입니다."),
+
+    // 근태
+    ATTENDANCE_NOT_FOUND(HttpStatus.NOT_FOUND, "근태 기록을 찾을 수 없습니다."),
+    ALREADY_CHECKED_IN(HttpStatus.BAD_REQUEST, "이미 출근 처리되었습니다."),
+    NOT_CHECKED_IN(HttpStatus.BAD_REQUEST, "출근 기록이 없습니다."),
+    ALREADY_CHECKED_OUT(HttpStatus.BAD_REQUEST, "이미 퇴근 처리되었습니다."),
 
     // 부서
     DEPARTMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "부서를 찾을 수 없습니다."),
