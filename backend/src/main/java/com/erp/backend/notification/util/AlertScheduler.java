@@ -11,7 +11,7 @@ public class AlertScheduler {
 
     private final AlertService alertService;
 
-    @Scheduled(cron = "0 0 1 * * *")
+    @Scheduled(cron = "5 * * * * *")
     public void checkExpiryAlertsDaily() {
         alertService.checkExpiryAlerts();
     }

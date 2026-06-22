@@ -3,12 +3,24 @@ import com.erp.backend.notification.vo.AlertVO;
 import com.erp.backend.notification.vo.StockAlertCheckVO;
 import com.erp.backend.notification.vo.NotificationItemLotVO;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
 import java.util.List;
 
 @Mapper
 public interface AlertMapper {
+    int currentAlertSeq();
     StockAlertCheckVO findSafetyStockCheckByProductId(int productId);
+    List<NotificationItemLotVO> findExpirySoonLotsByProductId(int productId);
     List<NotificationItemLotVO> findLotsForExpiryCheck();
-    int existsUnreadAlert(AlertVO alertVO);
+    int existsAlert(AlertVO alertVO);
     void insertAlert(AlertVO alertVO);
+    void insertAlertDetail(@Param("alertId")int alertId,@Param("deptCode")String deptCode,@Param("roleCode")String roleCode);
+    List<AlertVO> findTargetReceiverList(@Param("deptCode") String deptCode,@Param("roleCode")String roleCode);
+    List<AlertVO> findAlertItemList();
+    List<AlertVO> findUserAlertList(int empId);
+    void markRead(@Param("alertId")int alertId, @Param("empId")int loginId);
+    void markAlertDelivered(@Param("alertId")int alertId,@Param("empId")int empId);
+    List<AlertVO> findUndeliveredAlertList();
+    int countUnreadAlert(int empId);
 }

@@ -12,9 +12,16 @@ public class AlertVO {
     private Integer productId;
     private Integer inventoryLotId;
     private String alertType;
+    private String alertLevel;
     private String message;
-    private String isRead;
     private LocalDateTime createdAt;
+
+    private String isRead;
+    private Integer empId;
+    private String roleCode;
+    private Integer deptId;
+    private String deptCode;
+    private String isDelivered;
 
     private String productName;
     private String lotNo;
