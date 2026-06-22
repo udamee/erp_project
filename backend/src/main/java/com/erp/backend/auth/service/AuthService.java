@@ -60,6 +60,9 @@ public class AuthService {
         if (EmployeeStatus.INACTIVE.name().equals(employee.getStatus())) {
             throw new CustomException(ErrorCode.ACCOUNT_INACTIVE);
         }
+        if (EmployeeStatus.TERMINATED.name().equals(employee.getStatus())) {
+            throw new CustomException(ErrorCode.ACCOUNT_TERMINATED);
+        }
         if (!EmployeeStatus.ACTIVE.name().equals(employee.getStatus())) {
             throw new CustomException(ErrorCode.ACCOUNT_REJECTED);
         }
@@ -184,6 +187,8 @@ public class AuthService {
             throw new CustomException(ErrorCode.EMPLOYEE_NOT_FOUND);
         }
         authMapper.updatePassword(empId, passwordEncoder.encode(newPassword));
+        // 비밀번호 초기화 시 기존 세션 갱신 차단
+        refreshTokenMapper.deleteByEmpId(empId);
     }
 
     // 6. 응답 DTO 빌더

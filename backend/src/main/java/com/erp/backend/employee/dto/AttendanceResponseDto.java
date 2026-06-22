@@ -13,6 +13,8 @@ public class AttendanceResponseDto {
     private Long attendanceId;
     private Long empId;
     private String empName;     // EMPLOYEE 조인 결과
+    private Long deptId;        // EMPLOYEE 조인 결과
+    private String deptName;    // DEPARTMENT 조인 결과
     private LocalDate workDate;
     private LocalDateTime checkIn;
     private LocalDateTime checkOut;

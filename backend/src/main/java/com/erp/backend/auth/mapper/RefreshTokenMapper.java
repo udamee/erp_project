@@ -18,4 +18,7 @@ public interface RefreshTokenMapper {
 
     // jwt 토큰 삭제
     void deleteByJwtId(String jwtId);
+
+    // 특정 직원의 모든 refresh token 삭제 (퇴사·비활성화·비밀번호 초기화 시 세션 갱신 차단)
+    void deleteByEmpId(@Param("empId") Long empId);
 }

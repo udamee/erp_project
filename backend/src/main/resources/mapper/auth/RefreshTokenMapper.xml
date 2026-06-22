@@ -19,4 +19,9 @@
         WHERE JWT_ID = #{jwtId}
     </delete>
 
+    <delete id="deleteByEmpId">
+        DELETE FROM REFRESH_TOKEN
+        WHERE EMP_ID = #{empId}
+    </delete>
+
 </mapper>

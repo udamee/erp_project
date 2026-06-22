@@ -1,18 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type SubmitEvent } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { api, tokenStorage } from "@/lib/api";
-
-interface LoginResponse {
-  accessToken: string;
-  refreshToken: string;
-  empId: number;
-  loginId: string;
-  empName: string;
-  role: string;
-  deptId: number;
-}
+import { authApi, tokenStorage, userStorage } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -21,18 +12,14 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
-      const data = await api.post<LoginResponse>("/api/auth/login", {
-        loginId,
-        password,
-      });
+      const data = await authApi.login(loginId, password);
       tokenStorage.set(data.accessToken);
-      localStorage.setItem("empName", data.empName);
-      localStorage.setItem("role", data.role);
+      userStorage.set(data);
       router.push("/purchase-orders");
     } catch (err) {
       setError((err as Error).message);
@@ -65,6 +52,13 @@ export default function LoginPage() {
         <button type="submit" className="erp-btn primary" disabled={loading} style={{ width: "100%", height: 40 }}>
           {loading ? "로그인 중..." : "로그인"}
         </button>
+
+        <p style={{ margin: "4px 0 0", fontSize: 13, color: "#6b7280", textAlign: "center" }}>
+          계정이 없으신가요?{" "}
+          <Link href="/signup" style={{ color: "#1d9e75", fontWeight: 600 }}>
+            회원가입
+          </Link>
+        </p>
       </form>
     </div>
   );

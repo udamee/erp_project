@@ -1,5 +1,6 @@
 package com.erp.backend.employee.service;
 
+import com.erp.backend.auth.mapper.RefreshTokenMapper;
 import com.erp.backend.employee.dto.*;
 import com.erp.backend.employee.mapper.EmployeeMapper;
 import com.erp.backend.employee.util.EmployeeStatus;
@@ -19,6 +20,7 @@ import java.util.List;
 public class EmployeeService {
 
     private final EmployeeMapper employeeMapper;
+    private final RefreshTokenMapper refreshTokenMapper;
 
     // create Employee 삭제 (signup과 동일한 기능)
 
@@ -94,6 +96,10 @@ public class EmployeeService {
         int result = employeeMapper.updateAccountStatus(empId, status);
         if (result == 0) {
             throw new CustomException(ErrorCode.EMPLOYEE_NOT_FOUND);
+        }
+        // 비활성화 시 해당 직원의 세션(refresh token) 무효화 (재활성화는 제외)
+        if (EmployeeStatus.INACTIVE.name().equals(status)) {
+            refreshTokenMapper.deleteByEmpId(empId);
         }
     }
 }

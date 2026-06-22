@@ -9,7 +9,7 @@
         <selectKey keyProperty="empId"
                    resultType="long"
                    order="BEFORE">
-            SELECT EMP_SEQ.nextval
+            SELECT SEQ_EMPLOYEE.nextval
             FROM DUAL
         </selectKey>
 
@@ -60,7 +60,7 @@
         FROM EMPLOYEE E
                  LEFT JOIN DEPARTMENT D
                            ON E.DEPT_ID = D.DEPT_ID
-        WHERE E.STATUS != 'INACTIVE'
+        WHERE E.STATUS != 'TERMINATED'
         ORDER BY E.EMP_ID DESC
     </select>
 
@@ -84,7 +84,7 @@
                  LEFT JOIN DEPARTMENT D
                            ON E.DEPT_ID = D.DEPT_ID
         WHERE E.EMP_ID = #{empId}
-          AND E.STATUS != 'INACTIVE'
+          AND E.STATUS != 'TERMINATED'
     </select>
 
     <update id="updateEmployee"
@@ -98,19 +98,19 @@
             HIRE_DATE = #{hireDate},
             UPDATED_AT = SYSDATE
         WHERE EMP_ID = #{empId}
-          AND STATUS != 'INACTIVE'
+          AND STATUS != 'TERMINATED'
     </update>
 
-    <!-- 소프트 삭제 : 실제 행 삭제 대신 STATUS를 INACTIVE로 변경 -->
+    <!-- 퇴사 처리(소프트 삭제) : 실제 행 삭제 대신 STATUS를 TERMINATED로 변경 -->
     <!-- LOGIN_ID를 변경해 원래 아이디를 재사용 가능하게 함 (EMP_ID 접미사로 유일성 보장, VARCHAR2(50) 초과 방지) -->
     <update id="deleteEmployee"
             parameterType="long">
         UPDATE EMPLOYEE
-        SET STATUS = 'INACTIVE',
+        SET STATUS = 'TERMINATED',
             LOGIN_ID = SUBSTR(LOGIN_ID, 1, 30) || '_del_' || EMP_ID,
             UPDATED_AT = SYSDATE
         WHERE EMP_ID = #{empId}
-          AND STATUS != 'INACTIVE'
+          AND STATUS != 'TERMINATED'
     </update>
 
     <select id="countByLoginId"
@@ -140,7 +140,7 @@
         FROM EMPLOYEE E
         LEFT JOIN DEPARTMENT D
         ON E.DEPT_ID = D.DEPT_ID
-        WHERE E.STATUS != 'INACTIVE'
+        WHERE E.STATUS != 'TERMINATED'
         <if test="deptId != null">
             AND E.DEPT_ID = #{deptId}
         </if>
@@ -160,7 +160,7 @@
             EMAIL = #{email},
             UPDATED_AT = SYSDATE
         WHERE EMP_ID = #{empId}
-          AND STATUS != 'INACTIVE'
+          AND STATUS != 'TERMINATED'
     </update>
 
     <!-- 권한(역할) 변경 : ADMIN 전용 -->
@@ -169,7 +169,7 @@
         SET ROLE_CODE = #{roleCode},
             UPDATED_AT = SYSDATE
         WHERE EMP_ID = #{empId}
-          AND STATUS != 'INACTIVE'
+          AND STATUS != 'TERMINATED'
     </update>
 
     <!-- 계정 활성/비활성 토글 : ADMIN 전용 (ACTIVE ↔ INACTIVE) -->

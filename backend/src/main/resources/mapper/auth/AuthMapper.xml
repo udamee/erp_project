@@ -26,7 +26,7 @@
     </select>
     <insert id="insertEmployee">
         INSERT INTO EMPLOYEE (EMP_ID, LOGIN_ID, PASSWORD, EMP_NAME, DEPT_ID, PHONE, EMAIL, ROLE_CODE , STATUS)
-        VALUES (EMP_SEQ.NEXTVAL, #{dto.loginId}, #{encodedPassword}, #{dto.empName}, #{dto.deptId}, #{dto.phone}, #{dto.email}, 'STAFF', 'PENDING')
+        VALUES (SEQ_EMPLOYEE.nextval, #{dto.loginId}, #{encodedPassword}, #{dto.empName}, #{dto.deptId}, #{dto.phone}, #{dto.email}, 'STAFF', 'PENDING')
     </insert>
     <!-- 회원가입 중복 체크 : STATUS 무관하게 LOGIN_ID 존재 여부 -->
     <select id="existsEmployeeByLoginId" resultType="boolean">

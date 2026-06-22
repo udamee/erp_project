@@ -68,6 +68,17 @@ body { margin: 0; background: var(--erp-bg); color: var(--erp-text); font-family
 .erp-btn.danger { background: var(--erp-danger-strong); border-color: var(--erp-danger-strong); color: #fff; }
 .erp-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* 뒤로가기 화살표 버튼 */
+.erp-back-btn {
+  width: 36px; height: 36px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--erp-line); border-radius: 8px;
+  background: #fff; color: var(--erp-text-muted);
+  font-size: 18px; line-height: 1; cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.erp-back-btn:hover { background: var(--erp-bg); color: var(--erp-text); border-color: var(--erp-text-muted); }
+
 /* 테이블 */
 .erp-table-wrap { background: #fff; border: 1px solid var(--erp-line); border-radius: 10px; overflow: hidden; }
 .erp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -83,6 +94,11 @@ body { margin: 0; background: var(--erp-bg); color: var(--erp-text); font-family
 .erp-badge.APPROVED { background: var(--erp-primary-bg); color: var(--erp-primary-dark); }
 .erp-badge.REJECTED { background: var(--erp-danger-bg); color: var(--erp-danger); }
 .erp-badge.COMPLETED { background: var(--erp-info-bg); color: var(--erp-info); }
+/* 직원 계정 상태 */
+.erp-badge.PENDING { background: var(--erp-warning-bg); color: var(--erp-warning); }
+.erp-badge.ACTIVE { background: var(--erp-primary-bg); color: var(--erp-primary-dark); }
+.erp-badge.INACTIVE { background: var(--erp-bg); color: var(--erp-text-muted); }
+.erp-badge.TERMINATED { background: var(--erp-danger-bg); color: var(--erp-danger); }
 
 /* 정보 카드 */
 .erp-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }

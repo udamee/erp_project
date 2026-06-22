@@ -22,6 +22,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.List;
 
 @Configuration
@@ -42,6 +45,13 @@ public class SecurityConfig {
                 // 토큰 기반 무상태 인증이라 CSRF 비활성화.
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // 인증/인가 실패를 빈 응답 대신 JSON(ApiResponse)으로 내려 프론트가 처리할 수 있게 한다.
+                // 미인증(토큰 없음/만료) → 401 (프론트가 토큰 재발급 시도), 권한 부족 → 403
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((req, res, e) ->
+                                writeJsonError(res, 401, "인증이 필요합니다. 다시 로그인해주세요."))
+                        .accessDeniedHandler((req, res, e) ->
+                                writeJsonError(res, 403, "접근 권한이 없습니다.")))
                 .authorizeHttpRequests(auth -> auth
                         // 비밀번호 변경은 로그인 상태에서만 허용 (permitAll 보다 먼저 선언)
                         .requestMatchers(HttpMethod.PATCH, "/api/auth/password").authenticated()
@@ -68,6 +78,14 @@ public class SecurityConfig {
                         UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    // 보안 필터 단계(컨트롤러/Advice 밖)에서 거부될 때 JSON 본문을 직접 작성한다.
+    private static void writeJsonError(HttpServletResponse response, int status, String message)
+            throws IOException {
+        response.setStatus(status);
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write("{\"success\":false,\"message\":\"" + message + "\",\"data\":null}");
     }
 
     @Bean

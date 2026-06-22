@@ -7,6 +7,8 @@
         <id     property="attendanceId" column="ATTENDANCE_ID"/>
         <result property="empId"        column="EMP_ID"/>
         <result property="empName"      column="EMP_NAME"/>
+        <result property="deptId"       column="DEPT_ID"/>
+        <result property="deptName"     column="DEPT_NAME"/>
         <result property="workDate"     column="WORK_DATE"/>
         <result property="checkIn"      column="CHECK_IN"/>
         <result property="checkOut"     column="CHECK_OUT"/>
@@ -21,7 +23,7 @@
         <selectKey keyProperty="attendanceId"
                    resultType="long"
                    order="BEFORE">
-            SELECT ATTENDANCE_SEQ.nextval
+            SELECT SEQ_ATTENDANCE.nextval
             FROM DUAL
         </selectKey>
 
@@ -113,9 +115,10 @@
 
     <select id="search" parameterType="com.erp.backend.employee.dto.AttendanceSearchCondition"
             resultMap="responseMap">
-        SELECT a.*, e.EMP_NAME
+        SELECT a.*, e.EMP_NAME, e.DEPT_ID, d.DEPT_NAME
         FROM ATTENDANCE a
         JOIN EMPLOYEE e ON a.EMP_ID = e.EMP_ID
+        LEFT JOIN DEPARTMENT d ON e.DEPT_ID = d.DEPT_ID
         <where>
             <if test="empId != null">  AND a.EMP_ID = #{empId} </if>
             <if test="deptId != null"> AND e.DEPT_ID = #{deptId} </if>

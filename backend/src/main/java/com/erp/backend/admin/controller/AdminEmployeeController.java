@@ -8,6 +8,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -41,10 +43,17 @@ public class AdminEmployeeController {
         return ResponseEntity.ok(ApiResponse.success("사원 가입 승인 거절", null));
     }
 
-    @Operation(summary = "직원 삭제")
+    // 퇴사 처리: HR 매니저 이상만(클래스의 DEPT_HR + 메서드의 MANAGER 조합). 대상 역할 검사는 서비스에서.
+    @Operation(summary = "직원 퇴사 처리")
     @DeleteMapping("/{empId}")
-    public ResponseEntity<ApiResponse<Void>> deleteEmployee(@PathVariable Long empId) {
-        adminEmployeeService.deleteEmployee(empId);
-        return ResponseEntity.ok(ApiResponse.success("사원 삭제 완료", null));
+    @PreAuthorize("hasRole('MANAGER') and hasAuthority('DEPT_HR')")
+    public ResponseEntity<ApiResponse<Void>> deleteEmployee(
+            @PathVariable Long empId,
+            @AuthenticationPrincipal Long actorEmpId,
+            Authentication authentication) {
+        boolean actorIsAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+        adminEmployeeService.deleteEmployee(actorEmpId, actorIsAdmin, empId);
+        return ResponseEntity.ok(ApiResponse.success("사원 퇴사 처리 완료", null));
     }
 }
