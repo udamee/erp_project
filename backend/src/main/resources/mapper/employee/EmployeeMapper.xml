@@ -91,16 +91,14 @@
             parameterType="com.erp.backend.employee.vo.EmployeeVO">
         UPDATE EMPLOYEE
         SET
-            PASSWORD = #{password},
             EMP_NAME = #{empName},
             PHONE = #{phone},
             EMAIL = #{email},
             DEPT_ID = #{deptId},
-            ROLE_CODE = #{roleCode},
-            STATUS = #{status},
             HIRE_DATE = #{hireDate},
             UPDATED_AT = SYSDATE
         WHERE EMP_ID = #{empId}
+          AND STATUS != 'INACTIVE'
     </update>
 
     <!-- 소프트 삭제 : 실제 행 삭제 대신 STATUS를 INACTIVE로 변경 -->
@@ -122,5 +120,65 @@
         FROM EMPLOYEE
         WHERE LOGIN_ID = #{loginId}
     </select>
+
+    <select id="searchEmployeesByCondition"
+            parameterType="com.erp.backend.employee.dto.EmployeeSearchCondition"
+            resultType="com.erp.backend.employee.dto.EmployeeResponseDto">
+        SELECT
+        E.EMP_ID AS empId,
+        E.LOGIN_ID AS loginId,
+        E.EMP_NAME AS empName,
+        E.PHONE AS phone,
+        E.EMAIL AS email,
+        E.DEPT_ID AS deptId,
+        D.DEPT_NAME AS deptName,
+        E.ROLE_CODE AS roleCode,
+        E.STATUS AS status,
+        E.HIRE_DATE AS hireDate,
+        E.CREATED_AT AS createdAt,
+        E.UPDATED_AT AS updatedAt
+        FROM EMPLOYEE E
+        LEFT JOIN DEPARTMENT D
+        ON E.DEPT_ID = D.DEPT_ID
+        WHERE E.STATUS != 'INACTIVE'
+        <if test="deptId != null">
+            AND E.DEPT_ID = #{deptId}
+        </if>
+        <if test="empName != null and empName != ''">
+            AND E.EMP_NAME LIKE '%' || #{empName} || '%'
+        </if>
+        <if test="roleCode != null and roleCode != ''">
+            AND E.ROLE_CODE = #{roleCode}
+        </if>
+        ORDER BY E.EMP_ID DESC
+    </select>
+
+    <!-- 마이페이지 : 본인 정보 수정 (연락처·이메일만) -->
+    <update id="updateMyInfo">
+        UPDATE EMPLOYEE
+        SET PHONE = #{phone},
+            EMAIL = #{email},
+            UPDATED_AT = SYSDATE
+        WHERE EMP_ID = #{empId}
+          AND STATUS != 'INACTIVE'
+    </update>
+
+    <!-- 권한(역할) 변경 : ADMIN 전용 -->
+    <update id="updateRole">
+        UPDATE EMPLOYEE
+        SET ROLE_CODE = #{roleCode},
+            UPDATED_AT = SYSDATE
+        WHERE EMP_ID = #{empId}
+          AND STATUS != 'INACTIVE'
+    </update>
+
+    <!-- 계정 활성/비활성 토글 : ADMIN 전용 (ACTIVE ↔ INACTIVE) -->
+    <update id="updateAccountStatus">
+        UPDATE EMPLOYEE
+        SET STATUS = #{status},
+            UPDATED_AT = SYSDATE
+        WHERE EMP_ID = #{empId}
+          AND STATUS IN ('ACTIVE', 'INACTIVE')
+    </update>
 
 </mapper>

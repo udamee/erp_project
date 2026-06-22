@@ -1,4 +1,4 @@
-package com.erp.backend.sales.dto;
+package com.erp.backend.settlement.dto;
 
 import lombok.Getter;
 

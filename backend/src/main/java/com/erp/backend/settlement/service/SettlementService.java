@@ -1,8 +1,8 @@
-package com.erp.backend.sales.service;
+package com.erp.backend.settlement.service;
 
-import com.erp.backend.sales.dto.SettlementRequestDto;
-import com.erp.backend.sales.mapper.SalesMapper;
-import com.erp.backend.sales.vo.*;
+import com.erp.backend.settlement.dto.SettlementRequestDto;
+import com.erp.backend.settlement.mapper.SettlementMapper;
+import com.erp.backend.settlement.vo.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -14,9 +14,9 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
-public class SalesService {
+public class SettlementService {
 
-    private final SalesMapper salesMapper;
+    private final SettlementMapper settlementMapper;
 
     // 매출청구 조회
     public List<SalesInvoiceVO> getSalesInvoiceList(
@@ -25,7 +25,7 @@ public class SalesService {
         params.put("status", status);
         params.put("startDate", startDate);
         params.put("endDate", endDate);
-        return salesMapper.findAllSalesInvoices(params);
+        return settlementMapper.findAllSalesInvoices(params);
     }
 
     // 매입청구 조회
@@ -35,7 +35,7 @@ public class SalesService {
         params.put("status", status);
         params.put("startDate", startDate);
         params.put("endDate", endDate);
-        return salesMapper.findAllPurchaseInvoices(params);
+        return settlementMapper.findAllPurchaseInvoices(params);
     }
 
     // 미수금/매출채권 조회
@@ -45,7 +45,7 @@ public class SalesService {
         params.put("status", status);
         params.put("startDate", startDate);
         params.put("endDate", endDate);
-        return salesMapper.findAllAccountReceivables(params);
+        return settlementMapper.findAllAccountReceivables(params);
     }
 
     // 미지급금/매입채무 조회
@@ -55,7 +55,7 @@ public class SalesService {
         params.put("status", status);
         params.put("startDate", startDate);
         params.put("endDate", endDate);
-        return salesMapper.findAllAccountPayables(params);
+        return settlementMapper.findAllAccountPayables(params);
     }
 
     // 수금내역 조회
@@ -64,7 +64,7 @@ public class SalesService {
         Map<String, Object> params = new HashMap<>();
         params.put("startDate", startDate);
         params.put("endDate", endDate);
-        return salesMapper.findAllPayments(params);
+        return settlementMapper.findAllPayments(params);
     }
 
     // 손익정산 조회
@@ -73,37 +73,37 @@ public class SalesService {
         Map<String, Object> params = new HashMap<>();
         params.put("startDate", startDate);
         params.put("endDate", endDate);
-        return salesMapper.findAllSettlements(params);
+        return settlementMapper.findAllSettlements(params);
     }
 
     // 매출청구 상세조회
     public SalesInvoiceVO getSalesInvoice(Long salesInvoiceId) {
-        return salesMapper.findSalesInvoiceById(salesInvoiceId);
+        return settlementMapper.findSalesInvoiceById(salesInvoiceId);
     }
 
     // 매입청구 상세조회
     public PurchaseInvoiceVO getPurchaseInvoice(Long purchaseInvoiceId) {
-        return salesMapper.findPurchaseInvoiceById(purchaseInvoiceId);
+        return settlementMapper.findPurchaseInvoiceById(purchaseInvoiceId);
     }
 
     // 미수금 상세조회
     public AccountReceivableVO getAccountReceivable(Long arId) {
-        return salesMapper.findAccountReceivableById(arId);
+        return settlementMapper.findAccountReceivableById(arId);
     }
 
     // 미지급금 상세조회
     public AccountPayableVO getAccountPayable(Long apId) {
-        return salesMapper.findAccountPayableById(apId);
+        return settlementMapper.findAccountPayableById(apId);
     }
 
     // 수금내역 상세조회
     public PaymentVO getPayment(Long paymentId) {
-        return salesMapper.findPaymentById(paymentId);
+        return settlementMapper.findPaymentById(paymentId);
     }
 
     // 손익정산 상세조회
     public SettlementVO getSettlement(Long settlementId) {
-        return salesMapper.findSettlementById(settlementId);
+        return settlementMapper.findSettlementById(settlementId);
     }
 
 
@@ -115,7 +115,7 @@ public class SalesService {
         // 여신한도 임시 설정: 500만원
         BigDecimal creditLimit = new BigDecimal("5000000");
         // 거래처 현재 미수금 조회
-        BigDecimal currentReceivable = salesMapper.findCurrentReceivableAmount(salesInvoiceVO.getCustomerId());
+        BigDecimal currentReceivable = settlementMapper.findCurrentReceivableAmount(salesInvoiceVO.getCustomerId());
         // 현재 미수금 + 신규 매출청구 금액
         BigDecimal expectedReceivable = currentReceivable.add(salesInvoiceVO.getTotalAmount());
         // 여신한도 초과 여부 확인
@@ -123,7 +123,7 @@ public class SalesService {
             throw new RuntimeException("여신한도를 초과하여 매출청구를 등록할 수 없습니다.");
         }
         // 매출청구 등록
-        salesMapper.insertSalesInvoice(salesInvoiceVO);
+        settlementMapper.insertSalesInvoice(salesInvoiceVO);
         // 생성된 매출청구 ID를 미수금 정보에 설정
         accountReceivableVO.setSalesInvoiceId(salesInvoiceVO.getSalesInvoiceId());
         // 미수금 등록에 필요한 정보 설정
@@ -134,13 +134,13 @@ public class SalesService {
         accountReceivableVO.setStatus("UNPAID");
         accountReceivableVO.setDueDate(salesInvoiceVO.getIssueDate().plusDays(30));
         // 미수금 등록
-        salesMapper.insertAccountReceivable(accountReceivableVO);
+        settlementMapper.insertAccountReceivable(accountReceivableVO);
     }
 
     // 수금 처리
     public void createPayment(PaymentVO paymentVO) {
         // 수금 금액 유효성 검사
-        BigDecimal remainAmount = salesMapper.findRemainAmountByArId(paymentVO.getArId());
+        BigDecimal remainAmount = settlementMapper.findRemainAmountByArId(paymentVO.getArId());
         if (remainAmount == null) {
             throw new RuntimeException("해당 미수금 정보를 찾을 수 없습니다.");
         }
@@ -150,8 +150,8 @@ public class SalesService {
         if (paymentVO.getPaymentAmount() == null || paymentVO.getPaymentAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new RuntimeException("수금 금액은 0보다 커야 합니다.");
         }
-        salesMapper.insertPayment(paymentVO);
-        salesMapper.updateAccountReceivablePayment(paymentVO);
+        settlementMapper.insertPayment(paymentVO);
+        settlementMapper.updateAccountReceivablePayment(paymentVO);
     }
 
     // 손익정산 등록
@@ -160,10 +160,10 @@ public class SalesService {
         params.put("startDate", requestDto.getStartDate());
         params.put("endDate", requestDto.getEndDate());
 
-        BigDecimal totalSales = salesMapper.findTotalSalesAmount(params);
-        BigDecimal totalPurchase = salesMapper.findTotalPurchaseAmount(params);
-        BigDecimal totalReceivable = salesMapper.findTotalReceivableAmount(params);
-        BigDecimal totalPayable = salesMapper.findTotalPayableAmount(params);
+        BigDecimal totalSales = settlementMapper.findTotalSalesAmount(params);
+        BigDecimal totalPurchase = settlementMapper.findTotalPurchaseAmount(params);
+        BigDecimal totalReceivable = settlementMapper.findTotalReceivableAmount(params);
+        BigDecimal totalPayable = settlementMapper.findTotalPayableAmount(params);
 
         BigDecimal grossProfit = totalSales.subtract(totalPurchase);
         BigDecimal profitRate = BigDecimal.ZERO;
@@ -184,7 +184,7 @@ public class SalesService {
         settlementVO.setProfitRate(profitRate);
         settlementVO.setCreatedBy(requestDto.getCreatedBy());
 
-        salesMapper.insertSettlement(settlementVO);
+        settlementMapper.insertSettlement(settlementVO);
     }
 
     // 대시보드 조회
@@ -199,7 +199,7 @@ public class SalesService {
         params.put("customerId", customerId);
         params.put("itemId", itemId);
 
-        return salesMapper.getDashboardSummary(params);
+        return settlementMapper.getDashboardSummary(params);
     }
 
     // 대시보드 차트
@@ -214,7 +214,7 @@ public class SalesService {
         params.put("customerId", customerId);
         params.put("itemId", itemId);
 
-        return salesMapper.getSalesChart(params);
+        return settlementMapper.getSalesChart(params);
     }
 
     // 거래처별 매출 TOP 5 조회
@@ -222,7 +222,7 @@ public class SalesService {
         Map<String, Object> params = new HashMap<>();
         params.put("startDate", startDate);
         params.put("endDate", endDate);
-        return salesMapper.getCustomerTop5(params);
+        return settlementMapper.getCustomerTop5(params);
     }
 
     // 품목별 매출 TOP5 조회
@@ -230,6 +230,6 @@ public class SalesService {
         Map<String, Object> params = new HashMap<>();
         params.put("startDate", startDate);
         params.put("endDate", endDate);
-        return salesMapper.getProductTop5(params);
+        return settlementMapper.getProductTop5(params);
     }
 }

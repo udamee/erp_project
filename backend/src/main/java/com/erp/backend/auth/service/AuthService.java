@@ -10,7 +10,7 @@ import com.erp.backend.auth.mapper.AuthMapper;
 import com.erp.backend.auth.mapper.RefreshTokenMapper;
 import com.erp.backend.auth.vo.RefreshTokenVO;
 import com.erp.backend.common.CustomException;
-import com.erp.backend.common.EmployeeStatus;
+import com.erp.backend.employee.util.EmployeeStatus;
 import com.erp.backend.common.ErrorCode;
 import com.erp.backend.employee.vo.EmployeeVO;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +24,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -66,9 +67,11 @@ public class AuthService {
         Long empId = employee.getEmpId();
         String role = employee.getRoleCode();
         String deptCode = employee.getDeptCode();
+        List<String> exAuths = authMapper.findExceptionAuths(deptCode, "ROLE_" +role);
+
 
         // 토큰 생성
-        String accessToken = jwtTokenProvider.generateAccessToken(empId, deptCode, role);
+        String accessToken = jwtTokenProvider.generateAccessToken(empId, deptCode, role, exAuths);
         String refreshToken = jwtTokenProvider.generateRefreshToken(empId);
 
         // Refresh Token DB 저장
@@ -112,7 +115,8 @@ public class AuthService {
 
         String role = employee.getRoleCode();
         String deptCode = employee.getDeptCode();
-        String newAccessToken = jwtTokenProvider.generateAccessToken(empId, deptCode, role);
+        List<String> exAuths = authMapper.findExceptionAuths(deptCode, "ROLE_" +role);
+        String newAccessToken = jwtTokenProvider.generateAccessToken(empId, deptCode, role, exAuths);
         String newRefreshToken = jwtTokenProvider.generateRefreshToken(empId);
 
         refreshTokenMapper.saveRefreshToken(
@@ -170,6 +174,16 @@ public class AuthService {
         }
 
         authMapper.updatePassword(empId, passwordEncoder.encode(dto.getNewPassword()));
+    }
+
+    // 5-1. 관리자 비밀번호 초기화 (현재 비번 확인 없이 새 비번으로 재설정, ADMIN 전용)
+    @Transactional
+    public void resetPassword(Long empId, String newPassword) {
+        EmployeeVO employee = authMapper.findEmployeeByEmpId(empId);
+        if (employee == null) {
+            throw new CustomException(ErrorCode.EMPLOYEE_NOT_FOUND);
+        }
+        authMapper.updatePassword(empId, passwordEncoder.encode(newPassword));
     }
 
     // 6. 응답 DTO 빌더

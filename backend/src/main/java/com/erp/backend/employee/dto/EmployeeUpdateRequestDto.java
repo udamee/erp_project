@@ -9,12 +9,10 @@ import java.time.LocalDate;
 @Setter
 public class EmployeeUpdateRequestDto {
 
-    private String password; //로그인 패스워드
+    // password 는 reset-password, roleCode 는 /role, status 는 /status 전용 API로 분리
     private String empName; //직원이름
     private String phone; //직원 연락처
     private String email; //직원 이메일
     private Long deptId; //직원 부서
-    private String roleCode; //직원 권한
-    private String status; //재직여부
     private LocalDate hireDate; //입사일
 }

@@ -1,4 +1,4 @@
-package com.erp.backend.sales.vo;
+package com.erp.backend.settlement.vo;
 
 import lombok.Getter;
 import lombok.Setter;

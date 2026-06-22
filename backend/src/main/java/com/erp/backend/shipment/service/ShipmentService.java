@@ -183,7 +183,7 @@ public class ShipmentService {
         stockMovementVO.setInventoryLotId(lotId);
         int result = shipmentMapper.changeStockMovement(stockMovementVO);
         if(result!=1){
-            throw new CustomException(ErrorCode.STCOKMOVEMENT_FAILED);
+            throw new CustomException(ErrorCode.STOCK_MOVEMENT_FAILED);
         }
     }
 
@@ -199,7 +199,7 @@ public class ShipmentService {
     }
 
     //주문의 출고 가능 상태 조회
-    public SalesOrderRequestVO verifyingSalesOrderStatusBySoId(int salesOrderId){
+    public List<SalesOrderRequestVO> verifyingSalesOrderStatusBySoId(int salesOrderId){
         return shipmentMapper.verifyingSalesOrderStatusBySoId(salesOrderId);
     }
 

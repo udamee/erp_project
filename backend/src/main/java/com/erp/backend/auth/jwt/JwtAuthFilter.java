@@ -7,12 +7,14 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -39,10 +41,26 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             String role = jwtTokenProvider.getRole(token);
             String dept = jwtTokenProvider.getDeptCode(token);
 
+            List<GrantedAuthority> authorities = new ArrayList<>();
+            authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+
+            List<String> exAuths = jwtTokenProvider.getExceptionAuths(token); // ex 클레임 추출
+            if (exAuths != null) {
+                exAuths.forEach(code -> authorities.add(new SimpleGrantedAuthority(code)));
+            }
+
+            if ("ADMIN".equals(role)) {
+                // ADMIN holds every department authority
+                authorities.add(new SimpleGrantedAuthority("DEPT_HR"));
+                authorities.add(new SimpleGrantedAuthority("DEPT_SAL"));
+                authorities.add(new SimpleGrantedAuthority("DEPT_LOG"));
+                authorities.add(new SimpleGrantedAuthority("DEPT_FIN"));
+            } else if (StringUtils.hasText(dept)) {
+                authorities.add(new SimpleGrantedAuthority(dept));
+            }
+
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                    empId,
-                    null,
-                    List.of(new SimpleGrantedAuthority("ROLE_" + role), new SimpleGrantedAuthority(dept)));
+                    empId, null, authorities);
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
 

@@ -1,6 +1,6 @@
-package com.erp.backend.sales.mapper;
+package com.erp.backend.settlement.mapper;
 
-import com.erp.backend.sales.vo.*;
+import com.erp.backend.settlement.vo.*;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.math.BigDecimal;
@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 @Mapper
-public interface SalesMapper {
+public interface SettlementMapper {
     // 목록 조회
     // 매출청구 (Sales Invoice)
     List<SalesInvoiceVO> findAllSalesInvoices(Map<String, Object> params);

@@ -4,11 +4,11 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="com.erp.backend.sales.mapper.SalesMapper">
+<mapper namespace="com.erp.backend.settlement.mapper.SettlementMapper">
     <!-- 매출청구 목록/조건 조회 -->
     <select id="findAllSalesInvoices"
             parameterType="map"
-            resultType="com.erp.backend.sales.vo.SalesInvoiceVO">
+            resultType="com.erp.backend.settlement.vo.SalesInvoiceVO">
         SELECT
             SI.SALES_INVOICE_ID,
             SI.SO_ID,
@@ -38,7 +38,7 @@
     <!-- 매입청구 목록/조건 조회 -->
     <select id="findAllPurchaseInvoices"
             parameterType="map"
-            resultType="com.erp.backend.sales.vo.PurchaseInvoiceVO">
+            resultType="com.erp.backend.settlement.vo.PurchaseInvoiceVO">
         SELECT
             PI.PURCHASE_INVOICE_ID,
             PI.PO_ID,
@@ -68,7 +68,7 @@
     <!-- 매출채권/미수금 목록/조건 조회 -->
     <select id="findAllAccountReceivables"
             parameterType="map"
-            resultType="com.erp.backend.sales.vo.AccountReceivableVO">
+            resultType="com.erp.backend.settlement.vo.AccountReceivableVO">
         SELECT
             AR.AR_ID,
             AR.CUSTOMER_ID,
@@ -99,7 +99,7 @@
     <!-- 매입채무/미지급금 목록/조건 조회 -->
     <select id="findAllAccountPayables"
             parameterType="map"
-            resultType="com.erp.backend.sales.vo.AccountPayableVO">
+            resultType="com.erp.backend.settlement.vo.AccountPayableVO">
         SELECT
             AP.AP_ID,
             AP.SUPPLIER_ID,
@@ -130,7 +130,7 @@
 
     <!-- 수금내역 조회 -->
     <select id="findAllPayments"
-            resultType="com.erp.backend.sales.vo.PaymentVO">
+            resultType="com.erp.backend.settlement.vo.PaymentVO">
         SELECT
             P.PAYMENT_ID,
             P.AR_ID,
@@ -157,7 +157,7 @@
     <!-- 손익정산 조회 -->
     <select id="findAllSettlements"
             parameterType="map"
-            resultType="com.erp.backend.sales.vo.SettlementVO">
+            resultType="com.erp.backend.settlement.vo.SettlementVO">
         SELECT *
         FROM SETTLEMENT
         WHERE 1 = 1
@@ -172,7 +172,7 @@
 
     <!-- 매출청구 상세 조회 -->
     <select id="findSalesInvoiceById"
-            resultType="com.erp.backend.sales.vo.SalesInvoiceVO">
+            resultType="com.erp.backend.settlement.vo.SalesInvoiceVO">
         SELECT
             SI.SALES_INVOICE_ID,
             SI.SO_ID,
@@ -190,7 +190,7 @@
 
     <!-- 매입청구 상세 조회 -->
     <select id="findPurchaseInvoiceById"
-            resultType="com.erp.backend.sales.vo.PurchaseInvoiceVO">
+            resultType="com.erp.backend.settlement.vo.PurchaseInvoiceVO">
         SELECT
             PI.PURCHASE_INVOICE_ID,
             PI.PO_ID,
@@ -208,7 +208,7 @@
 
     <!-- 매출채권/미수금 상세 조회 -->
     <select id="findAccountReceivableById"
-            resultType="com.erp.backend.sales.vo.AccountReceivableVO">
+            resultType="com.erp.backend.settlement.vo.AccountReceivableVO">
         SELECT
             AR.AR_ID,
             AR.CUSTOMER_ID,
@@ -228,7 +228,7 @@
 
     <!-- 매입채무/미지급금 상세 조회 -->
     <select id="findAccountPayableById"
-            resultType="com.erp.backend.sales.vo.AccountPayableVO">
+            resultType="com.erp.backend.settlement.vo.AccountPayableVO">
         SELECT
             AP.AP_ID,
             AP.SUPPLIER_ID,
@@ -248,7 +248,7 @@
 
     <!-- 수금내역 상세 조회 -->
     <select id="findPaymentById"
-            resultType="com.erp.backend.sales.vo.PaymentVO">
+            resultType="com.erp.backend.settlement.vo.PaymentVO">
         SELECT *
         FROM PAYMENT
         WHERE PAYMENT_ID = #{paymentId}
@@ -256,7 +256,7 @@
 
     <!-- 손익정산 상세 조회 -->
     <select id="findSettlementById"
-            resultType="com.erp.backend.sales.vo.SettlementVO">
+            resultType="com.erp.backend.settlement.vo.SettlementVO">
         SELECT *
         FROM SETTLEMENT
         WHERE SETTLEMENT_ID = #{settlementId}
@@ -264,7 +264,7 @@
 
     <!-- 매출청구 등록 -->
     <insert id="insertSalesInvoice"
-            parameterType="com.erp.backend.sales.vo.SalesInvoiceVO">
+            parameterType="com.erp.backend.settlement.vo.SalesInvoiceVO">
         <selectKey keyProperty="salesInvoiceId"
                    resultType="int"
                    order="BEFORE">
@@ -291,7 +291,7 @@
 
     <!-- 매출채권(미수금) 등록 -->
     <insert id="insertAccountReceivable"
-            parameterType="com.erp.backend.sales.vo.AccountReceivableVO">
+            parameterType="com.erp.backend.settlement.vo.AccountReceivableVO">
         INSERT INTO ACCOUNT_RECEIVABLE (
             AR_ID,
             CUSTOMER_ID,
@@ -317,7 +317,7 @@
 
     <!-- 수금 처리 -->
     <insert id="insertPayment"
-            parameterType="com.erp.backend.sales.vo.PaymentVO">
+            parameterType="com.erp.backend.settlement.vo.PaymentVO">
         INSERT INTO PAYMENT (
             PAYMENT_ID,
             AR_ID,
@@ -341,7 +341,7 @@
 
     <!-- 미수금 차감 -->
     <update id="updateAccountReceivablePayment"
-            parameterType="com.erp.backend.sales.vo.PaymentVO">
+            parameterType="com.erp.backend.settlement.vo.PaymentVO">
         UPDATE ACCOUNT_RECEIVABLE
         SET
             PAID_AMOUNT = PAID_AMOUNT + #{paymentAmount},
@@ -400,7 +400,7 @@
 
     <!-- 손익정산 등록 -->
     <insert id="insertSettlement"
-            parameterType="com.erp.backend.sales.vo.SettlementVO">
+            parameterType="com.erp.backend.settlement.vo.SettlementVO">
         INSERT INTO SETTLEMENT (
             SETTLEMENT_ID,
             START_DATE,
@@ -431,7 +431,7 @@
     <!-- 대시보드 조회 -->
     <select id="getDashboardSummary"
             parameterType="map"
-            resultType="com.erp.backend.sales.vo.DashboardVO">
+            resultType="com.erp.backend.settlement.vo.DashboardVO">
         SELECT
             (SELECT NVL(SUM(TOTAL_AMOUNT),0)
             FROM SALES_INVOICE
@@ -571,7 +571,7 @@
     <!-- 기간별 매출 차트 조회 -->
     <select id="getSalesChart"
             parameterType="map"
-            resultType="com.erp.backend.sales.vo.SalesChartVO">
+            resultType="com.erp.backend.settlement.vo.SalesChartVO">
         SELECT
             TO_CHAR(SI.ISSUE_DATE, 'YYYY-MM') AS PERIOD,
             NVL(SUM(SI.TOTAL_AMOUNT), 0) AS SALES_AMOUNT
@@ -593,7 +593,7 @@
     <!-- 거래처별 매출 TOP 5 조회 -->
     <select id="getCustomerTop5"
             parameterType="map"
-            resultType="com.erp.backend.sales.vo.SalesChartVO">
+            resultType="com.erp.backend.settlement.vo.SalesChartVO">
         SELECT
             NULL AS PERIOD,
             SI.CUSTOMER_ID,
@@ -617,7 +617,7 @@
     <!-- 품목별 매출 TOP 5 조회 -->
     <select id="getProductTop5"
             parameterType="map"
-            resultType="com.erp.backend.sales.vo.SalesChartVO">
+            resultType="com.erp.backend.settlement.vo.SalesChartVO">
         SELECT
             SOD.PRODUCT_ID,
             P.PRODUCT_NAME,

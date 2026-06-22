@@ -182,7 +182,7 @@
               #{soId},
               #{customerId},
               #{reqEmployeeId},
-              #{orderDate},
+              SYSDATE,
               #{status},
               #{totalAmount},
               SYSDATE

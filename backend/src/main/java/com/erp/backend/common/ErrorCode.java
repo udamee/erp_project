@@ -28,6 +28,14 @@ public enum ErrorCode {
     // 사원
     EMPLOYEE_NOT_FOUND(HttpStatus.NOT_FOUND, "사원을 찾을 수 없습니다."),
     EMPLOYEE_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 존재하는 사원입니다."),
+    INVALID_ROLE(HttpStatus.BAD_REQUEST, "유효하지 않은 역할입니다."),
+    INVALID_STATUS(HttpStatus.BAD_REQUEST, "유효하지 않은 계정 상태입니다."),
+
+    // 근태
+    ATTENDANCE_NOT_FOUND(HttpStatus.NOT_FOUND, "근태 기록을 찾을 수 없습니다."),
+    ALREADY_CHECKED_IN(HttpStatus.BAD_REQUEST, "이미 출근 처리되었습니다."),
+    NOT_CHECKED_IN(HttpStatus.BAD_REQUEST, "출근 기록이 없습니다."),
+    ALREADY_CHECKED_OUT(HttpStatus.BAD_REQUEST, "이미 퇴근 처리되었습니다."),
 
     // 부서
     DEPARTMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "부서를 찾을 수 없습니다."),
@@ -46,10 +54,12 @@ public enum ErrorCode {
     INVALID_EXPIRY_DATE(HttpStatus.BAD_REQUEST, "유효기간이 만료된 의약품입니다."),
 
     // 주문
+    SALES_ORDER_REQUEST_INVALID(HttpStatus.BAD_REQUEST,"주문 요청이 유효하지 않습니다"),
     SALES_ORDER_FAILED(HttpStatus.BAD_REQUEST,"주문을 요청할 수 없습니다"),
     SALES_NOT_AVAILABLE_STOCK(HttpStatus.BAD_REQUEST,"재고가 부족합니다."),
     SALES_NOT_AMOUNT_MATCHED(HttpStatus.BAD_REQUEST,"금액이 일치하지 않습니다"),
     SALES_APPROVE_FAILED(HttpStatus.BAD_REQUEST,"승인이 되지 않았습니다"),
+    SALES_ALREADY_APPROVED(HttpStatus.BAD_REQUEST,"승인이 이미 되었습니다"),
     SALES_LOT_ALLOCATE_FAILED(HttpStatus.CONFLICT,"로트번호 배정 작업이 실패했습니다"),
 
     // 거래처 관련
@@ -62,7 +72,7 @@ public enum ErrorCode {
     SHIPMENT_DETAIL_FAILED(HttpStatus.BAD_REQUEST,"배송 세부내역 생성에 실패했습니다"),
 
     // 재고
-    STCOKMOVEMENT_FAILED(HttpStatus.BAD_REQUEST,"재고변동이력 생성에 실패했습니다.");
+    STOCK_MOVEMENT_FAILED(HttpStatus.BAD_REQUEST,"재고변동이력 생성에 실패했습니다.");
 
 
     private final HttpStatus status;

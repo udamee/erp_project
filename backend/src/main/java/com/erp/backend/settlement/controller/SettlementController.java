@@ -1,10 +1,10 @@
-package com.erp.backend.sales.controller;
+package com.erp.backend.settlement.controller;
 
 import com.erp.backend.common.ApiResponse;
-import com.erp.backend.sales.dto.SalesRequestDto;
-import com.erp.backend.sales.dto.SettlementRequestDto;
-import com.erp.backend.sales.service.SalesService;
-import com.erp.backend.sales.vo.*;
+import com.erp.backend.settlement.dto.SalesRequestDto;
+import com.erp.backend.settlement.dto.SettlementRequestDto;
+import com.erp.backend.settlement.service.SettlementService;
+import com.erp.backend.settlement.vo.*;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -14,10 +14,10 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/sales")
-public class SalesController {
+@RequestMapping("/api/settlement")
+public class SettlementController {
 
-    private final SalesService salesService;
+    private final SettlementService settlementService;
 
     @Operation(summary = "매출청구 조회")
     @GetMapping("/invoices")
@@ -26,7 +26,7 @@ public class SalesController {
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate) {
         return ResponseEntity.ok(
-                ApiResponse.success(salesService.getSalesInvoiceList(status, startDate, endDate))
+                ApiResponse.success(settlementService.getSalesInvoiceList(status, startDate, endDate))
         );
     }
 
@@ -37,7 +37,7 @@ public class SalesController {
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate) {
         return ResponseEntity.ok(
-                ApiResponse.success(salesService.getPurchaseInvoiceList(status, startDate, endDate))
+                ApiResponse.success(settlementService.getPurchaseInvoiceList(status, startDate, endDate))
         );
     }
 
@@ -48,7 +48,7 @@ public class SalesController {
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate) {
         return ResponseEntity.ok(
-                ApiResponse.success(salesService.getAccountReceivableList(status, startDate, endDate))
+                ApiResponse.success(settlementService.getAccountReceivableList(status, startDate, endDate))
         );
     }
 
@@ -59,7 +59,7 @@ public class SalesController {
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate) {
         return ResponseEntity.ok(
-                ApiResponse.success(salesService.getAccountPayableList(status, startDate, endDate))
+                ApiResponse.success(settlementService.getAccountPayableList(status, startDate, endDate))
         );
     }
 
@@ -69,7 +69,7 @@ public class SalesController {
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate) {
         return ResponseEntity.ok(
-                ApiResponse.success(salesService.getPaymentList(startDate, endDate))
+                ApiResponse.success(settlementService.getPaymentList(startDate, endDate))
         );
     }
 
@@ -79,7 +79,7 @@ public class SalesController {
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate) {
         return ResponseEntity.ok(
-                ApiResponse.success(salesService.getSettlementList(startDate, endDate))
+                ApiResponse.success(settlementService.getSettlementList(startDate, endDate))
         );
     }
 
@@ -87,7 +87,7 @@ public class SalesController {
     @GetMapping("/invoices/{salesInvoiceId}")
     public ResponseEntity<ApiResponse<SalesInvoiceVO>> getSalesInvoice(@PathVariable Long salesInvoiceId) {
         return ResponseEntity.ok(
-                ApiResponse.success(salesService.getSalesInvoice(salesInvoiceId))
+                ApiResponse.success(settlementService.getSalesInvoice(salesInvoiceId))
         );
     }
 
@@ -95,7 +95,7 @@ public class SalesController {
     @GetMapping("/purchase-invoices/{purchaseInvoiceId}")
     public ResponseEntity<ApiResponse<PurchaseInvoiceVO>> getPurchaseInvoice(@PathVariable Long purchaseInvoiceId) {
         return ResponseEntity.ok(
-                ApiResponse.success(salesService.getPurchaseInvoice(purchaseInvoiceId))
+                ApiResponse.success(settlementService.getPurchaseInvoice(purchaseInvoiceId))
         );
     }
 
@@ -103,7 +103,7 @@ public class SalesController {
     @GetMapping("/receivables/{arId}")
     public ResponseEntity<ApiResponse<AccountReceivableVO>> getAccountReceivable(@PathVariable Long arId) {
         return ResponseEntity.ok(
-                ApiResponse.success(salesService.getAccountReceivable(arId))
+                ApiResponse.success(settlementService.getAccountReceivable(arId))
         );
     }
 
@@ -111,7 +111,7 @@ public class SalesController {
     @GetMapping("/payables/{apId}")
     public ResponseEntity<ApiResponse<AccountPayableVO>> getAccountPayable(@PathVariable Long apId) {
         return ResponseEntity.ok(
-                ApiResponse.success(salesService.getAccountPayable(apId))
+                ApiResponse.success(settlementService.getAccountPayable(apId))
         );
     }
 
@@ -119,7 +119,7 @@ public class SalesController {
     @GetMapping("/payments/{paymentId}")
     public ResponseEntity<ApiResponse<PaymentVO>> getPayment(@PathVariable Long paymentId) {
         return ResponseEntity.ok(
-                ApiResponse.success(salesService.getPayment(paymentId))
+                ApiResponse.success(settlementService.getPayment(paymentId))
         );
     }
 
@@ -127,7 +127,7 @@ public class SalesController {
     @GetMapping("/settlements/{settlementId}")
     public ResponseEntity<ApiResponse<SettlementVO>> getSettlement(@PathVariable Long settlementId) {
         return ResponseEntity.ok(
-                ApiResponse.success(salesService.getSettlement(settlementId))
+                ApiResponse.success(settlementService.getSettlement(settlementId))
         );
     }
 
@@ -143,7 +143,7 @@ public class SalesController {
         salesInvoiceVO.setTotalAmount(requestDto.getTotalAmount());
         salesInvoiceVO.setStatus(requestDto.getStatus());
 
-        salesService.createSalesInvoice(
+        settlementService.createSalesInvoice(
                 salesInvoiceVO,
                 accountReceivableVO
         );
@@ -154,14 +154,14 @@ public class SalesController {
     @Operation(summary = "수금 처리")
     @PostMapping("/payments")
     public ResponseEntity<String> createPayment(@RequestBody PaymentVO paymentVO) {
-        salesService.createPayment(paymentVO);
+        settlementService.createPayment(paymentVO);
         return ResponseEntity.ok("수금 처리 완료");
     }
 
     @Operation(summary = "손익정산 등록")
     @PostMapping("/settlements")
     public ResponseEntity<String> createSettlement(@RequestBody SettlementRequestDto requestDto) {
-        salesService.createSettlement(requestDto);
+        settlementService.createSettlement(requestDto);
         return ResponseEntity.ok("손익정산 등록 완료");
     }
 
@@ -172,7 +172,7 @@ public class SalesController {
             @RequestParam(required = false) String endDate,
             @RequestParam(required = false) Integer customerId,
             @RequestParam(required = false) Integer itemId) {
-        DashboardVO dashboardVO = salesService.getDashboardSummary(startDate, endDate, customerId, itemId);
+        DashboardVO dashboardVO = settlementService.getDashboardSummary(startDate, endDate, customerId, itemId);
         return ResponseEntity.ok(
                 ApiResponse.success(dashboardVO)
         );
@@ -185,7 +185,7 @@ public class SalesController {
             @RequestParam(required = false) String endDate,
             @RequestParam(required = false) Integer customerId,
             @RequestParam(required = false) Integer itemId) {
-        List<SalesChartVO> salesChart = salesService.getSalesChart(startDate, endDate, customerId, itemId);
+        List<SalesChartVO> salesChart = settlementService.getSalesChart(startDate, endDate, customerId, itemId);
         return ResponseEntity.ok(
                 ApiResponse.success(salesChart)
         );
@@ -196,7 +196,7 @@ public class SalesController {
     public ResponseEntity<ApiResponse<List<SalesChartVO>>> getCustomerTop5(
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate) {
-        List<SalesChartVO> customerTop5 = salesService.getCustomerTop5(startDate, endDate);
+        List<SalesChartVO> customerTop5 = settlementService.getCustomerTop5(startDate, endDate);
         return ResponseEntity.ok(
                 ApiResponse.success(customerTop5)
         );
@@ -207,7 +207,7 @@ public class SalesController {
     public ResponseEntity<ApiResponse<List<SalesChartVO>>> getProductTop5(
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate) {
-        List<SalesChartVO> productTop5 = salesService.getProductTop5(startDate, endDate);
+        List<SalesChartVO> productTop5 = settlementService.getProductTop5(startDate, endDate);
 
         return ResponseEntity.ok(
                 ApiResponse.success(productTop5)

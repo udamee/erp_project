@@ -11,7 +11,7 @@
 
 | 축 | 값 | 성격 |
 |---|---|---|
-| **역할(Role)** | `EMPLOYEE` < `MANAGER` < `ADMIN` | 수직 — 계층 있음 (상위가 하위 권한 포함) |
+| **역할(Role)** | `STAFF` < `MANAGER` < `ADMIN` | 수직 — 계층 있음 (상위가 하위 권한 포함) |
 | **부서(Dept)** | `DEPT_HR` / `DEPT_SAL` / `DEPT_LOG` / `DEPT_FIN` | 수평 — 계층 없음, 서로 배타적 |
 
 예) "인사부 Manager만 직원 승인 가능" = `역할 ≥ MANAGER` **AND** `부서 == DEPT_HR`
@@ -20,7 +20,7 @@
 `hasRole('MANAGER')` 한 줄이면 **ADMIN도 자동 통과**합니다. (상위 역할이 하위를 포함)
 
 ```
-ROLE_ADMIN > ROLE_MANAGER > ROLE_EMPLOYEE
+ROLE_ADMIN > ROLE_MANAGER > ROLE_STAFF
 ```
 
 ### 코드 값 정의
@@ -31,7 +31,7 @@ ROLE_ADMIN > ROLE_MANAGER > ROLE_EMPLOYEE
 | 부서 | `DEPT_SAL` | 영업관리부 |
 | 부서 | `DEPT_LOG` | 물류관리부 |
 | 부서 | `DEPT_FIN` | 경영지원부 |
-| 역할 | `EMPLOYEE` | 사원(Employee) |
+| 역할 | `STAFF` | 사원(Staff) |
 | 역할 | `MANAGER` | 매니저 |
 | 역할 | `ADMIN` | 시스템 관리자 |
 

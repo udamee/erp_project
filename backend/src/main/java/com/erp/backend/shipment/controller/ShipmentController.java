@@ -20,7 +20,7 @@ public class ShipmentController {
         this.shipmentService = shipmentService;
     }
 
-    //출고 몰록 조회
+    //출고 목록 조회
     @GetMapping
     public ResponseEntity<List<ShipmentVO>> getShipments(@RequestParam(required = false) Integer salesOrderId,
                                                          @RequestParam(required = false) String status,
@@ -42,13 +42,13 @@ public class ShipmentController {
     }
 
     //출고 가능 주문 검증
-    @GetMapping("/{salesOrderId}/verify")
-    public ResponseEntity<ApiResponse<SalesOrderRequestVO>> verify(@PathVariable Integer salesOrderId){
+    @GetMapping("/verify/{salesOrderId}")
+    public ResponseEntity<ApiResponse<List<SalesOrderRequestVO>>> verify(@PathVariable Integer salesOrderId){
         return ResponseEntity.ok(ApiResponse.success("OK",shipmentService.verifyingSalesOrderStatusBySoId(salesOrderId)));
     }
 
     //출고 결과 조회
-    @GetMapping("/{shipmentId}/result")
+    @GetMapping("/result/{shipmentId}")
     public ResponseEntity<ApiResponse<List<ShipmentResultVO>>> findShipmentResult(@PathVariable int shipmentId){
         return ResponseEntity.ok(ApiResponse.success("OK",shipmentService.findShipmentResult(shipmentId)));
     }

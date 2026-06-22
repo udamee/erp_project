@@ -59,7 +59,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/purchase-orders/*/reject")
                         .hasAnyRole("MANAGER", "ADMIN")
                         // STORE 허용
-                        .requestMatchers("/api/sales/**").permitAll()
+                        .requestMatchers("/api/sales-order/**").permitAll()
+                        .requestMatchers("/api/shipment/**").permitAll()
+                        .requestMatchers("/api/settlement/**").permitAll()
                         // 나머지는 인증 필요
                         .anyRequest().authenticated())
                 .addFilterBefore(new JwtAuthFilter(jwtTokenProvider),
@@ -75,7 +77,7 @@ public class SecurityConfig {
 
     @Bean
     static RoleHierarchy roleHierarchy() {
-        return RoleHierarchyImpl.fromHierarchy("ROLE_ADMIN > ROLE_MANAGER > ROLE_EMPLOYEE");
+        return RoleHierarchyImpl.fromHierarchy("ROLE_ADMIN > ROLE_MANAGER > ROLE_STAFF");
     }
 
     @Bean

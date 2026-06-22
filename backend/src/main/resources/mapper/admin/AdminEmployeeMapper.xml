@@ -14,7 +14,7 @@
                ROLE_CODE,
                STATUS
         FROM EMPLOYEE
-        WHERE ROLE_CODE = 'EMPLOYEE'
+        WHERE ROLE_CODE = 'STAFF'
           AND STATUS = #{status}
 
     </select>
@@ -23,7 +23,7 @@
         UPDATE EMPLOYEE
         SET STATUS=#{status}, UPDATED_AT=SYSDATE
         WHERE EMP_ID=#{empId}
-          AND ROLE_CODE = 'EMPLOYEE'
+          AND ROLE_CODE = 'STAFF'
           AND STATUS = 'PENDING'
     </update>
 </mapper>
