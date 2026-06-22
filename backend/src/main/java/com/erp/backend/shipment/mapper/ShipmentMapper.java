@@ -53,4 +53,7 @@ public interface ShipmentMapper {
     List<StockMovementSearchVO> searchStockMovement(StockMovementSearchVO stockMovementSearchVO);
     //출고 처리 결과 조회
     List<ShipmentResultVO> findShipmentResult(int shipmentId);
+    //안전재고 검사 결과 조회
+    ProductStockCheckVO findShippableProductForShipment(int productId);
+    StockMovementSearchVO searchStockMovementHeader(int productId);
 }

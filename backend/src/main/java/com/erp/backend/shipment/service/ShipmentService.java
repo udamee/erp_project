@@ -262,4 +262,7 @@ public class ShipmentService {
         return shipmentMapper.searchShipmentHistory(salesOrderId);
     }
 
+    //재고 조회
+//    public
+
 }

@@ -392,6 +392,22 @@
             so.so_id,
             sh.shipment_id
     </select>
+    <select id="searchStockMovementHeader" resultType="StockMovementSearchVO">
+        SELECT
+            il.inventory_lot_id,
+            pr.product_id,
+            pr.product_code,
+            pr.product_name,
+            il.lot_no,
+            il.expiry_date,
+            il.current_qty AS qty,
+            il.location,
+            il.status,
+            il.created_at
+        FROM inventory_lot il
+        JOIN Product pr ON pr.product_id=il.product_id
+        WHERE pr.product_id=#{productId}
+    </select>
     <select id="searchStockMovement" resultType="StockMovementSearchVO">
         SELECT
             pro.product_id,
@@ -432,7 +448,7 @@
             <if test="productName != null and productName != ''">
                 AND pro.product_name=#{productName}
             </if>
-            <if test="lotNo != null and lotNo != ' '">
+            <if test="lotNo != null and lotNo != ''">
                 AND il.lot_no=#{lotNo}
             </if>
             <if test="sourceType != null and sourceType != ''">

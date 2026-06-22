@@ -55,7 +55,7 @@ public class ShipmentController {
 
     //재고 변동 이력 조회
     @PostMapping("/stock-movement")
-    public ResponseEntity<ApiResponse<List<StockMovementSearchVO>>> searchStockMovementHistory(@RequestBody StockMovementSearchVO stockMovementSearchVO){
+    public ResponseEntity<ApiResponse<List<StockMovementSearchVO>>> searchStockMovementHistory(@RequestBody(required = false) StockMovementSearchVO stockMovementSearchVO){
         return ResponseEntity.ok(ApiResponse.success("OK",shipmentService.searchStockMovementHistory(stockMovementSearchVO)));
     }
 
