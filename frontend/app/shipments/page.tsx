@@ -6,22 +6,19 @@ import { Badge, Button, Card, Flex, Space, Table, Tabs, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table';
 import ErpLayout from '@/components/ErpLayout';
 import StatusBadge from '@/components/StatusBadge';
-import { salesOrderApi, SalesOrder } from '@/lib/api';
+import { Shipment, shipmentApi } from '@/lib/api';
 
 const TABS = [
-  { key: '', label: '전체' },
-  { key: 'REQUESTED', label: '승인 대기' },
-  { key: 'APPROVED', label: '승인 완료 ' },
-  { key: 'SHIPPED', label: '출고 완료' },
-  { key: 'CANCELED', label: '취소됨' },
+  { key: 'SHIPPED', label: '배송 완료 ' },
+  { key: 'CANCELED', label: '배송 취소' },
 ];
 
-export default function SalesOrderListPage() {
+export default function ShipmentListPage() {
   const router = useRouter();
 
-  const [orders, setOrders] = useState<SalesOrder[]>([]);
+  const [shipments, setShipments] = useState<Shipment[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
-  const [tab, setTab] = useState('');
+  const [tab, setTab] = useState('SHIPPED');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -29,7 +26,7 @@ export default function SalesOrderListPage() {
   const totalCount = Object.values(counts).reduce((a, b) => a + b, 0);
 
   useEffect(() => {
-    salesOrderApi
+    shipmentApi
       .statusCount()
       .then(setCounts)
       .catch(() => {});
@@ -37,16 +34,30 @@ export default function SalesOrderListPage() {
 
   useEffect(() => {
     setLoading(true);
-    salesOrderApi
-      .listPaging(tab, page, 20)
+    shipmentApi
+      .listPaging(page, 20, tab)
       .then((res) => {
-        setOrders(res.list);
+        setShipments(res.list);
         setTotal(res.total);
       })
-      .finally(() => setLoading(false));
+      .catch(() => {})
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [page, tab]);
+
+  useEffect(() => {
+    // setLoading(true);
+    // salesOrderApi
+    //   .listPaging(tab, page, 20)
+    //   .then((res) => {
+    //     setOrders(res.list);
+    //     setTotal(res.total);
+    //   })
+    //   .finally(() => setLoading(false));
   }, [tab, page]);
 
-  const columns = useMemo<ColumnsType<SalesOrder>>(
+  const columns = useMemo<ColumnsType<Shipment>>(
     () => [
       {
         title: '주문번호',
@@ -58,16 +69,16 @@ export default function SalesOrderListPage() {
         ),
       },
       {
-        title: '고객사명',
-        dataIndex: 'customerName',
+        title: '배송번호',
+        dataIndex: 'shipmentId',
       },
       {
-        title: '기안자',
-        dataIndex: 'reqEmployeeName',
+        title: '배송 담당자',
+        dataIndex: 'employeeName',
       },
       {
-        title: '주문접수일',
-        dataIndex: 'orderDate',
+        title: '배송일자',
+        dataIndex: 'shipmentDate',
         render: (value?: string) => value?.slice(0, 10) ?? '-',
       },
       {
@@ -76,17 +87,16 @@ export default function SalesOrderListPage() {
         render: (status: string) => <StatusBadge status={status} />,
       },
       {
-        title: '총금액',
-        dataIndex: 'totalAmount',
-        align: 'right',
-        render: (value?: number) => `${value?.toLocaleString() ?? 0}원`,
+        title: '생성일자',
+        dataIndex: 'createdAt',
+        render: (value?: string) => value?.slice(0, 10) ?? '-',
       },
     ],
     [],
   );
 
   return (
-    <ErpLayout title="판매 주문 관리">
+    <ErpLayout title="출고 관리">
       <Card>
         <Tabs
           activeKey={tab}
@@ -111,17 +121,13 @@ export default function SalesOrderListPage() {
 
         <Flex justify="space-between" align="center" style={{ marginBottom: 12 }}>
           <Typography.Text type="secondary">총 {total}건</Typography.Text>
-
-          <Button type="primary" onClick={() => router.push('/sales-orders/new')}>
-            판매 주문 등록
-          </Button>
         </Flex>
 
         <Table
-          rowKey="soId"
+          rowKey="shipmentId"
           loading={loading}
           columns={columns}
-          dataSource={orders}
+          dataSource={shipments}
           pagination={{
             current: page,
             pageSize: 20,
@@ -129,11 +135,11 @@ export default function SalesOrderListPage() {
             showSizeChanger: false,
             onChange: setPage,
           }}
-          locale={{ emptyText: '주문 내역이 없습니다.' }}
+          locale={{ emptyText: '배송 내역이 없습니다.' }}
           onRow={(record) => ({
             className: 'erp-clickable-row',
             onClick: () => {
-              (console.log(record), router.push(`/sales-orders/${record.soId}`));
+              router.push(`/shipments/${record.shipmentId}`);
             },
           })}
         />

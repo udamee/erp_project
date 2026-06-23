@@ -6,7 +6,7 @@ import { App, Button, Card, Descriptions, Flex, Input, Space, Table, Typography 
 import type { ColumnsType } from 'antd/es/table';
 import ErpLayout from '@/components/ErpLayout';
 import StatusBadge from '@/components/StatusBadge';
-import { purchaseOrderApi, salesOrderApi, SalesOrder } from '@/lib/api';
+import { purchaseOrderApi, salesOrderApi, SalesOrder, shipmentApi } from '@/lib/api';
 
 const { Text } = Typography;
 
@@ -39,15 +39,16 @@ export default function SalesOrderDetailPage() {
 
   const handleApprove = () => {
     modal.confirm({
-      title: '발주 승인',
-      content: '이 발주를 승인하시겠습니까?',
+      title: '판매 주문 승인',
+      content: '이 판매주문 주문을 승인하시겠습니까?',
       okText: '승인',
       cancelText: '취소',
       onOk: async () => {
         setProcessing(true);
 
         try {
-          await purchaseOrderApi.approve(Number(soId));
+          //employeeId: 자신의 번호로 바꿔야함
+          await salesOrderApi.approve(Number(soId), { employeeId: 1 });
           message.success('주문이 승인되었습니다.');
           router.push('/sales-orders');
         } catch (e) {
@@ -63,15 +64,15 @@ export default function SalesOrderDetailPage() {
     let reason = '';
 
     modal.confirm({
-      title: '발주 반려',
+      title: '판매 주문 반려',
       width: 520,
-      okText: '반려 확정',
+      okText: '판매 주문 확정',
       cancelText: '취소',
       okButtonProps: { danger: true },
       content: (
         <Space orientation="vertical" style={{ width: '100%' }}>
           <Text type="secondary">
-            PO-{String(order?.soId).padStart(4, '0')} 발주를 반려합니다. 반려 사유는 기안자에게 전달됩니다.
+            SO-{String(order?.soId).padStart(4, '0')} 판매주문을 반려합니다. 반려 사유는 기안자에게 전달됩니다.
           </Text>
           <Input.TextArea
             rows={4}
@@ -92,8 +93,34 @@ export default function SalesOrderDetailPage() {
 
         try {
           await purchaseOrderApi.reject(Number(soId), reason.trim());
-          message.success('주문이 반려되었습니다.');
+          message.success('판매 주문이 반려되었습니다.');
           router.push('/sales-orders');
+        } catch (e) {
+          message.error((e as Error).message);
+        } finally {
+          setProcessing(false);
+        }
+      },
+    });
+  };
+
+  const handleShipping = () => {
+    modal.confirm({
+      title: '출고 승인',
+      content: '이 출고요청을 승낙하시겠습니다?',
+      okText: '확인',
+      cancelText: '취소',
+      onOk: async () => {
+        setProcessing(true);
+        try {
+          const verified = await shipmentApi.verify(Number(soId));
+          if (!verified || verified.length === 0) {
+            message.error('출고 가능한 주문이 아닙니다.');
+            return;
+          }
+          await shipmentApi.process(Number(soId), 10); //담당자 번호로 바꿔야함
+          message.success('출고 처리과 완료되었습니다.');
+          router.push('/shipments');
         } catch (e) {
           message.error((e as Error).message);
         } finally {
@@ -131,7 +158,7 @@ export default function SalesOrderDetailPage() {
 
   if (error) {
     return (
-      <ErpLayout title="발주 상세">
+      <ErpLayout title="판매 주문 상세">
         <Card>
           <Text type="danger">{error}</Text>
         </Card>
@@ -141,7 +168,7 @@ export default function SalesOrderDetailPage() {
 
   if (!order) {
     return (
-      <ErpLayout title="발주 상세">
+      <ErpLayout title="판매 주문 상세">
         <Card loading />
       </ErpLayout>
     );
@@ -198,6 +225,13 @@ export default function SalesOrderDetailPage() {
           </Button>
           <Button type="primary" loading={processing} onClick={handleApprove}>
             승인
+          </Button>
+        </div>
+      )}
+      {order.status === 'APPROVED' && (
+        <div className="erp-page-actions">
+          <Button type="primary" loading={processing} onClick={handleShipping}>
+            출고처리
           </Button>
         </div>
       )}

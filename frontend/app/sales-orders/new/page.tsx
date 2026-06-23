@@ -48,7 +48,7 @@ export default function SalesOrderCreatePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [productId, setProductId] = useState<number>();
-  const [customerId, setCustomerId] = useState<number>(0);
+  const [customerId, setCustomerId] = useState<number>();
   const [orderQty, setOrderQty] = useState<number | null>(null);
   const [memo, setMemo] = useState('');
   const [rows, setRows] = useState<OrderRow[]>([]);
@@ -132,6 +132,7 @@ export default function SalesOrderCreatePage() {
   const handleSubmit = async () => {
     if (!customerId) {
       message.warning('거래처를 선택해주세요');
+      return;
     }
 
     if (rows.length === 0) {
@@ -151,7 +152,7 @@ export default function SalesOrderCreatePage() {
     try {
       await salesOrderApi.create({
         customerId,
-        employeeId: 1, //자신의 번호로 바꿔야함
+        employeeId: 1, //employeeId: 자신의 번호로 바꿔야함
         memo: memo || undefined,
         details: rows,
       });
@@ -227,7 +228,7 @@ export default function SalesOrderCreatePage() {
   ];
 
   return (
-    <ErpLayout title="출고 등록">
+    <ErpLayout title="판매 주문 등록">
       <Button style={{ alignSelf: 'flex-start' }} onClick={() => router.back()}>
         목록으로
       </Button>
@@ -253,13 +254,13 @@ export default function SalesOrderCreatePage() {
               />
             </Form.Item>
             <Form.Item label="메모" style={{ flex: 2 }}>
-              <Input placeholder="출고 관련 메모를 입력하세요" value={memo} onChange={(e) => setMemo(e.target.value)} />
+              <Input placeholder="주문 관련 메모를 입력하세요" value={memo} onChange={(e) => setMemo(e.target.value)} />
             </Form.Item>
           </Flex>
         </Form>
       </Card>
 
-      <Card title={`출고 품목 ${rows.length}개`}>
+      <Card title={`주문 품목 ${rows.length}개`}>
         <Table
           rowKey="productId"
           columns={columns}
@@ -282,7 +283,7 @@ export default function SalesOrderCreatePage() {
       <div className="erp-page-actions">
         <Button onClick={() => router.back()}>취소</Button>
         <Button type="primary" loading={processing} onClick={handleSubmit}>
-          출고 등록
+          판매 주문 등록
         </Button>
       </div>
 

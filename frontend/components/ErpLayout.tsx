@@ -9,6 +9,7 @@ import {
   HomeOutlined,
   MedicineBoxOutlined,
   ShoppingCartOutlined,
+  AuditOutlined,
   TruckOutlined,
   UserOutlined,
   WalletOutlined,
@@ -51,8 +52,9 @@ const MENU_GROUPS = [
     key: 'stock',
     label: '재고 / 출고',
     children: [
-      { key: '/inventory', label: '재고 관리', icon: <MedicineBoxOutlined /> },
-      { key: '/sales-orders', label: '출고 관리', icon: <TruckOutlined /> },
+      { key: '/sales-orders', label: '판매 주문 관리', icon: <AuditOutlined /> },
+      { key: '/shipments', label: '출고 관리', icon: <TruckOutlined /> },
+      { key: '/stock', label: '재고 관리', icon: <MedicineBoxOutlined /> },
     ],
   },
   {

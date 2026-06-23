@@ -6,7 +6,9 @@ export interface ApiResponse<T> {
   data: T;
 }
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
+// const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://192.168.1.190:8080';
+console.log('[API BASE URL]', BASE_URL);
 
 // 토큰 관리 (학습용으로 localStorage 사용)
 export const tokenStorage = {
@@ -52,6 +54,8 @@ export const api = {
   post: <T>(path: string, data?: unknown) => request<T>(path, { method: 'POST', body: JSON.stringify(data) }),
   put: <T>(path: string, data?: unknown) =>
     request<T>(path, { method: 'PUT', body: data ? JSON.stringify(data) : undefined }),
+  patch: <T>(path: string, data?: unknown) =>
+    request<T>(path, { method: 'PATCH', body: data ? JSON.stringify(data) : undefined }),
 };
 
 // ===== 도메인 타입 (백엔드 DTO와 매핑) =====
@@ -119,6 +123,87 @@ export interface SalesOrderDetail {
   unitPrice: number;
   amount: number;
   productName: string;
+}
+
+// ======Shipments=====
+export interface Shipment {
+  shipmentId: number;
+  soId: number;
+  shippedEmpId: number;
+  employeeName: string;
+  shipmentDate: string;
+  status: string;
+  memo?: string;
+  createdAt: string;
+}
+
+export interface ShipmentDetail {
+  shipmentDetailId: number;
+  shipmentId: number;
+  salesOrderId: number;
+  salesOrderDetailId: number;
+  customerName: string;
+  orderDate: string;
+  shipmentDate: string;
+  shippedEmpId: string;
+  employeeName: string;
+  status: string;
+  memo: string;
+  productName: string;
+  inventoryLotId: number;
+  lotNo: string;
+  expiryDate: string;
+  shippedQty: number;
+  productId: number;
+}
+
+// ======StockMovement=====
+export interface StockMovement {
+  movementId: number;
+  productId: number;
+  productName: string;
+  inventoryLotId: number;
+  lotNo: string;
+  movementType: string;
+  sourceType: string;
+  sourceId: number;
+  beforeQty: number;
+  qty: number;
+  afterQty: number;
+  createdAt: string;
+}
+
+export interface StockMovementSearchParams {
+  productName?: string;
+  lotNo?: string;
+  movementType?: string;
+  sourceType?: string;
+  sourceId?: number;
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface ProductStock {
+  productId: number;
+  productCode: string;
+  productName: string;
+  availableQty: number;
+  safetyQty: number;
+  shippableQty: number;
+  stockStatus: string;
+}
+
+export interface LotStock {
+  inventoryLotId: number;
+  productId: number;
+  productCode: string;
+  productName: string;
+  lotNo: string;
+  expiryDate: string;
+  daysLeft: number;
+  qty: number;
+  location: string;
+  status: string;
 }
 
 // ======Notifications=====
@@ -209,12 +294,57 @@ export const salesOrderApi = {
   detail: (soId: number) => api.get<SalesOrder>(`/api/sales-order/${soId}/details`),
   customers: () => api.get<{ customerId: number; customerName: string }[]>(`/api/sales-order/customers`),
   products: () => api.get<Record<string, unknown>[]>(`/api/sales-order/products`),
+  approve: (soId: number, data: { employeeId: number }) => api.patch<void>(`/api/sales-order/${soId}/approve`, data),
   create: (data: {
     customerId: number;
     employeeId: number;
     memo?: string;
     details: { productId: number; orderQty: number }[];
   }) => api.post<number>('/api/sales-order', data),
+};
+
+export const shipmentApi = {
+  list: (salesOrderId?: number, status?: string, employeeName?: string) => {
+    const params = new URLSearchParams();
+    if (salesOrderId) params.set('salesOrderId', String(salesOrderId));
+    if (status) params.set('status', status);
+    if (employeeName) params.set('employeeName', employeeName);
+    const qs = params.toString();
+    return api.get<Shipment[]>(`/api/shipment${qs ? `?${qs}` : ''}`);
+  },
+  listPaging: (page: number, size = 10, status?: string, salesOrderId?: number, employeeName?: string) => {
+    const params = new URLSearchParams();
+    params.set('page', String(page));
+    params.set('size', String(size));
+    if (status) params.set('status', status);
+    if (salesOrderId) params.set('salesOrderId', String(salesOrderId));
+    if (employeeName) params.set('employeeName', employeeName);
+    return api.get<PageResult<Shipment>>(`/api/shipment?${params}`);
+  },
+  statusCount: () => api.get<Record<string, number>>(`/api/shipment/status-count`),
+  detail: (shipmentId: number, status?: string) => {
+    const params = new URLSearchParams();
+    if (status) {
+      params.set('status', status);
+    }
+    const query = params.toString();
+    return api.get<ShipmentDetail[]>(`/api/shipment/${shipmentId}${query ? `?${query}` : ''}`);
+  },
+  verify: (salesOrderId: number) => api.get<unknown[]>(`/api/shipment/verify/${salesOrderId}`),
+  process: (salesOrderId: number, employeeId: number) => {
+    const param = new URLSearchParams();
+    param.set('salesOrderId', String(salesOrderId));
+    param.set('employeeId', String(employeeId));
+    return api.post(`/api/shipment/process?${param}`);
+  },
+};
+
+export const stockMovementApi = {
+  search: (data: StockMovementSearchParams) => {
+    return api.post<StockMovement[]>(`/api/shipment/stock-movement`, data);
+  },
+  searchProductList: () => api.get<ProductStock[]>(`/api/shipment/product-stock`),
+  searchLotStockList: () => api.get<LotStock[]>(`/api/shipment/lot-stock`),
 };
 
 export const alertApi = {

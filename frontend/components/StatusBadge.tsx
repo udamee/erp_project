@@ -8,7 +8,8 @@ const STATUS_META: Record<string, { label: string; color: string }> = {
   REJECTED: { label: '반려', color: 'red' },
   COMPLETED: { label: '입고 완료', color: 'blue' },
 
-  SHIPPED: { label: '출고 완료', color: 'green' },
+  READY: { label: '배송 준비', color: 'blue' },
+  SHIPPED: { label: '배송 완료', color: 'green' },
   NORMAL: { label: '정상', color: 'green' },
   SOLD_OUT: { label: '품절', color: 'red' },
   CANCELED: { label: '취소됨', color: 'red' },
