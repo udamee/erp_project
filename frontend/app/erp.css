@@ -3,6 +3,11 @@
   --erp-primary-bg: #e1f5ee;
   --erp-primary-dark: #085041;
   --erp-danger: #a32d2d;
+  --erp-danger-bg: #fdecec;
+  --erp-warning: #b45309;
+  --erp-warning-bg: #fef3c7;
+  --erp-info: #185fa5;
+  --erp-info-bg: #e6f0fb;
   --erp-bg: #f5f7fa;
   --erp-line: #e5e7eb;
   --erp-text: #1f2937;
@@ -22,4 +27,183 @@ body {
 
 .recall-row-danger td {
   background: #fff1f0;
+}
+
+/* ===== 카드 ===== */
+.erp-card {
+  background: #fff;
+  border: 1px solid var(--erp-line);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+/* ===== 버튼 ===== */
+.erp-btn {
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--erp-line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--erp-text);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+  white-space: nowrap;
+}
+.erp-btn:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+.erp-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.erp-btn.primary {
+  background: var(--erp-primary);
+  border-color: var(--erp-primary);
+  color: #fff;
+}
+.erp-btn.primary:hover:not(:disabled) {
+  background: var(--erp-primary-dark);
+  border-color: var(--erp-primary-dark);
+}
+.erp-btn.danger {
+  background: var(--erp-danger);
+  border-color: var(--erp-danger);
+  color: #fff;
+}
+.erp-btn.danger:hover:not(:disabled) {
+  filter: brightness(0.92);
+}
+.erp-btn.danger-outline {
+  background: #fff;
+  border-color: var(--erp-danger);
+  color: var(--erp-danger);
+}
+.erp-btn.danger-outline:hover:not(:disabled) {
+  background: var(--erp-danger-bg);
+}
+
+/* ===== 입력 ===== */
+.erp-input,
+.erp-select {
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--erp-line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--erp-text);
+  font-size: 13px;
+  outline: none;
+}
+.erp-input:focus,
+.erp-select:focus {
+  border-color: var(--erp-primary);
+  box-shadow: 0 0 0 2px var(--erp-primary-bg);
+}
+.erp-select {
+  cursor: pointer;
+}
+
+/* ===== 테이블 ===== */
+.erp-table-wrap {
+  background: #fff;
+  border: 1px solid var(--erp-line);
+  border-radius: 10px;
+  overflow: hidden;
+  overflow-x: auto;
+}
+.erp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.erp-table th,
+.erp-table td {
+  padding: 11px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--erp-line);
+  white-space: nowrap;
+}
+.erp-table th {
+  background: #fafafa;
+  font-weight: 600;
+  color: var(--erp-text-muted);
+}
+.erp-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.erp-table tbody tr[onclick],
+.erp-table tbody tr {
+  cursor: pointer;
+}
+.erp-table tbody tr:hover {
+  background: var(--erp-primary-bg);
+}
+.erp-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.erp-table .link {
+  color: var(--erp-primary-dark);
+  font-weight: 600;
+}
+
+/* ===== 보조 텍스트 / 액션 영역 ===== */
+.erp-warn-text {
+  color: var(--erp-danger);
+  font-size: 13px;
+}
+.erp-page-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+.erp-back-btn {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--erp-line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--erp-text);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.erp-back-btn:hover {
+  background: #f3f4f6;
+}
+
+/* ===== 상태 뱃지 ===== */
+.erp-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+.erp-badge.ACTIVE {
+  background: var(--erp-primary-bg);
+  color: var(--erp-primary-dark);
+}
+.erp-badge.PENDING {
+  background: var(--erp-warning-bg);
+  color: var(--erp-warning);
+}
+.erp-badge.REJECTED,
+.erp-badge.TERMINATED {
+  background: var(--erp-danger-bg);
+  color: var(--erp-danger);
+}
+.erp-badge.INACTIVE {
+  background: #f3f4f6;
+  color: var(--erp-text-muted);
 }
