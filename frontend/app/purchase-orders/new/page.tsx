@@ -136,10 +136,7 @@ export default function PurchaseOrderCreatePage() {
   };
 
   return (
-    <ErpLayout title="발주 등록">
-      <button className="erp-btn" style={{ alignSelf: "flex-start" }} onClick={() => router.back()}>
-        ← 목록으로
-      </button>
+    <ErpLayout title="발주 등록" back>
 
       <div className="erp-cards" style={{ gridTemplateColumns: "1fr 2fr" }}>
         <div className="erp-card">

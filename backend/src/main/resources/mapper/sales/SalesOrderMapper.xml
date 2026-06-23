@@ -177,6 +177,7 @@
             ORDER_DATE,
             STATUS,
             TOTAL_AMOUNT,
+            MEMO,
             CREATED_AT
         ) select
               #{soId},
@@ -185,11 +186,12 @@
               SYSDATE,
               #{status},
               #{totalAmount},
+              #{memo},
               SYSDATE
         from customer c
         where c.customer_id= #{customerId}
     </insert>
-    <select id="currentSalesOrderDetailSeq" resultType="int">
+    <select id="currentSalesOrderDetailSeq" resultType="int" useCache="false" flushCache="true">
         SELECT seq_sales_order_detail.nextval FROM DUAL
     </select>
     <select id="findActiveProduct" resultType="ProductVO" parameterType="int">

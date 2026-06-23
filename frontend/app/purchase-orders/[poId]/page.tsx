@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import ErpLayout from "@/components/ErpLayout";
 import StatusBadge from "@/components/StatusBadge";
-import { purchaseOrderApi, PurchaseOrder } from "@/lib/api";
+import { purchaseOrderApi, PurchaseOrder, userStorage } from "@/lib/api";
 
 export default function PurchaseOrderDetailPage() {
   const { poId } = useParams<{ poId: string }>();
@@ -13,7 +13,7 @@ export default function PurchaseOrderDetailPage() {
 
   const [order, setOrder] = useState<PurchaseOrder | null>(null);
   const [error, setError] = useState("");
-  const [role, setRole] = useState("");
+  const [role] = useState(() => userStorage.get()?.role ?? "");
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [processing, setProcessing] = useState(false);
@@ -26,10 +26,6 @@ export default function PurchaseOrderDetailPage() {
   };
 
   useEffect(load, [poId]);
-
-  useEffect(() => {
-  setRole(localStorage.getItem("role") ?? "");
-  }, []);
 
   // 발주 승인
   const handleApprove = async () => {
@@ -65,13 +61,12 @@ export default function PurchaseOrderDetailPage() {
     }
   };
 
-  if (error) return <ErpLayout title="발주 상세"><p className="erp-warn-text">{error}</p></ErpLayout>;
-  if (!order) return <ErpLayout title="발주 상세"><p>불러오는 중...</p></ErpLayout>;
+  if (error) return <ErpLayout title="발주 상세" back><p className="erp-warn-text">{error}</p></ErpLayout>;
+  if (!order) return <ErpLayout title="발주 상세" back><p>불러오는 중...</p></ErpLayout>;
 
   return (
-    <ErpLayout title={`발주 상세 — PO-${String(order.poId).padStart(4, "0")}`}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <button className="erp-btn" onClick={() => router.back()}>← 목록으로</button>
+    <ErpLayout title={`발주 상세 — PO-${String(order.poId).padStart(4, "0")}`} back>
+      <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center" }}>
         <StatusBadge status={order.status} />
       </div>
 

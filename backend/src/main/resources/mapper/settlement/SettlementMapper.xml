@@ -268,7 +268,7 @@
         <selectKey keyProperty="salesInvoiceId"
                    resultType="int"
                    order="BEFORE">
-            SELECT SALES_INVOICE_SEQ.NEXTVAL FROM DUAL
+            SELECT SEQ_SALES_INVOICE.NEXTVAL FROM DUAL
         </selectKey>
         INSERT INTO SALES_INVOICE (
             SALES_INVOICE_ID,
@@ -303,7 +303,7 @@
             STATUS,
             CREATED_AT
         ) VALUES (
-            ACCOUNT_RECEIVABLE_SEQ.NEXTVAL,
+            SEQ_ACCOUNT_RECEIVABLE.NEXTVAL,
             #{customerId},
             #{salesInvoiceId},
             #{totalAmount},
@@ -313,6 +313,70 @@
             #{status},
             SYSDATE
         )
+    </insert>
+
+    <!-- 입고 완료 발주 기준 매입전표 등록 -->
+    <insert id="insertPurchaseInvoiceFromPurchaseOrder" parameterType="map">
+        <selectKey keyProperty="purchaseInvoiceId" resultType="int" order="BEFORE">
+            SELECT SEQ_PURCHASE_INVOICE.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO PURCHASE_INVOICE (
+            PURCHASE_INVOICE_ID,
+            PO_ID,
+            SUPPLIER_ID,
+            ISSUE_DATE,
+            TOTAL_AMOUNT,
+            STATUS,
+            CREATED_AT
+        )
+        SELECT
+            #{purchaseInvoiceId},
+            PO.PO_ID,
+            PO.SUPPLIER_ID,
+            SYSDATE,
+            PO.TOTAL_AMOUNT,
+            'ISSUED',
+            SYSDATE
+        FROM PURCHASE_ORDER PO
+        WHERE PO.PO_ID = #{poId}
+          AND PO.STATUS = 'COMPLETED'
+          AND NOT EXISTS (
+              SELECT 1
+              FROM PURCHASE_INVOICE PI
+              WHERE PI.PO_ID = PO.PO_ID
+          )
+    </insert>
+
+    <!-- 매입전표 기준 매입채무 등록 -->
+    <insert id="insertAccountPayableFromPurchaseInvoice" parameterType="int">
+        INSERT INTO ACCOUNT_PAYABLE (
+            AP_ID,
+            SUPPLIER_ID,
+            PURCHASE_INVOICE_ID,
+            TOTAL_AMOUNT,
+            PAID_AMOUNT,
+            REMAIN_AMOUNT,
+            DUE_DATE,
+            STATUS,
+            CREATED_AT
+        )
+        SELECT
+            SEQ_ACCOUNT_PAYABLE.NEXTVAL,
+            PI.SUPPLIER_ID,
+            PI.PURCHASE_INVOICE_ID,
+            PI.TOTAL_AMOUNT,
+            0,
+            PI.TOTAL_AMOUNT,
+            PI.ISSUE_DATE + 30,
+            'UNPAID',
+            SYSDATE
+        FROM PURCHASE_INVOICE PI
+        WHERE PI.PURCHASE_INVOICE_ID = #{purchaseInvoiceId}
+          AND NOT EXISTS (
+              SELECT 1
+              FROM ACCOUNT_PAYABLE AP
+              WHERE AP.PURCHASE_INVOICE_ID = PI.PURCHASE_INVOICE_ID
+          )
     </insert>
 
     <!-- 수금 처리 -->
@@ -328,7 +392,7 @@
             CREATED_BY,
             CREATED_AT
         ) VALUES (
-            PAYMENT_SEQ.NEXTVAL,
+            SEQ_PAYMENT.NEXTVAL,
             #{arId},
             #{customerId},
             #{paymentDate},
@@ -414,7 +478,7 @@
             CREATED_BY,
             CREATED_AT
         ) VALUES (
-            SETTLEMENT_SEQ.NEXTVAL,
+            SEQ_SETTLEMENT.NEXTVAL,
             #{startDate},
             #{endDate},
             #{totalPurchase},

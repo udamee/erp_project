@@ -23,16 +23,32 @@ import java.util.Map;
 public class CustomerService {
 
     private final CustomerMapper customerMapper;
+    private final BusinessVerifyService businessVerifyService;
 
     // ---------- 거래처 등록 ----------
     @Transactional
     public void createCustomer(CustomerCreateRequestDto dto) {
 
-        // 사업자번호 중복 확인 (입력된 경우만)
+        // 사업자번호를 입력한 경우에만 검증 (선택 입력)
         if (dto.getBusinessNo() != null && !dto.getBusinessNo().isBlank()) {
+
+            // 1) 중복 확인
             int count = customerMapper.countByBusinessNo(dto.getBusinessNo());
             if (count > 0) {
                 throw new CustomException(ErrorCode.DUPLICATE_BUSINESS_NO);
+            }
+
+            // 2) 국세청 상태조회 - 정상 영업(계속사업자)만 등록 허용
+            Map<String, Object> status = businessVerifyService.checkStatus(dto.getBusinessNo());
+            boolean registered = Boolean.TRUE.equals(status.get("registered"));
+            boolean valid = Boolean.TRUE.equals(status.get("valid"));
+
+            if (!registered) {
+                throw new CustomException(ErrorCode.BUSINESS_NOT_REGISTERED);
+            }
+            if (!valid) {
+                // 휴업·폐업 등
+                throw new CustomException(ErrorCode.BUSINESS_NOT_ACTIVE);
             }
         }
 

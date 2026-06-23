@@ -63,7 +63,7 @@
     <select id="currentShipmentSeq" resultType="int">
         SELECT seq_shipment.nextval FROM dual
     </select>
-    <select id="currentShipmentDetailSeq" resultType="int">
+    <select id="currentShipmentDetailSeq" resultType="int" useCache="false" flushCache="true">
         SELECT seq_shipment_detail.nextval from dual
     </select>
     <insert id="arrangeShipmentHeader" parameterType="ShipmentVO">

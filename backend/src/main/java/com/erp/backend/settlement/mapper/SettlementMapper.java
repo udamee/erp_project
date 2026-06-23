@@ -53,6 +53,11 @@ public interface SettlementMapper {
     // 매출채권(미수금) 등록
     int insertAccountReceivable(AccountReceivableVO accountReceivableVO);
 
+    // 입고 완료 발주 기준 매입전표/매입채무 등록
+    int insertPurchaseInvoiceFromPurchaseOrder(Map<String, Object> params);
+
+    int insertAccountPayableFromPurchaseInvoice(Integer purchaseInvoiceId);
+
     // 수금 처리
     int insertPayment(PaymentVO paymentVO);
 

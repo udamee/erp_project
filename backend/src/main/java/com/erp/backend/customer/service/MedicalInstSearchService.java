@@ -34,9 +34,9 @@ public class MedicalInstSearchService {
     @Value("${api.service-key}")
     private String serviceKey;
 
-    private static final String BASE_URL = "http://apis.data.go.kr/B552657/ErmctInsttInfoInqireService";
-    private static final String PHARMACY_PATH = "/getParmacyListInfoInqire";
-    private static final String HOSPITAL_PATH = "/getHsptlBassInfoInqire";
+    private static final String BASE_URL = "http://apis.data.go.kr/B552657";
+    private static final String PHARMACY_PATH = "/ErmctInsttInfoInqireService/getParmacyListInfoInqire";
+    private static final String HOSPITAL_PATH = "/HsptlAsembySearchService/getHsptlMdcncListInfoInqire";
 
     public MedicalInstSearchService() {
         this.webClient = WebClient.builder().build();

@@ -7,6 +7,7 @@ import com.erp.backend.inventory.dto.ReceivingDetailResponseDto;
 import com.erp.backend.inventory.dto.ReceivingRequestDto;
 import com.erp.backend.inventory.mapper.PurchaseOrderMapper;
 import com.erp.backend.inventory.mapper.ReceivingMapper;
+import com.erp.backend.settlement.service.SettlementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,7 @@ public class ReceivingService {
 
     private final ReceivingMapper receivingMapper;
     private final PurchaseOrderMapper purchaseOrderMapper;
+    private final SettlementService settlementService;
 
     // -------- 입고 가능 목록 조회 ---------
     public List<Map<String, Object>> getReceivableOrders(){
@@ -122,6 +124,9 @@ public class ReceivingService {
 
         // 발주 상태 COMPLETED 변경
         receivingMapper.completePurchaseOrder(requestDto.getPoId());
+
+        // 입고가 완료된 발주를 매입전표와 매입채무로 연계
+        settlementService.createPurchaseInvoiceForCompletedOrder(requestDto.getPoId());
     }
 }
 

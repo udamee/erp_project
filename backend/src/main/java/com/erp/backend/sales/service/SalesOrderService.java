@@ -91,6 +91,7 @@ public class SalesOrderService {
         salesOrderVO.setSoId(orderId);
         salesOrderVO.setCustomerId(requestDTO.getCustomerId());
         salesOrderVO.setReqEmployeeId(requestDTO.getEmployeeId());
+        salesOrderVO.setMemo(requestDTO.getMemo());
         salesOrderVO.setOrderDate(LocalDateTime.now());
         salesOrderVO.setStatus(OrderStatus.REQUESTED.name());
         salesOrderVO.setCreatedAt(LocalDateTime.now());

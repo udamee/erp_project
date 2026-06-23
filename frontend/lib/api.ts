@@ -272,6 +272,90 @@ export const receivingApi = {
     api.post<void>("/api/receivings", data),
 };
 
+export interface Customer {
+  customerId: number;
+  customerName: string;
+  customerType: "PHARMACY" | "HOSPITAL";
+  businessNo: string | null;
+  creditLimit: number;
+  receivableBalance: number;
+  phone: string | null;
+  address: string | null;
+  status: string;
+}
+
+// 거래처 등록·수정 요청
+export interface CustomerInput {
+  customerName: string;
+  customerType: "PHARMACY" | "HOSPITAL";
+  businessNo?: string;
+  creditLimit?: number;
+  phone?: string;
+  address?: string;
+}
+
+// 약국·병원 검색 결과 (백엔드 MedicalInstSearchDto 매핑)
+export interface MedicalInst {
+  name: string;
+  type: "PHARMACY" | "HOSPITAL";
+  phone: string | null;
+  address: string | null;
+}
+
+// 사업자번호 상태조회 결과 (백엔드 checkStatus 매핑)
+export interface BusinessStatus {
+  valid: boolean;        // 거래 가능(계속사업자)
+  registered: boolean;   // 국세청 등록 여부
+  bStt: string | null;   // "계속사업자" 등
+  taxType: string | null;// "부가가치세 일반과세자" 등
+}
+
+export const customerApi = {
+  // 거래처 목록
+  list: (customerType?: string, status?: string, keyword?: string) => {
+    const params = new URLSearchParams();
+    if (customerType) params.set("customerType", customerType);
+    if (status) params.set("status", status);
+    if (keyword) params.set("keyword", keyword);
+    const qs = params.toString();
+    return api.get<Customer[]>(`/api/customers${qs ? `?${qs}` : ""}`);
+  },
+
+  // 거래처 상세
+  detail: (customerId: number) => api.get<Customer>(`/api/customers/${customerId}`),
+
+  // 거래처 등록
+  create: (data: CustomerInput) => api.post<void>("/api/customers", data),
+
+  // 거래처 수정
+  update: (customerId: number, data: CustomerInput) =>
+    api.put<void>(`/api/customers/${customerId}`, data),
+
+  // 약국 검색
+  searchPharmacy: (sido?: string, sigungu?: string, name?: string) => {
+    const params = new URLSearchParams();
+    if (sido) params.set("sido", sido);
+    if (sigungu) params.set("sigungu", sigungu);
+    if (name) params.set("name", name);
+    const qs = params.toString();
+    return api.get<MedicalInst[]>(`/api/customers/search/pharmacy${qs ? `?${qs}` : ""}`);
+  },
+
+  // 병의원 검색
+  searchHospital: (sido?: string, sigungu?: string, name?: string) => {
+    const params = new URLSearchParams();
+    if (sido) params.set("sido", sido);
+    if (sigungu) params.set("sigungu", sigungu);
+    if (name) params.set("name", name);
+    const qs = params.toString();
+    return api.get<MedicalInst[]>(`/api/customers/search/hospital${qs ? `?${qs}` : ""}`);
+  },
+
+  // 사업자번호 상태조회
+  checkBusiness: (businessNo: string) =>
+    api.post<BusinessStatus>("/api/customers/check-business", { businessNo }),
+};
+
 // ===== 인사(HR) 도메인 =====
 
 export type EmployeeStatus = "PENDING" | "ACTIVE" | "REJECTED" | "INACTIVE" | "TERMINATED";

@@ -1,4 +1,4 @@
-//--주문금액 및 디테일금액 검증을 위한 뷰
+-- 주문금액 및 디테일금액 검증을 위한 뷰
 create or replace view v_sales_order_amount_check as
 select
     so.so_id,
@@ -28,7 +28,7 @@ group by
     so.status,
     so.total_amount;
 
-//--전체 주문오더조회를 위한 뷰
+-- 전체 주문오더조회를 위한 뷰
 create or replace view vw_sales_order_list as
 select
     so.so_id as sales_order_id,

@@ -118,3 +118,249 @@ body { margin: 0; background: var(--erp-bg); color: var(--erp-text); font-family
 
 /* 페이지 액션 영역 */
 .erp-page-actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 12px; border-top: 1px solid var(--erp-line); }
+
+
+.erp-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+ 
+/* 유형 탭 */
+.erp-tabs {
+  display: flex;
+  gap: 4px;
+  background: #f1f5f4;
+  padding: 4px;
+  border-radius: 10px;
+}
+.erp-tab {
+  border: none;
+  background: transparent;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #5b6b66;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.erp-tab.active {
+  background: #fff;
+  color: #1d9e75;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+ 
+/* 기본 버튼(보조) / 주요 버튼 */
+.erp-btn-primary {
+  border: none;
+  background: #1d9e75;
+  color: #fff;
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.erp-btn-primary:hover {
+  background: #178463;
+}
+.erp-btn-primary:disabled {
+  background: #9cc8ba;
+  cursor: not-allowed;
+}
+ 
+/* 검색 바 */
+.erp-search-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.erp-search-bar .erp-input {
+  max-width: 280px;
+}
+ 
+/* 에러 / 빈 상태 */
+.erp-error {
+  background: #fdecea;
+  color: #b3261e;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 14px;
+  font-size: 14px;
+}
+.erp-empty {
+  text-align: center;
+  color: #8a9690;
+  padding: 48px 0;
+  font-size: 14px;
+}
+.erp-empty-sm {
+  text-align: center;
+  color: #aab4af;
+  padding: 28px 0;
+  font-size: 13px;
+}
+ 
+/* 테이블 행 클릭 / 셀 정렬 */
+.erp-row-link {
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.erp-row-link:hover {
+  background: #f6faf8;
+}
+.erp-cell-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.erp-cell-ellipsis {
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+ 
+/* 등록 폼: 좌(검색) 우(폼) 2단 */
+.erp-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+@media (max-width: 900px) {
+  .erp-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+ 
+.erp-card-narrow {
+  max-width: 560px;
+}
+.erp-card-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 4px;
+  color: #1f2a26;
+}
+.erp-card-desc {
+  font-size: 13px;
+  color: #8a9690;
+  margin: 0 0 16px;
+}
+ 
+/* 약국/병의원 세그먼트 토글 */
+.erp-segment {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.erp-segment-btn {
+  flex: 1;
+  border: 1px solid #d8e2de;
+  background: #fff;
+  padding: 8px 0;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #5b6b66;
+  cursor: pointer;
+}
+.erp-segment-btn.active {
+  border-color: #1d9e75;
+  background: #eaf7f2;
+  color: #1d9e75;
+  font-weight: 600;
+}
+ 
+/* 입력 한 줄에 여러 개 */
+.erp-field-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.erp-field-row .erp-input {
+  flex: 1;
+}
+ 
+/* 검색 결과 리스트 */
+.erp-search-results {
+  margin-top: 14px;
+  max-height: 420px;
+  overflow-y: auto;
+  border: 1px solid #eef2f0;
+  border-radius: 10px;
+}
+.erp-result-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  border-bottom: 1px solid #f0f4f2;
+  background: #fff;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.erp-result-item:last-child {
+  border-bottom: none;
+}
+.erp-result-item:hover {
+  background: #f6faf8;
+}
+.erp-result-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2a26;
+  margin-bottom: 2px;
+}
+.erp-result-sub {
+  font-size: 12px;
+  color: #8a9690;
+}
+ 
+/* 폼 라벨 */
+.erp-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #5b6b66;
+  margin: 14px 0 6px;
+}
+ 
+/* 사업자 상태 메시지 */
+.erp-biz-status {
+  font-size: 13px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-top: 6px;
+}
+.erp-biz-status.ok {
+  background: #eaf7f2;
+  color: #178463;
+}
+.erp-biz-status.warn {
+  background: #fdf0e6;
+  color: #c2660c;
+}
+ 
+/* 폼 하단 버튼 */
+.erp-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 24px;
+}
+ 
+/* 상세 메타 */
+.erp-detail-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #8a9690;
+  padding-bottom: 14px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #eef2f0;
+}

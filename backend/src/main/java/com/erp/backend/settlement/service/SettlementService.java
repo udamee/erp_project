@@ -5,6 +5,7 @@ import com.erp.backend.settlement.mapper.SettlementMapper;
 import com.erp.backend.settlement.vo.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -107,6 +108,7 @@ public class SettlementService {
     }
 
 
+    @Transactional
     public void createSalesInvoice(SalesInvoiceVO salesInvoiceVO, AccountReceivableVO accountReceivableVO) {
         // 매출청구 금액 유효성 검사
         if (salesInvoiceVO.getTotalAmount() == null || salesInvoiceVO.getTotalAmount().compareTo(BigDecimal.ZERO) <= 0) {
@@ -138,6 +140,7 @@ public class SettlementService {
     }
 
     // 수금 처리
+    @Transactional
     public void createPayment(PaymentVO paymentVO) {
         // 수금 금액 유효성 검사
         BigDecimal remainAmount = settlementMapper.findRemainAmountByArId(paymentVO.getArId());
@@ -155,6 +158,7 @@ public class SettlementService {
     }
 
     // 손익정산 등록
+    @Transactional
     public void createSettlement(SettlementRequestDto requestDto) {
         Map<String, Object> params = new HashMap<>();
         params.put("startDate", requestDto.getStartDate());
@@ -185,6 +189,23 @@ public class SettlementService {
         settlementVO.setCreatedBy(requestDto.getCreatedBy());
 
         settlementMapper.insertSettlement(settlementVO);
+    }
+
+    @Transactional
+    public void createPurchaseInvoiceForCompletedOrder(Long poId) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("poId", poId);
+
+        int invoiceResult = settlementMapper.insertPurchaseInvoiceFromPurchaseOrder(params);
+        if (invoiceResult != 1 || params.get("purchaseInvoiceId") == null) {
+            throw new IllegalStateException("매입전표 생성에 실패했습니다. poId=" + poId);
+        }
+
+        Integer purchaseInvoiceId = ((Number) params.get("purchaseInvoiceId")).intValue();
+        int payableResult = settlementMapper.insertAccountPayableFromPurchaseInvoice(purchaseInvoiceId);
+        if (payableResult != 1) {
+            throw new IllegalStateException("매입채무 생성에 실패했습니다. purchaseInvoiceId=" + purchaseInvoiceId);
+        }
     }
 
     // 대시보드 조회

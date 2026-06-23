@@ -107,7 +107,6 @@
         LOT_NO,
         EXPIRY_DATE,
         CURRENT_QTY,
-        SAFETY_QTY,
         LOCATION,
         STATUS,
         CREATED_AT
@@ -117,7 +116,6 @@
         #{lotNo},
         #{expiryDate},
         #{receivedQty},
-        0,
         'A',
         'NORMAL',
         SYSDATE
@@ -143,12 +141,12 @@
         QTY,
         BEFORE_QTY,
         AFTER_QTY,
-        REF_TABLE,
-        REF_ID,
+        SOURCE_TYPE,
+        SOURCE_ID,
         CREATED_BY,
         CREATED_AT
         ) VALUES (
-        SEQ_MOVEMENT.NEXTVAL,
+        SEQ_STOCK_MOVEMENT.NEXTVAL,
         #{inventoryLotId},
         'IN',
         #{qty},

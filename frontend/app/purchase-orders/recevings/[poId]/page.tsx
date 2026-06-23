@@ -70,10 +70,7 @@ export default function ReceivingProcessPage() {
   };
 
   return (
-    <ErpLayout title={`입고 처리 — PO-${String(poId).padStart(4, "0")}`}>
-      <button className="erp-btn" style={{ alignSelf: "flex-start" }} onClick={() => router.back()}>
-        ← 입고 가능 목록으로
-      </button>
+    <ErpLayout title={`입고 처리 — PO-${String(poId).padStart(4, "0")}`} back>
 
       {error && <p className="erp-warn-text">{error}</p>}
 
