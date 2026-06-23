@@ -44,7 +44,7 @@ CREATE TABLE "공급처 승인 발주 처리 테이블" (
                                     "CREATED_AT"	DATE		NULL
 );
 
-CREATE TABLE "의약품 분류 테이블" (
+CREATE TABLE product-spec (
                               "CATEGORY_ID"	INTEGER		NOT NULL,
                               "CATEGORY_NAME"	VARCHAR(100)		NOT NULL,
                               "DESCRIPTION"	VARCHAR(300)		NULL,
@@ -316,7 +316,7 @@ CREATE TABLE "매출 확정 및 매출전표 테이블" (
                                     "CREATED_AT"	DATE		NULL
 );
 
-CREATE TABLE "의약품마스터" (
+CREATE TABLE product (
                           "PRODUCT_ID"	INTEGER		NOT NULL,
                           "PRODUCT_CODE"	VARCHAR(50)		NOT NULL,
                           "PRODUCT_NAME"	VARCHAR(150)		NOT NULL,

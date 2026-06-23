@@ -51,6 +51,7 @@
             E.PHONE AS phone,
             E.EMAIL AS email,
             E.DEPT_ID AS deptId,
+            D.DEPT_CODE AS deptCode,
             D.DEPT_NAME AS deptName,
             E.ROLE_CODE AS roleCode,
             E.STATUS AS status,
