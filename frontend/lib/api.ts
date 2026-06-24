@@ -6,8 +6,8 @@ export interface ApiResponse<T> {
   data: T;
 }
 
-// const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://192.168.1.190:8080';
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
+// const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://192.168.1.190:8080';
 console.log('[API BASE URL]', BASE_URL);
 
 // 토큰 관리 (학습용으로 localStorage 사용)
@@ -223,11 +223,16 @@ export interface AlertMessage {
   dateTime: string;
   alertType?: string;
   alertLevel?: 'INFO' | 'WARNING' | 'CRITICAL';
-  isRead: boolean;
+  isRead: 'Y' | 'N';
   productId?: number;
   inventoryLotId?: number;
   productName?: string;
   lotNo?: string;
+  message: string;
+  createdAt: string;
+  empId: number;
+  deptCode: string;
+  roleCode: string;
 }
 
 export interface PageResult<T> {
@@ -348,6 +353,12 @@ export const stockMovementApi = {
 };
 
 export const alertApi = {
+  list: (loginId: number) => {
+    const params = new URLSearchParams();
+    params.set('loginId', String(loginId));
+    const qs = params.toString();
+    return api.get<AlertMessage[]>(`/api/alert${qs ? `?${qs}` : ''}`);
+  },
   markRead: (alertId: number, loginId: number) => {
     const param = new URLSearchParams();
     param.set('loginId', String(loginId));

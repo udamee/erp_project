@@ -41,11 +41,9 @@ export default function NotificationItem({ item, onRead }: NotificationItemProps
             {new Date(item.dateTime).toLocaleString('ko-KR')}
           </Typography.Text>
 
-          {!item.isRead && (
-            <Button type="link" size="small" onClick={() => onRead(item.notificationId)}>
-              읽음 처리
-            </Button>
-          )}
+          <Button type="link" disabled={item.isRead} size="small" onClick={() => onRead(item.notificationId)}>
+            {item.isRead ? '읽음' : '읽음 처리'}
+          </Button>
         </Flex>
       </Flex>
     </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useCallback, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { notification } from 'antd';
 import { Client, IMessage } from '@stomp/stompjs';
 import { alertApi } from '@/lib/api';
@@ -22,6 +22,7 @@ export const NotificationContext = createContext<NotificationContextValue | null
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
   const [notificationApi, contextHolder] = notification.useNotification();
   const [notifications, setNotifications] = useState<NotificationMessage[]>([]);
+  const receivedIdsRef = useRef<Set<number>>(new Set());
   const [drawerOpen, setDrawerOpen] = useState(false);
   const unreadCount = useMemo(() => notifications.filter((item) => !item.isRead).length, [notifications]);
   const openDrawer = useCallback(() => {
@@ -33,9 +34,11 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, []);
 
   const markAsRead = useCallback(async (notificationId: number) => {
+    const loginId = Number(localStorage.getItem('employeeId'));
+    if (!loginId) return;
     try {
       // 실제 API 호출
-      await alertApi.markRead(notificationId, 1);
+      await alertApi.markRead(notificationId, loginId);
 
       setNotifications((prev) =>
         prev.map((item) => (item.notificationId === notificationId ? { ...item, isRead: true } : item)),
@@ -49,7 +52,10 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     (message: IMessage) => {
       try {
         const received = JSON.parse(message.body) as NotificationMessage;
-        console.log(received);
+        if (receivedIdsRef.current.has(received.notificationId)) {
+          return;
+        }
+        receivedIdsRef.current.add(received.notificationId);
         const newItem: NotificationMessage = {
           notificationId: received.notificationId,
           level: received.level,
@@ -59,16 +65,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
           isRead: false,
         };
 
-        setNotifications((prev) => {
-          const duplicated = prev.some((item) => item.notificationId === newItem.notificationId);
-
-          if (duplicated) {
-            return prev;
-          }
-
-          return [newItem, ...prev];
-        });
-
+        setNotifications((prev) => [newItem, ...prev]);
         notificationApi.warning({
           title: getNotificationTitle(received.level),
           description: received.content,
@@ -81,6 +78,27 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     },
     [notificationApi],
   );
+  useEffect(() => {
+    const loginId = Number(localStorage.getItem('employeeId'));
+    if (!loginId) return;
+    alertApi
+      .list(loginId)
+      .then((result) => {
+        const mapped: NotificationMessage[] = result.map((item) => ({
+          notificationId: item.alertId,
+          level: item.alertLevel ?? 'INFO',
+          receiver: item.deptCode ?? '',
+          content: item.message,
+          dateTime: item.createdAt,
+          isRead: item.isRead === 'Y',
+        }));
+        setNotifications(mapped);
+        receivedIdsRef.current = new Set(mapped.map((item) => item.notificationId));
+      })
+      .catch((error) => {
+        console.error('기존 알림 조회 실패: ', error);
+      });
+  }, []);
 
   useEffect(() => {
     // const token = localStorage.getItem('accessToken');
@@ -93,9 +111,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     const department = localStorage.getItem('deptCode') ?? '';
     const client = new Client({
       brokerURL: 'ws://localhost:8080/ws-connect',
-
+      // brokerURL: 'ws://192.168.1.190:8080/ws-connect',
       reconnectDelay: 5000,
-
       // connectHeaders: {
       // Authorization: `Bearer ${token}`,
       // },
@@ -116,6 +133,13 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
       onWebSocketError: (error) => {
         console.error('WebSocket 오류:', error);
+      },
+      onWebSocketClose: (event) => {
+        console.error('소켓종료', {
+          code: event.code,
+          reason: event.reason,
+          wasClean: event.wasClean,
+        });
       },
     });
 
@@ -146,23 +170,14 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   );
 }
 
-function getNotificationTitle(alertType?: string) {
-  switch (alertType) {
-    case 'SAFETY_STOCK_LOW':
-      return '안전재고 부족';
-
-    case 'EXPIRED':
-      return '유효기간 만료';
-
-    case 'EXPIRY_10':
-      return '유효기간 10일 이내';
-
-    case 'EXPIRY_30':
-      return '유효기간 30일 이내';
-
-    case 'EXPIRY_90':
-      return '유효기간 90일 이내';
-
+function getNotificationTitle(level: string) {
+  switch (level) {
+    case 'CRITICAL':
+      return '심각';
+    case 'WARNING':
+      return '주의';
+    case 'INFO':
+      return '안내';
     default:
       return '새로운 알림';
   }
