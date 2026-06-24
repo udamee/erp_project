@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import ErpLayout from "@/components/ErpLayout";
+import { paymentTypeLabel } from "@/lib/display-labels";
 import "../../settlement.css";
 
 type PaymentHistory = {
@@ -145,7 +146,7 @@ export default function PaymentHistoryPage() {
                                     <td>{item.customerName}</td>
                                     <td>{item.paymentDate?.slice(0, 10)}</td>
                                     <td className="num">{formatMoney(item.paymentAmount)}</td>
-                                    <td>{item.paymentType}</td>
+                                    <td>{paymentTypeLabel(item.paymentType)}</td>
                                     <td>{item.createdBy}</td>
                                 </tr>
                             ))
