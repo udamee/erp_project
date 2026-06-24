@@ -78,10 +78,41 @@ export default function MyPage() {
 
   const cached = useAuthUser();
 
+  const [tab, setTab] = useState<"info" | "password">("info");
+  const tabs = [
+    { key: "info" as const, label: "내 정보" },
+    { key: "password" as const, label: "비밀번호 변경" },
+  ];
+
   return (
     <ErpLayout title="마이페이지">
+      {/* 탭 */}
+      <div style={{ display: "flex", alignItems: "flex-end", borderBottom: "1px solid var(--erp-line)" }}>
+        <div style={{ display: "flex", gap: 4 }}>
+          {tabs.map((t) => {
+            const active = tab === t.key;
+            return (
+              <button
+                key={t.key}
+                onClick={() => setTab(t.key)}
+                style={{
+                  padding: "10px 16px", border: "none", background: "none", cursor: "pointer",
+                  fontSize: 14, fontWeight: active ? 600 : 400,
+                  color: active ? "var(--erp-primary)" : "var(--erp-text-muted)",
+                  borderBottom: active ? "2px solid var(--erp-primary)" : "2px solid transparent",
+                  marginBottom: -1,
+                }}
+              >
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* 내 정보 */}
-      <div className="erp-card">
+      {tab === "info" && (
+      <div className="erp-card" style={{ marginTop: 12 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
           <span style={{ fontSize: 14, fontWeight: 600 }}>내 정보</span>
           {!editing ? (
@@ -121,8 +152,10 @@ export default function MyPage() {
           ※ 이름·부서·역할 변경은 관리자에게 문의하세요.
         </p>
       </div>
+      )}
 
       {/* 비밀번호 변경 */}
+      {tab === "password" && (
       <div className="erp-card" style={{ marginTop: 12, maxWidth: 420 }}>
         <p style={{ marginTop: 0, fontSize: 14, fontWeight: 600, color: "var(--erp-text)" }}>비밀번호 변경</p>
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 8 }}>
@@ -139,6 +172,7 @@ export default function MyPage() {
           </button>
         </div>
       </div>
+      )}
     </ErpLayout>
   );
 }

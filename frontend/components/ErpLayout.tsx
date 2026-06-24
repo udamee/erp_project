@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ReactNode, useEffect, useMemo, useState } from "react";
+import { ReactNode, useEffect, useMemo, useSyncExternalStore } from "react";
 import { Avatar, Button, Layout, Menu, Space, Typography } from "antd";
 import {
   LogoutOutlined,
@@ -35,22 +35,64 @@ interface ErpLayoutProps {
   back?: boolean;
 }
 
+type SessionSnapshot = {
+  hasToken: boolean;
+  user: AuthUser | null;
+  hydrated: boolean;
+};
+
+const SERVER_SESSION: SessionSnapshot = {
+  hasToken: false,
+  user: null,
+  hydrated: false,
+};
+
+let cachedToken: string | null = null;
+let cachedUserRaw: string | null = null;
+let cachedSession: SessionSnapshot = SERVER_SESSION;
+
+function getSessionSnapshot(): SessionSnapshot {
+  const token = tokenStorage.get();
+  const userRaw = typeof window !== "undefined" ? localStorage.getItem("authUser") : null;
+
+  if (token === cachedToken && userRaw === cachedUserRaw) {
+    return cachedSession;
+  }
+
+  cachedToken = token;
+  cachedUserRaw = userRaw;
+  cachedSession = {
+    hasToken: !!token,
+    user: token && userRaw ? (JSON.parse(userRaw) as AuthUser) : null,
+    hydrated: true,
+  };
+
+  return cachedSession;
+}
+
+function getServerSessionSnapshot(): SessionSnapshot {
+  return SERVER_SESSION;
+}
+
+function subscribeSession(callback: () => void) {
+  window.addEventListener("storage", callback);
+  return () => window.removeEventListener("storage", callback);
+}
+
 export default function ErpLayout({ title, children }: ErpLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const [session] = useState<{ hasToken: boolean; user: AuthUser | null }>(() => {
-    const hasToken = !!tokenStorage.get();
-    return {
-      hasToken,
-      user: hasToken ? userStorage.get() : null,
-    };
-  });
+  const session = useSyncExternalStore(
+    subscribeSession,
+    getSessionSnapshot,
+    getServerSessionSnapshot,
+  );
 
   useEffect(() => {
-    if (!session.hasToken) {
+    if (session.hydrated && !session.hasToken) {
       router.replace("/login");
     }
-  }, [router, session.hasToken]);
+  }, [router, session]);
 
   const selectedKey = useMemo(() => {
     if (pathname === "/") return "/";
@@ -70,6 +112,7 @@ export default function ErpLayout({ title, children }: ErpLayoutProps) {
     router.push("/login");
   };
 
+  if (!session.hydrated) return null;
   if (!session.hasToken) return null;
 
   const empName = session.user?.empName ?? "사용자";
@@ -129,6 +172,11 @@ export default function ErpLayout({ title, children }: ErpLayoutProps) {
             <Text>
               {empName} 님{role ? ` · ${role}` : ""}
             </Text>
+            <Link href="/mypage">
+              <Button size="small" icon={<UserOutlined />}>
+                My Page
+              </Button>
+            </Link>
             <Button size="small" icon={<LogoutOutlined />} onClick={handleLogout}>
               로그아웃
             </Button>
