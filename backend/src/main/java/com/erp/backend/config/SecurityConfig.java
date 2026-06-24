@@ -25,6 +25,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -104,7 +105,12 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         // 쿠키 전송을 위해 출처를 명시(와일드카드 불가) + 자격증명 허용
-        config.setAllowedOrigins(List.of(allowedOrigin));
+        // cors.allowed-origin은 콤마로 구분된 여러 출처를 허용한다.
+        config.setAllowedOrigins(
+                Arrays.stream(allowedOrigin.split(","))
+                        .map(String::trim)
+                        .filter(s -> !s.isEmpty())
+                        .toList());
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
