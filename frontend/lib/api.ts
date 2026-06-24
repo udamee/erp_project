@@ -6,8 +6,9 @@ export interface ApiResponse<T> {
   data: T;
 }
 
-// const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://192.168.1.190:8080';
+// 기본값은 localhost. LAN/다른 환경은 frontend/.env.local 의 NEXT_PUBLIC_API_URL 로 덮어쓴다.
+// 예) NEXT_PUBLIC_API_URL=http://192.168.1.190:8080
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
 console.log('[API BASE URL]', BASE_URL);
 
 // Access Token 관리 (학습용으로 localStorage 사용)
