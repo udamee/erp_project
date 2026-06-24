@@ -2,23 +2,26 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { App, Button, Card, Descriptions, Flex, Input, Space, Table, Typography } from 'antd';
+import { App, Button, Card, Descriptions, Flex, Input, Space, Steps, Table, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import ErpLayout from '@/components/ErpLayout';
 import StatusBadge from '@/components/StatusBadge';
 import { purchaseOrderApi, salesOrderApi, SalesOrder, shipmentApi } from '@/lib/api';
-
+import { CANCELLED } from 'dns';
 const { Text } = Typography;
-
 export default function SalesOrderDetailPage() {
   const { soId } = useParams<{ soId: string }>();
   const router = useRouter();
   const { message, modal } = App.useApp();
-
   const [order, setOrder] = useState<SalesOrder | null>(null);
   const [error, setError] = useState('');
   const [role, setRole] = useState('');
   const [processing, setProcessing] = useState(false);
+  const statusStep: Record<string, number> = {
+    REQUESTED: 1,
+    APPROVED: 2,
+    SHIPPED: 3,
+  };
 
   const load = useCallback(() => {
     salesOrderApi
@@ -130,6 +133,8 @@ export default function SalesOrderDetailPage() {
     });
   };
 
+  const currentStep = statusStep[order?.status];
+
   const columns = useMemo<ColumnsType<any>>(
     () => [
       { title: '제품코드', dataIndex: 'productCode' },
@@ -184,22 +189,22 @@ export default function SalesOrderDetailPage() {
       <Card>
         <Descriptions bordered column={3} size="small">
           <Descriptions.Item label="고객사명">{order.customerName}</Descriptions.Item>
-
           <Descriptions.Item label="주문자">{order.reqEmployeeName}</Descriptions.Item>
-
           <Descriptions.Item label="주문일">{order.orderDate?.slice(0, 10)}</Descriptions.Item>
-
           <Descriptions.Item label="총금액">
             <Text strong>{order.totalAmount?.toLocaleString()}원</Text>
           </Descriptions.Item>
-
           <Descriptions.Item label="승인자">{order.appEmployeeName ?? '-'}</Descriptions.Item>
-
           <Descriptions.Item label="상태">
             <StatusBadge status={order.status} />
           </Descriptions.Item>
         </Descriptions>
       </Card>
+      <Steps
+        current={currentStep}
+        // percent={progress}
+        items={[{ title: '주문 생성' }, { title: '승인대기' }, { title: '승인 완료' }, { title: '출고 완료' }]}
+      />
 
       <Card title="주문 품목">
         <Table

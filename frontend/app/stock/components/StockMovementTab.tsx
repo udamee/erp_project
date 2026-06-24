@@ -88,6 +88,12 @@ export default function StockMovementTab() {
   }, [message]);
   const columns: ColumnsType<StockMovement> = [
     {
+      title: '변경번호',
+      dataIndex: 'movementId',
+      width: 100,
+      align: 'center',
+    },
+    {
       title: '이동일시',
       dataIndex: 'createdAt',
       width: 170,
@@ -136,12 +142,13 @@ export default function StockMovementTab() {
         return <Tag>{labels[value] ?? value}</Tag>;
       },
     },
-    {
-      title: '원본 참조번호',
-      dataIndex: 'sourceId',
-      width: 130,
-      align: 'right',
-    },
+    ,
+    // {
+    //   title: '업무 참조번호',
+    //   dataIndex: 'sourceId',
+    //   width: 130,
+    //   align: 'right',
+    // },
     {
       title: '변경 전',
       dataIndex: 'beforeQty',
@@ -174,106 +181,113 @@ export default function StockMovementTab() {
   ];
 
   return (
-    <Card
-      title="재고 이동 이력"
-      extra={<Typography.Text type="secondary">총 {StockMovement.length.toLocaleString()}건</Typography.Text>}
-      styles={{ body: { padding: 10 } }}
-    >
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1.2fr 1fr 160px 180px 140px',
-          gap: 12,
-          marginBottom: 16,
-        }}
+    <>
+      <Card
+        style={{ marginBottom: 16 }}
+        title="재고 이동 이력"
+        extra={<Typography.Text type="secondary">총 {StockMovement.length.toLocaleString()}건</Typography.Text>}
+        styles={{ body: { padding: 10 } }}
       >
-        <Input
-          placeholder="상품명"
-          value={productName}
-          onChange={(e) => setProductName(e.target.value)}
-          onPressEnter={handleSearch}
-          allowClear
-        />
-        <Input
-          placeholder="로트번호"
-          value={lotNo}
-          onChange={(e) => setLotNo(e.target.value)}
-          onPressEnter={handleSearch}
-          allowClear
-        />
-        <Select
-          placeholder="이동유형"
-          value={movementType || undefined}
-          onChange={(value) => setMovementType(value)}
-          allowClear
-          options={[
-            { value: 'IN', label: '입고' },
-            { value: 'OUT', label: '출고' },
-            { value: 'RETURN', label: '반품' },
-            { value: 'DISPOSAL', label: '폐기' },
-            { value: 'ADJUSTMENT', label: '재고조정' },
-          ]}
-        />
-        <Select
-          placeholder="발생업무"
-          value={sourceType || undefined}
-          onChange={(value) => {
-            setSourceType(value ?? '');
-            setSourceId(undefined);
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1.2fr 1fr 160px 180px 140px',
+            gap: 12,
+            marginBottom: 16,
           }}
-          allowClear
-          options={[
-            { value: 'RECEIVING', label: '입고' },
-            { value: 'SHIPMENT_DETAIL', label: '출고' },
-            { value: 'RETURN', label: '반품' },
-            { value: 'DISPOSAL', label: '폐기' },
-            { value: 'ADJUSTMENT', label: '재고조정' },
-          ]}
-        />
-        <InputNumber
-          placeholder={
-            sourceType === 'SHIPMENT_DETAIL' ? '출고상세번호' : sourceType === 'RECEIVING' ? '입고번호' : '업무번호'
-          }
-          value={sourceId}
-          onChange={(value) => setSourceId(value ?? undefined)}
-          min={1}
-          controls={false}
-          disabled={!sourceType}
-          style={{ width: '100%' }}
-        />
-      </div>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: 12,
-          flexWrap: 'wrap',
-        }}
+        >
+          <Input
+            placeholder="상품명"
+            value={productName}
+            onChange={(e) => setProductName(e.target.value)}
+            onPressEnter={handleSearch}
+            allowClear
+          />
+          <Input
+            placeholder="로트번호"
+            value={lotNo}
+            onChange={(e) => setLotNo(e.target.value)}
+            onPressEnter={handleSearch}
+            allowClear
+          />
+          <Select
+            placeholder="이동유형"
+            value={movementType || undefined}
+            onChange={(value) => setMovementType(value)}
+            allowClear
+            options={[
+              { value: 'IN', label: '입고' },
+              { value: 'OUT', label: '출고' },
+              { value: 'RETURN', label: '반품' },
+              { value: 'DISPOSAL', label: '폐기' },
+              { value: 'ADJUSTMENT', label: '재고조정' },
+            ]}
+          />
+          <Select
+            placeholder="발생업무"
+            value={sourceType || undefined}
+            onChange={(value) => {
+              setSourceType(value ?? '');
+              setSourceId(undefined);
+            }}
+            allowClear
+            options={[
+              { value: 'RECEIVING', label: '입고' },
+              { value: 'SHIPMENT_DETAIL', label: '출고' },
+              { value: 'RETURN', label: '반품' },
+              { value: 'DISPOSAL', label: '폐기' },
+              { value: 'ADJUSTMENT', label: '재고조정' },
+            ]}
+          />
+          <InputNumber
+            placeholder={
+              sourceType === 'SHIPMENT_DETAIL' ? '출고상세번호' : sourceType === 'RECEIVING' ? '입고번호' : '업무번호'
+            }
+            value={sourceId}
+            onChange={(value) => setSourceId(value ?? undefined)}
+            min={1}
+            controls={false}
+            disabled={!sourceType}
+            style={{ width: '100%' }}
+          />
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 12,
+            flexWrap: 'wrap',
+          }}
+        >
+          <Space>
+            <DatePicker
+              placeholder="시작일"
+              value={startDate}
+              onChange={setStartDate}
+              disabledDate={(current) => (endDate ? current.isAfter(endDate, 'day') : false)}
+            />
+            <span>-</span>
+            <DatePicker
+              placeholder="종료일"
+              value={endDate}
+              onChange={setEndDate}
+              disabledDate={(current) => (startDate ? current.isBefore(startDate, 'day') : false)}
+            />
+          </Space>
+          <Space>
+            <Button onClick={handleReset}>초기화</Button>
+            <Button type="primary" loading={loading} disabled={loading} onClick={handleSearch}>
+              검색
+            </Button>
+          </Space>
+        </div>
+      </Card>
+      <Card
+        title="상품별 재고"
+        extra={<Typography.Text type="secondary"> 총 {StockMovement.length.toLocaleString()}건</Typography.Text>}
+        styles={{ body: { padding: 0 } }}
       >
-        <Space>
-          <DatePicker
-            placeholder="시작일"
-            value={startDate}
-            onChange={setStartDate}
-            disabledDate={(current) => (endDate ? current.isAfter(endDate, 'day') : false)}
-          />
-          <span>-</span>
-          <DatePicker
-            placeholder="종료일"
-            value={endDate}
-            onChange={setEndDate}
-            disabledDate={(current) => (startDate ? current.isBefore(startDate, 'day') : false)}
-          />
-        </Space>
-        <Space>
-          <Button onClick={handleReset}>초기화</Button>
-          <Button type="primary" loading={loading} disabled={loading} onClick={handleSearch}>
-            검색
-          </Button>
-        </Space>
-      </div>
-      <Card styles={{ body: { padding: 0 } }} style={{ marginTop: 20 }}>
         <Table
           columns={columns}
           dataSource={StockMovement}
@@ -295,6 +309,6 @@ export default function StockMovementTab() {
           }}
         />
       </Card>
-    </Card>
+    </>
   );
 }

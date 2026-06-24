@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 
 import { ProductStock, stockMovementApi } from '@/lib/api';
 import { ColumnsType } from 'antd/es/table';
-import { App, Button, Card, Checkbox, Input, Select, Space, Tag, Table } from 'antd';
+import { App, Button, Card, Checkbox, Input, Select, Space, Tag, Table, Typography } from 'antd';
 
 export default function ProductStockTab() {
   const { message } = App.useApp();
@@ -151,7 +151,11 @@ export default function ProductStockTab() {
           </Button>
         </Space>
       </Card>
-      <Card styles={{ body: { padding: 0 } }}>
+      <Card
+        title="상품별 재고"
+        extra={<Typography.Text type="secondary"> 총 {productStocks.length.toLocaleString()}건</Typography.Text>}
+        styles={{ body: { padding: 0 } }}
+      >
         <Table
           columns={columns}
           dataSource={productStocks}
