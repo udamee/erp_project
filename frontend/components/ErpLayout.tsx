@@ -2,39 +2,83 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ReactNode, useEffect, useMemo, useSyncExternalStore } from "react";
-import { Avatar, Button, Layout, Menu, Space, Typography } from "antd";
+import { ReactNode, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { Avatar, Button, Layout, Space, Typography } from "antd";
 import {
-  BellOutlined,
+  ArrowLeftOutlined,
+  CalendarOutlined,
+  HomeOutlined,
   LogoutOutlined,
   MedicineBoxOutlined,
+  ReconciliationOutlined,
   SafetyCertificateOutlined,
   ShoppingCartOutlined,
   TruckOutlined,
   UserOutlined,
   WalletOutlined,
 } from "@ant-design/icons";
-import { authApi, tokenStorage, userStorage, type AuthUser } from "@/lib/api";
+import { employeeApi } from "@/lib/api";
+import { authApi } from "@/lib/auth-api";
+import { tokenStorage, userStorage, type AuthUser } from "@/lib/api-client";
 import NotificationBell from "@/components/notification/NotificationBell";
 import NotificationDrawer from "@/components/notification/NotificationDrawer";
+import { NotificationProvider } from "@/app/providers/NotificationProvider";
 
 const { Header, Sider, Content } = Layout;
 const { Title, Text } = Typography;
 
-const MENUS = [
-  { href: "/", label: "Home", icon: <MedicineBoxOutlined /> },
-  { href: "/employees", label: "Employees", icon: <UserOutlined /> },
-  { href: "/attendance", label: "Attendance", icon: <UserOutlined /> },
-  { href: "/customers", label: "Customers", icon: <UserOutlined /> },
-  { href: "/product", label: "Products", icon: <MedicineBoxOutlined /> },
-  { href: "/purchase-orders", label: "Purchase Orders", icon: <ShoppingCartOutlined /> },
-  { href: "/purchase-orders/recevings", label: "Receiving", icon: <ShoppingCartOutlined /> },
-  { href: "/sales-orders", label: "Sales Orders", icon: <WalletOutlined /> },
-  { href: "/shipments", label: "Shipments", icon: <TruckOutlined /> },
-  { href: "/stock", label: "Stock", icon: <BellOutlined /> },
-  { href: "/recall-drugs", label: "Recall Drugs", icon: <MedicineBoxOutlined /> },
-  { href: "/settlement/dashboard", label: "Settlement", icon: <WalletOutlined /> },
-  { href: "/admin", label: "Admin", icon: <SafetyCertificateOutlined />, roles: ["MANAGER", "ADMIN"] },
+type MenuItem = {
+  href: string;
+  label: string;
+  icon: ReactNode;
+  roles?: string[];
+};
+
+type MenuGroup = {
+  title: string;
+  items: MenuItem[];
+};
+
+const MENU_GROUPS: MenuGroup[] = [
+  {
+    title: "기준정보",
+    items: [
+      { href: "/dashboard", label: "홈", icon: <HomeOutlined /> },
+      { href: "/attendance", label: "근태 관리", icon: <CalendarOutlined /> },
+      { href: "/customers", label: "거래처 관리", icon: <UserOutlined /> },
+      { href: "/product", label: "의약품 관리", icon: <MedicineBoxOutlined /> },
+      { href: "/recall-drugs", label: "위해의약품", icon: <SafetyCertificateOutlined /> },
+    ],
+  },
+  {
+    title: "구매 / 입고",
+    items: [
+      { href: "/purchase-orders", label: "발주 관리", icon: <ShoppingCartOutlined /> },
+      { href: "/purchase-orders/recevings", label: "입고 관리", icon: <TruckOutlined /> },
+    ],
+  },
+  {
+    title: "재고 / 출고",
+    items: [
+      { href: "/sales-orders", label: "판매 주문 관리", icon: <ReconciliationOutlined /> },
+      { href: "/shipments", label: "출고 관리", icon: <TruckOutlined /> },
+      { href: "/stock", label: "재고 관리", icon: <MedicineBoxOutlined /> },
+    ],
+  },
+  {
+    title: "정산 / 분석",
+    items: [
+      { href: "/settlement/dashboard", label: "정산 / 매출", icon: <WalletOutlined /> },
+      { href: "/settlement/receivables", label: "미수금 관리", icon: <WalletOutlined /> },
+      { href: "/settlement/payables", label: "미지급금 관리", icon: <WalletOutlined /> },
+    ],
+  },
+  {
+    title: "알림",
+    items: [
+      { href: "/admin", label: "관리자", icon: <SafetyCertificateOutlined />, roles: ["MANAGER", "ADMIN"] },
+    ],
+  },
 ];
 
 interface ErpLayoutProps {
@@ -87,9 +131,10 @@ function subscribeSession(callback: () => void) {
   return () => window.removeEventListener("storage", callback);
 }
 
-export default function ErpLayout({ title, children }: ErpLayoutProps) {
+export default function ErpLayout({ title, children, back = false }: ErpLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const [checkingSession, setCheckingSession] = useState(true);
   const session = useSyncExternalStore(
     subscribeSession,
     getSessionSnapshot,
@@ -97,22 +142,43 @@ export default function ErpLayout({ title, children }: ErpLayoutProps) {
   );
 
   useEffect(() => {
-    if (session.hydrated && !session.hasToken) {
+    if (!session.hydrated) return;
+
+    if (!session.hasToken) {
       router.replace("/login");
+      return;
     }
-  }, [router, session]);
+
+    let active = true;
+
+    employeeApi.me()
+      .then(() => {
+        if (active) setCheckingSession(false);
+      })
+      .catch(() => {
+        tokenStorage.clear();
+        userStorage.clear();
+        if (active) setCheckingSession(false);
+        router.replace("/login");
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [router, session.hasToken, session.hydrated]);
 
   const selectedKey = useMemo(() => {
-    if (pathname === "/") return "/";
+    if (pathname === "/" || pathname === "/dashboard") return "/dashboard";
 
-    return (
-      MENUS.find((menu) => menu.href !== "/" && pathname.startsWith(menu.href))?.href ??
-      pathname
-    );
+    const menuItems = MENU_GROUPS.flatMap((group) => group.items)
+      .filter((menu) => menu.href !== "/dashboard")
+      .sort((a, b) => b.href.length - a.href.length);
+
+    return menuItems.find((menu) => pathname.startsWith(menu.href))?.href ?? pathname;
   }, [pathname]);
 
   const handleLogout = async () => {
-    if (!confirm("Log out?")) return;
+    if (!confirm("로그아웃하시겠습니까?")) return;
 
     await authApi.logout().catch(() => {});
     tokenStorage.clear();
@@ -120,81 +186,83 @@ export default function ErpLayout({ title, children }: ErpLayoutProps) {
     router.push("/login");
   };
 
-  if (!session.hydrated) return null;
+  if (!session.hydrated || checkingSession) return null;
   if (!session.hasToken) return null;
 
-  const empName = session.user?.empName ?? "User";
+  const empName = session.user?.empName ?? "사용자";
   const role = session.user?.role ?? "";
 
   return (
-    <Layout style={{ minHeight: "100vh" }}>
-      <Sider width={230} theme="light" style={{ borderRight: "1px solid #f0f0f0" }}>
-        <div
-          style={{
-            height: 64,
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            padding: "0 20px",
-            fontWeight: 700,
-            fontSize: 18,
-          }}
-        >
-          <Avatar
-            shape="square"
-            icon={<MedicineBoxOutlined />}
-            style={{ backgroundColor: "#1d9e75" }}
-          />
-          PharmaFlow ERP
-        </div>
+    <NotificationProvider>
+      <Layout className="erp-shell">
+        <Sider width={252} theme="light" className="erp-sidebar">
+          <Link href="/dashboard" className="erp-brand" aria-label="약통 ERP 홈">
+            <span className="erp-logo-mark">약</span>
+            <span>약통 ERP</span>
+          </Link>
 
-        <Menu
-          mode="inline"
-          selectedKeys={[selectedKey]}
-          items={MENUS.filter((menu) => !menu.roles || menu.roles.includes(role)).map((menu) => ({
-            key: menu.href,
-            icon: menu.icon,
-            label: <Link href={menu.href}>{menu.label}</Link>,
-          }))}
-        />
-      </Sider>
+          <nav className="erp-nav" aria-label="주요 메뉴">
+            {MENU_GROUPS.map((group) => {
+              const visibleItems = group.items.filter((item) => !item.roles || item.roles.includes(role));
 
-      <Layout>
-        <Header
-          style={{
-            height: 64,
-            background: "#fff",
-            borderBottom: "1px solid #f0f0f0",
-            padding: "0 24px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <Title level={4} style={{ margin: 0 }}>
-            {title}
-          </Title>
+              if (visibleItems.length === 0) return null;
 
-          <Space size={12}>
-            <NotificationBell />
-            <Avatar icon={<UserOutlined />} />
-            <Text>
-              {empName}{role ? ` · ${role}` : ""}
-            </Text>
-            <Link href="/mypage">
-              <Button size="small" icon={<UserOutlined />}>
-                My Page
+              return (
+                <section className="erp-nav-section" key={group.title}>
+                  <div className="erp-nav-title">
+                    <span>{group.title}</span>
+                    <span className="erp-nav-caret">⌃</span>
+                  </div>
+                  <div className="erp-nav-items">
+                    {visibleItems.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={`erp-nav-item${selectedKey === item.href ? " active" : ""}`}
+                      >
+                        <span className="erp-nav-icon">{item.icon}</span>
+                        <span>{item.label}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
+          </nav>
+        </Sider>
+
+        <Layout>
+          <Header className="erp-topbar">
+            <div className="erp-title-wrap">
+              {back && (
+                <Button
+                  className="erp-back-btn"
+                  icon={<ArrowLeftOutlined />}
+                  onClick={() => router.back()}
+                  aria-label="뒤로가기"
+                />
+              )}
+              <Title level={3} className="erp-page-title">
+                {title}
+              </Title>
+            </div>
+
+            <Space size={12} className="erp-user-actions">
+              <NotificationBell />
+              <Link href="/mypage" className="erp-user-link">
+                <Avatar icon={<UserOutlined />} />
+                <Text>{empName} 님</Text>
+              </Link>
+              <Button size="small" icon={<LogoutOutlined />} onClick={handleLogout}>
+                로그아웃
               </Button>
-            </Link>
-            <Button size="small" icon={<LogoutOutlined />} onClick={handleLogout}>
-              Log out
-            </Button>
-          </Space>
-        </Header>
+            </Space>
+          </Header>
 
-        <Content style={{ padding: 24, background: "#f5f7f9" }}>{children}</Content>
+          <Content className="erp-content">{children}</Content>
+        </Layout>
+        <NotificationDrawer />
       </Layout>
-      <NotificationDrawer />
-    </Layout>
+    </NotificationProvider>
   );
 }

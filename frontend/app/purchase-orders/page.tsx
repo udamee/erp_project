@@ -12,11 +12,11 @@ import { purchaseOrderApi, PurchaseOrder } from "@/lib/api";
 const { Text } = Typography;
 
 const TABS = [
-  { key: "", label: "All" },
-  { key: "REQUESTED", label: "Requested" },
-  { key: "APPROVED", label: "Approved" },
-  { key: "REJECTED", label: "Rejected" },
-  { key: "COMPLETED", label: "Completed" },
+  { key: "", label: "전체" },
+  { key: "REQUESTED", label: "승인 대기" },
+  { key: "APPROVED", label: "승인 완료" },
+  { key: "REJECTED", label: "반려" },
+  { key: "COMPLETED", label: "입고 완료" },
 ];
 
 export default function PurchaseOrderListPage() {
@@ -54,33 +54,33 @@ export default function PurchaseOrderListPage() {
 
   const columns: ColumnsType<PurchaseOrder> = [
     {
-      title: "PO No.",
+      title: "발주번호",
       dataIndex: "poId",
       render: (poId) => `PO-${String(poId).padStart(4, "0")}`,
     },
     {
-      title: "Supplier",
+      title: "공급처",
       dataIndex: "supplierName",
     },
     {
-      title: "Requester",
+      title: "기안자",
       dataIndex: "requestEmpName",
     },
     {
-      title: "Order Date",
+      title: "발주일",
       dataIndex: "poDate",
       render: (value) => value?.slice(0, 10),
     },
     {
-      title: "Status",
+      title: "상태",
       dataIndex: "status",
       render: (status) => <StatusBadge status={status} />,
     },
     {
-      title: "Total",
+      title: "총금액",
       dataIndex: "totalAmount",
       align: "right",
-      render: (value) => `${value?.toLocaleString() ?? 0}`,
+      render: (value) => `${value?.toLocaleString() ?? 0}원`,
     },
   ];
 
@@ -98,7 +98,7 @@ export default function PurchaseOrderListPage() {
   );
 
   return (
-    <ErpLayout title="Purchase Orders">
+    <ErpLayout title="발주 관리">
       <Space direction="vertical" size={16} style={{ width: "100%" }}>
         <Tabs
           activeKey={tab}
@@ -110,14 +110,14 @@ export default function PurchaseOrderListPage() {
         />
 
         <Space style={{ width: "100%", justifyContent: "space-between" }}>
-          <Text type="secondary">Total {total}</Text>
+          <Text type="secondary">총 {total}건</Text>
 
           <Button
             type="primary"
             icon={<PlusOutlined />}
             onClick={() => router.push("/purchase-orders/new")}
           >
-            New Purchase Order
+            발주 등록
           </Button>
         </Space>
 

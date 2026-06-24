@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import AntdProvider from "./providers/AntdProvider";
-import { NotificationProvider } from "./providers/NotificationProvider";
 import "antd/dist/reset.css";
 import "./globals.css";
 import "./erp.css";
 
 export const metadata: Metadata = {
-  title: "PharmaFlow ERP",
-  description: "Pharmaceutical distribution ERP",
+  title: "약통 ERP",
+  description: "의약품 유통 관리 ERP",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -17,7 +16,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <AntdRegistry>
           <AntdProvider>
-            <NotificationProvider>{children}</NotificationProvider>
+            {children}
           </AntdProvider>
         </AntdRegistry>
       </body>
