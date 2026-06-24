@@ -23,7 +23,7 @@ export default function AntdProvider({ children }: { children: React.ReactNode }
           colorText: '#1F2937',
           colorTextSecondary: '#6B7280',
 
-          borderRadius: 10,
+          borderRadius: 8,
           fontSize: 13,
           controlHeight: 36,
         },
@@ -50,10 +50,10 @@ export default function AntdProvider({ children }: { children: React.ReactNode }
             borderColor: '#DCE8DF',
           },
           Card: {
-            borderRadiusLG: 12,
+            borderRadiusLG: 8,
           },
           Modal: {
-            borderRadiusLG: 12,
+            borderRadiusLG: 8,
           },
         },
       }}
