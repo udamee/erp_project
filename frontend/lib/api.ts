@@ -23,16 +23,54 @@ export interface AuthUser {
   empName: string;
   role: string;
   deptId: number;
+  deptCode?: string;
 }
 
 export const userStorage = {
-  set: (u: AuthUser) => localStorage.setItem("authUser", JSON.stringify(u)),
+  set: (u: AuthUser) => {
+    localStorage.setItem("authUser", JSON.stringify(u));
+    localStorage.setItem("empId", String(u.empId));
+    localStorage.setItem("loginId", u.loginId);
+    localStorage.setItem("empName", u.empName);
+    localStorage.setItem("role", u.role);
+    localStorage.setItem("deptId", String(u.deptId));
+    if (u.deptCode) {
+      localStorage.setItem("deptCode", u.deptCode);
+    } else {
+      localStorage.removeItem("deptCode");
+    }
+  },
   get: (): AuthUser | null => {
     if (typeof window === "undefined") return null;
     const raw = localStorage.getItem("authUser");
-    return raw ? (JSON.parse(raw) as AuthUser) : null;
+    if (raw) return JSON.parse(raw) as AuthUser;
+
+    const empId = localStorage.getItem("empId");
+    const loginId = localStorage.getItem("loginId");
+    const empName = localStorage.getItem("empName");
+    const role = localStorage.getItem("role");
+    const deptId = localStorage.getItem("deptId");
+
+    if (!empId || !loginId || !empName || !role || !deptId) return null;
+
+    return {
+      empId: Number(empId),
+      loginId,
+      empName,
+      role,
+      deptId: Number(deptId),
+      deptCode: localStorage.getItem("deptCode") ?? undefined,
+    };
   },
-  clear: () => localStorage.removeItem("authUser"),
+  clear: () => {
+    localStorage.removeItem("authUser");
+    localStorage.removeItem("empId");
+    localStorage.removeItem("loginId");
+    localStorage.removeItem("empName");
+    localStorage.removeItem("role");
+    localStorage.removeItem("deptId");
+    localStorage.removeItem("deptCode");
+  },
 };
 
 // 로그인/재발급 응답 (백엔드 LoginResponseDto와 매핑 — refreshToken은 쿠키라 body에 없음)
@@ -43,6 +81,7 @@ export interface LoginResponse {
   empName: string;
   role: string;
   deptId: number;
+  deptCode?: string;
 }
 
 // 세션 정리 후 로그인 페이지로 이동
@@ -85,9 +124,9 @@ function refreshAccessToken(): Promise<string | null> {
 
 // 공통 fetch 래퍼: JWT 자동 첨부 + 401 시 토큰 재발급 후 1회 재시도
 async function request<T>(
-  path: string,
-  options: RequestInit = {},
-  allowRetry = true,
+    path: string,
+    options: RequestInit = {},
+    allowRetry = true,
 ): Promise<T> {
   const token = tokenStorage.get();
 
@@ -135,11 +174,11 @@ async function request<T>(
 export const api = {
   get: <T>(path: string) => request<T>(path),
   post: <T>(path: string, data?: unknown) =>
-    request<T>(path, { method: "POST", body: data ? JSON.stringify(data) : undefined }),
+      request<T>(path, { method: "POST", body: data ? JSON.stringify(data) : undefined }),
   put: <T>(path: string, data?: unknown) =>
-    request<T>(path, { method: "PUT", body: data ? JSON.stringify(data) : undefined }),
+      request<T>(path, { method: "PUT", body: data ? JSON.stringify(data) : undefined }),
   patch: <T>(path: string, data?: unknown) =>
-    request<T>(path, { method: "PATCH", body: data ? JSON.stringify(data) : undefined }),
+      request<T>(path, { method: "PATCH", body: data ? JSON.stringify(data) : undefined }),
 };
 
 // ===== 인증 API =====
@@ -156,15 +195,15 @@ export interface SignupRequest {
 export const authApi = {
   // 로그인 실패(401 LOGIN_FAILED)는 refresh 재시도 없이 백엔드 메시지를 그대로 노출해야 하므로 allowRetry=false
   login: (loginId: string, password: string) =>
-    request<LoginResponse>(
-      "/api/auth/login",
-      { method: "POST", body: JSON.stringify({ loginId, password }) },
-      false,
-    ),
+      request<LoginResponse>(
+          "/api/auth/login",
+          { method: "POST", body: JSON.stringify({ loginId, password }) },
+          false,
+      ),
   signup: (data: SignupRequest) => api.post<void>("/api/auth/signup", data),
   // 재발급 실패로 로그인 화면에 튕기지 않도록 refresh 재시도는 비활성화
   logout: () =>
-    request<void>("/api/auth/logout", { method: "POST" }, false),
+      request<void>("/api/auth/logout", { method: "POST" }, false),
   // 본인 비밀번호 변경
   changePassword: (data: {
     currentPassword: string;
@@ -223,12 +262,65 @@ export interface ReceivingDetailInput {
   unitPrice: number;
 }
 
+export interface SalesOrder {
+  soId: number;
+  customerId: number;
+  customerName: string;
+  reqEmployeeId: number;
+  reqEmployeeName: string;
+  appEmployeeId?: number | null;
+  appEmployeeName?: string | null;
+  orderDate: string;
+  approveDate?: string | null;
+  status: "REQUESTED" | "APPROVED" | "SHIPPED" | "CANCELED";
+  totalAmount: number;
+  memo?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  detailList?: SalesOrderDetail[];
+}
+
+export interface SalesOrderDetail {
+  soDetailId: number;
+  soId: number;
+  productId: number;
+  productCode?: string;
+  productName: string;
+  orderQty: number;
+  unitPrice: number;
+  amount: number;
+}
+
+export interface NotificationMessage {
+  notificationId: number;
+  level: "INFO" | "WARNING" | "CRITICAL";
+  receiver: string;
+  content: string;
+  dateTime: string;
+  isRead: boolean;
+}
+
+export interface AlertMessage {
+  alertId: number;
+  receiver: string;
+  content: string;
+  dateTime: string;
+  alertType?: string;
+  alertLevel?: "INFO" | "WARNING" | "CRITICAL";
+  isRead: boolean;
+  productId?: number;
+  inventoryLotId?: number;
+  productName?: string;
+  lotNo?: string;
+}
+
 export interface PageResult<T> {
   list: T[];
   total: number;
   page: number;
   size: number;
   totalPages: number;
+  totalPage?: number;
 }
 
 export interface ProductOption {
@@ -260,7 +352,7 @@ export const purchaseOrderApi = {
   },
   detail: (poId: number) => api.get<PurchaseOrder>(`/api/purchase-orders/${poId}`),
   suppliers: () =>
-    api.get<{ supplierId: number; supplierName: string }[]>("/api/purchase-orders/suppliers"),
+      api.get<{ supplierId: number; supplierName: string }[]>("/api/purchase-orders/suppliers"),
   products: () => api.get<ProductOption[]>("/api/purchase-orders/products"),
   create: (data: {
     supplierId: number;
@@ -269,7 +361,7 @@ export const purchaseOrderApi = {
   }) => api.post<number>("/api/purchase-orders", data),
   approve: (poId: number) => api.put<void>(`/api/purchase-orders/${poId}/approve`),
   reject: (poId: number, rejectReason: string) =>
-    api.put<void>(`/api/purchase-orders/${poId}/reject`, { rejectReason }),
+      api.put<void>(`/api/purchase-orders/${poId}/reject`, { rejectReason }),
   listPaging: (status: string, page: number, size = 10) => {
     const params = new URLSearchParams();
     if (status) params.set("status", status);
@@ -278,15 +370,51 @@ export const purchaseOrderApi = {
     return api.get<PageResult<PurchaseOrder>>(`/api/purchase-orders/paging?${params}`);
   },
   statusCounts: () =>
-    api.get<Record<string, number>>("/api/purchase-orders/status-counts"),
+      api.get<Record<string, number>>("/api/purchase-orders/status-counts"),
 };
 
 export const receivingApi = {
   receivableList: () => api.get<ReceivableOrder[]>("/api/receivings"),
   detailsByPoId: (poId: number) =>
-    api.get<PurchaseOrderDetail[]>(`/api/receivings/${poId}/details`),
+      api.get<PurchaseOrderDetail[]>(`/api/receivings/${poId}/details`),
   process: (data: { poId: number; memo?: string; details: ReceivingDetailInput[] }) =>
-    api.post<void>("/api/receivings", data),
+      api.post<void>("/api/receivings", data),
+};
+
+export const salesOrderApi = {
+  list: (status?: string) => {
+    const params = new URLSearchParams();
+    if (status) params.set("status", status);
+    const qs = params.toString();
+    return api.get<SalesOrder[]>(`/api/sales-order${qs ? `?${qs}` : ""}`);
+  },
+  listPaging: (status: string, page: number, size = 10) => {
+    const params = new URLSearchParams();
+    if (status) params.set("status", status);
+    params.set("page", String(page));
+    params.set("size", String(size));
+    return api.get<PageResult<SalesOrder>>(`/api/sales-order/paging?${params}`);
+  },
+  statusCount: () => api.get<Record<string, number>>("/api/sales-order/status-count"),
+  detail: (soId: number) => api.get<SalesOrder>(`/api/sales-order/${soId}/details`),
+  customers: () => api.get<{ customerId: number; customerName: string }[]>("/api/sales-order/customers"),
+  products: () => api.get<Product[]>("/api/sales-order/products"),
+  create: (data: {
+    customerId: number;
+    employeeId: number;
+    memo?: string;
+    details: { productId: number; orderQty: number }[];
+  }) => api.post<SalesOrder>("/api/sales-order", data),
+  approve: (soId: number, employeeId: number) =>
+      api.patch<SalesOrder>(`/api/sales-order/${soId}/approve`, { employeeId }),
+};
+
+export const alertApi = {
+  markRead: (alertId: number, loginId: number) => {
+    const params = new URLSearchParams();
+    params.set("loginId", String(loginId));
+    return api.put<void>(`/api/alert/${alertId}?${params}`);
+  },
 };
 
 export interface Customer {
@@ -346,7 +474,7 @@ export const customerApi = {
 
   // 거래처 수정
   update: (customerId: number, data: CustomerInput) =>
-    api.put<void>(`/api/customers/${customerId}`, data),
+      api.put<void>(`/api/customers/${customerId}`, data),
 
   // 약국 검색
   searchPharmacy: (sido?: string, sigungu?: string, name?: string) => {
@@ -370,7 +498,7 @@ export const customerApi = {
 
   // 사업자번호 상태조회
   checkBusiness: (businessNo: string) =>
-    api.post<BusinessStatus>("/api/customers/check-business", { businessNo }),
+      api.post<BusinessStatus>("/api/customers/check-business", { businessNo }),
 };
 
 export interface RecallDrug {
@@ -504,23 +632,23 @@ export const employeeApi = {
   // 마이페이지
   me: () => api.get<Employee>("/api/employees/me"),
   updateMyInfo: (data: { phone?: string; email?: string }) =>
-    api.put<void>("/api/employees/me", data),
+      api.put<void>("/api/employees/me", data),
 
   // ===== ADMIN 전용 계정·권한 관리 =====
   // 직원 정보 수정 (이름/연락처/이메일/부서/입사일)
   update: (
-    empId: number,
-    data: { empName?: string; phone?: string; email?: string; deptId?: number; hireDate?: string },
+      empId: number,
+      data: { empName?: string; phone?: string; email?: string; deptId?: number; hireDate?: string },
   ) => api.put<void>(`/api/employees/${empId}`, data),
   // 역할 변경
   updateRole: (empId: number, roleCode: RoleCode) =>
-    api.patch<void>(`/api/employees/${empId}/role`, { roleCode }),
+      api.patch<void>(`/api/employees/${empId}/role`, { roleCode }),
   // 계정 활성/비활성
   updateStatus: (empId: number, status: "ACTIVE" | "INACTIVE") =>
-    api.patch<void>(`/api/employees/${empId}/status`, { status }),
+      api.patch<void>(`/api/employees/${empId}/status`, { status }),
   // 비밀번호 초기화
   resetPassword: (empId: number, newPassword: string) =>
-    api.patch<void>(`/api/employees/${empId}/reset-password`, { newPassword }),
+      api.patch<void>(`/api/employees/${empId}/reset-password`, { newPassword }),
 };
 
 // 사원 승인/거절/삭제 (HR 매니저 + ADMIN) — /api/admin/employees
@@ -529,7 +657,7 @@ export const adminEmployeeApi = {
   approve: (empId: number) => api.post<void>(`/api/admin/employees/${empId}/approve`),
   reject: (empId: number) => api.post<void>(`/api/admin/employees/${empId}/reject`),
   remove: (empId: number) =>
-    request<void>(`/api/admin/employees/${empId}`, { method: "DELETE" }),
+      request<void>(`/api/admin/employees/${empId}`, { method: "DELETE" }),
 };
 
 // ===== 근태(Attendance) 도메인 =====
@@ -554,7 +682,7 @@ export const attendanceApi = {
   today: () => api.get<Attendance>("/api/attendance/me/today"),
   // 기간별 본인 근태 (yyyy-MM-dd)
   myList: (from: string, to: string) =>
-    api.get<Attendance[]>(`/api/attendance/me?from=${from}&to=${to}`),
+      api.get<Attendance[]>(`/api/attendance/me?from=${from}&to=${to}`),
 };
 
 // ===== 관리자 근태 (MANAGER·ADMIN) =====
@@ -581,8 +709,8 @@ export const adminAttendanceApi = {
   detail: (attendanceId: number) => api.get<Attendance>(`/api/admin/attendance/${attendanceId}`),
   // 근태 보정 (checkIn/checkOut은 yyyy-MM-ddTHH:mm)
   update: (attendanceId: number, data: { checkIn?: string; checkOut?: string; status?: string; memo?: string }) =>
-    api.put<void>(`/api/admin/attendance/${attendanceId}`, data),
+      api.put<void>(`/api/admin/attendance/${attendanceId}`, data),
   // 결근/휴가 직접 등록
   createAbsence: (data: { empId: number; workDate: string; status: "ABSENT" | "LEAVE"; memo?: string }) =>
-    api.post<Attendance>("/api/admin/attendance/absence", data),
+      api.post<Attendance>("/api/admin/attendance/absence", data),
 };

@@ -25,6 +25,35 @@ body {
   font-family: Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.erp-logo-mark {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--erp-primary);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+}
+
+.erp-clickable-row {
+  cursor: pointer;
+}
+
+.erp-muted {
+  color: var(--erp-text-muted);
+}
+
+.erp-danger-text {
+  color: var(--erp-danger);
+}
+
 .recall-row-danger td {
   background: #fff1f0;
 }
@@ -163,6 +192,8 @@ body {
   justify-content: flex-end;
   gap: 8px;
   margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--erp-line);
 }
 .erp-back-btn {
   width: 36px;

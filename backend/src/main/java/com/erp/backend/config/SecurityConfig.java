@@ -48,10 +48,8 @@ public class SecurityConfig {
                 // 인증/인가 실패를 빈 응답 대신 JSON(ApiResponse)으로 내려 프론트가 처리할 수 있게 한다.
                 // 미인증(토큰 없음/만료) → 401 (프론트가 토큰 재발급 시도), 권한 부족 → 403
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint((req, res, e) ->
-                                writeJsonError(res, 401, "인증이 필요합니다. 다시 로그인해주세요."))
-                        .accessDeniedHandler((req, res, e) ->
-                                writeJsonError(res, 403, "접근 권한이 없습니다.")))
+                        .authenticationEntryPoint((req, res, e) -> writeJsonError(res, 401, "인증이 필요합니다. 다시 로그인해주세요."))
+                        .accessDeniedHandler((req, res, e) -> writeJsonError(res, 403, "접근 권한이 없습니다.")))
                 .authorizeHttpRequests(auth -> auth
                         // 비밀번호 변경은 로그인 상태에서만 허용 (permitAll 보다 먼저 선언)
                         .requestMatchers(HttpMethod.PATCH, "/api/auth/password").authenticated()
@@ -59,15 +57,19 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         // Swagger 허용
                         .requestMatchers("/swagger-ui/**", "/api-docs/**").permitAll()
+                        // STOMP handshake endpoint
+                        .requestMatchers("/ws-connect", "/ws-connect/**").permitAll()
                         // 부서 조회는 회원가입 폼에서 필요하므로 인증 없이 허용
                         .requestMatchers(HttpMethod.GET, "/api/departments/**").permitAll()
                         // ADMIN, MANAGER 전용
-                        .requestMatchers("/api/admin/**").hasAnyRole("MANAGER","ADMIN")
+                        .requestMatchers("/api/admin/**").hasAnyRole("MANAGER", "ADMIN")
                         // 발주 승인, 반려
                         .requestMatchers(HttpMethod.PUT, "/api/purchase-orders/*/approve")
                         .hasAnyRole("MANAGER", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/purchase-orders/*/reject")
                         .hasAnyRole("MANAGER", "ADMIN")
+                        // 알림 데이터 API는 로그인 사용자 기준으로 처리
+                        .requestMatchers("/api/alert/**", "/api/notification/**").authenticated()
                         // STORE 허용
                         .requestMatchers("/api/sales-order/**").permitAll()
                         .requestMatchers("/api/shipment/**").permitAll()

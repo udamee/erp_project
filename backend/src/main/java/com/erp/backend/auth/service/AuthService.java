@@ -70,8 +70,7 @@ public class AuthService {
         Long empId = employee.getEmpId();
         String role = employee.getRoleCode();
         String deptCode = employee.getDeptCode();
-        List<String> exAuths = authMapper.findExceptionAuths(deptCode, "ROLE_" +role);
-
+        List<String> exAuths = authMapper.findExceptionAuths(deptCode, "ROLE_" + role);
 
         // 토큰 생성
         String accessToken = jwtTokenProvider.generateAccessToken(empId, deptCode, role, exAuths);
@@ -118,7 +117,7 @@ public class AuthService {
 
         String role = employee.getRoleCode();
         String deptCode = employee.getDeptCode();
-        List<String> exAuths = authMapper.findExceptionAuths(deptCode, "ROLE_" +role);
+        List<String> exAuths = authMapper.findExceptionAuths(deptCode, "ROLE_" + role);
         String newAccessToken = jwtTokenProvider.generateAccessToken(empId, deptCode, role, exAuths);
         String newRefreshToken = jwtTokenProvider.generateRefreshToken(empId);
 
@@ -198,8 +197,9 @@ public class AuthService {
                 .empId(employee.getEmpId())
                 .loginId(employee.getLoginId())
                 .empName(employee.getEmpName())
-                .role(employee.getRoleCode())      // ← ROLE → roleCode 주의!
+                .role(employee.getRoleCode()) // ← ROLE → roleCode 주의!
                 .deptId(employee.getDeptId())
+                .deptCode(employee.getDeptCode())
                 .build();
     }
 }
