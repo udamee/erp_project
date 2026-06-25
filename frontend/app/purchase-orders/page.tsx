@@ -99,7 +99,7 @@ export default function PurchaseOrderListPage() {
 
   return (
     <ErpLayout title="발주 관리">
-      <Space direction="vertical" size={16} style={{ width: "100%" }}>
+      <Space orientation="vertical" size={16} style={{ width: "100%" }}>
         <Tabs
           activeKey={tab}
           items={tabItems}

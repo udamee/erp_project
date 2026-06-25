@@ -62,7 +62,7 @@ export default function ReceivableListPage() {
         width: 110,
         align: 'center',
         render: (_, record) => (
-          <Button type="primary" size="small" onClick={() => router.push(`/receivings/${record.poId}`)}>
+          <Button type="primary" size="small" onClick={() => router.push(`/purchase-orders/recevings/${record.poId}`)}>
             입고하기
           </Button>
         ),
