@@ -104,7 +104,7 @@ public class SalesOrderController {
 
     @GetMapping("/products")
     public ResponseEntity<ApiResponse<List<ProductVO>>> findAllProducts(){
-        List<ProductVO> results = salesOrderService.findAllActiveProducts();
+        List<ProductVO> results = salesOrderService.findAllAvailableActiveProducts();
         return ResponseEntity.ok(ApiResponse.success("의약품을 조회했습니다",results));
     }
 

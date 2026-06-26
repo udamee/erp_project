@@ -137,6 +137,11 @@ public class SalesOrderService {
             if(productVO==null){
                 throw new CustomException(ErrorCode.NOT_FOUND);
             }
+            int availableQty = salesOrderMapper.findAvailableQtyByProductId(detailRequest.getProductId());
+            if (availableQty < detailRequest.getOrderQty()) {
+                throw new CustomException(ErrorCode.SALES_INSUFFICIENT_STOCK);
+            }
+
             BigDecimal unitPrice = productVO.getStandardSalesPrice();
             if(unitPrice==null){
                 throw new CustomException(ErrorCode.SALES_ORDER_FAILED);
@@ -223,7 +228,7 @@ public class SalesOrderService {
         return salesOrderMapper.existsRequestedOrderWithDetail(salesOrderId);
     }
 
-    public List<ProductVO> findAllActiveProducts(){
+    public List<ProductVO> findAllAvailableActiveProducts() {
         return salesOrderMapper.findAllActiveProducts();
     }
 

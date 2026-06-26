@@ -274,9 +274,26 @@
         GROUP BY status
     </select>
     <select id="findAllActiveProducts" resultType="ProductVO">
-        SELECT *
+        SELECT pr.product_id,
+               pr.product_code,
+               pr.product_name,
+               pr.unit,
+               pr.standard_sales_price,
+               SUM(il.current_qty) as "availableQty"
         FROM product pr
+                 JOIN inventory_lot il ON il.product_id = pr.product_id
         WHERE pr.status = 'ACTIVE'
+          AND pr.standard_sales_price > 0
+          AND il.status = 'NORMAL'
+          AND il.current_qty > 0
+          AND il.expiry_date >= TRUNC(SYSDATE) + 11
+        GROUP BY pr.product_id,
+                 pr.product_code,
+                 pr.product_name,
+                 pr.unit,
+                 pr.standard_sales_price
+        HAVING SUM(il.current_qty) > 0
+        ORDER BY pr.product_name
     </select>
     <select id="findAllCustomers" resultType="SalesOrderVO">
         SELECT customer_id, customer_name

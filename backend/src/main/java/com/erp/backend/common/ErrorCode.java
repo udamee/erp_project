@@ -62,6 +62,7 @@ public enum ErrorCode {
     SALES_APPROVE_FAILED(HttpStatus.BAD_REQUEST,"승인이 되지 않았습니다"),
     SALES_ALREADY_APPROVED(HttpStatus.BAD_REQUEST,"승인이 이미 되었습니다"),
     SALES_LOT_ALLOCATE_FAILED(HttpStatus.CONFLICT,"로트번호 배정 작업이 실패했습니다"),
+    SALES_INSUFFICIENT_STOCK(HttpStatus.BAD_REQUEST, "재고가 충분하지 않습니다"),
 
     // 거래처 관련
     DUPLICATE_BUSINESS_NO(HttpStatus.CONFLICT, "이미 등록된 사업자번호입니다."),
