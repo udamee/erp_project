@@ -19,9 +19,13 @@ type AccountReceivable = {
 
 export default function ReceivablesPage() {
     const router = useRouter();
+
     const [status, setStatus] = useState("");
     const [list, setList] = useState<AccountReceivable[]>([]);
     const [customerName, setCustomerName] = useState("");
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
+
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
 
@@ -42,6 +46,8 @@ export default function ReceivablesPage() {
         const params = new URLSearchParams();
         if (customerName) params.append("customerName", customerName);
         if (status) params.append("status", status);
+        if (startDate) params.append("startDate", startDate);
+        if (endDate) params.append("endDate", endDate);
         const query = params.toString() ? `?${params.toString()}` : "";
         
         fetch(`http://localhost:8080/api/settlement/receivables${query}`)
@@ -85,10 +91,24 @@ export default function ReceivablesPage() {
                     onChange={(e) => setStatus(e.target.value)}
                 >
                     <option value="">전체 상태</option>
-                    <option value="UNPAID">미수</option>
-                    <option value="PARTIAL">부분수금</option>
-                    <option value="PAID">완납</option>
+                    <option value="UNPAID">UNPAID</option>
+                    <option value="PARTIAL">PARTIAL</option>
+                    <option value="PAID">PAID</option>
                 </select>
+
+                <input
+                    className="erp-input"
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                />
+
+                <input
+                    className="erp-input"
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                />
 
                 <button className="erp-btn primary" onClick={handleSearch}>
                     검색
@@ -98,6 +118,8 @@ export default function ReceivablesPage() {
                     onClick={() => {
                         setCustomerName("");
                         setStatus("");
+                        setStartDate("");
+                        setEndDate("");
                         setTimeout(fetchList, 0);
                     }}
                 >

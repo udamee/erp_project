@@ -22,7 +22,7 @@ export default function SalesInvoiceNewPage() {
   const [customer, setCustomer] = useState<CustomerInfo | null>(null);
   const [issueDate, setIssueDate] = useState("");
   const [totalAmount, setTotalAmount] = useState("");
-  const [status, setStatus] = useState("PENDING");
+  const [status, setStatus] = useState("ISSUED");
   const [loading, setLoading] = useState(true);
 
   const formatMoney = (value?: number) => {
@@ -179,8 +179,7 @@ export default function SalesInvoiceNewPage() {
                   onChange={(e) => setStatus(e.target.value)}
                   style={{ width: "100%" }}
                 >
-                  <option value="PENDING">대기</option>
-                  <option value="APPROVED">승인</option>
+                  <option value="ISSUED">ISSUED</option>
                 </select>
               </div>
             </div>

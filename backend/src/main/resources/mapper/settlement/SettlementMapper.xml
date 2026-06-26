@@ -20,7 +20,7 @@
             SI.CREATED_AT
         FROM SALES_INVOICE SI
         JOIN CUSTOMER C
-        ON C.CUSTOMER_ID = SI.CUSTOMER_ID
+            ON C.CUSTOMER_ID = SI.CUSTOMER_ID
         WHERE 1 = 1
         <if test="status != null and status != ''">
             AND SI.STATUS = #{status}
@@ -212,10 +212,13 @@
             P.PAYMENT_AMOUNT,
             P.PAYMENT_TYPE,
             P.CREATED_BY,
+            E.EMP_NAME AS CREATED_BY_NAME,
             P.CREATED_AT
         FROM PAYMENT P
         JOIN CUSTOMER C
             ON C.CUSTOMER_ID = P.CUSTOMER_ID
+        JOIN EMPLOYEE E
+            ON E.EMP_ID = P.CREATED_BY
         WHERE 1 = 1
         <if test="customerName != null and customerName != ''">
             AND C.CUSTOMER_NAME LIKE '%' || #{customerName} || '%'
@@ -332,6 +335,7 @@
         <result property="paymentAmount" column="PAYMENT_AMOUNT"/>
         <result property="paymentType" column="PAYMENT_TYPE"/>
         <result property="createdBy" column="CREATED_BY"/>
+        <result property="createdByName" column="CREATED_BY_NAME"/>
         <result property="createdAt" column="CREATED_AT"/>
     </resultMap>
 
@@ -347,10 +351,13 @@
             PP.PAYMENT_AMOUNT,
             PP.PAYMENT_TYPE,
             PP.CREATED_BY,
+            E.EMP_NAME AS CREATED_BY_NAME,
             PP.CREATED_AT
         FROM PAYABLE_PAYMENT PP
         JOIN SUPPLIER S
             ON S.SUPPLIER_ID = PP.SUPPLIER_ID
+        JOIN EMPLOYEE E
+            ON E.EMP_ID = PP.CREATED_BY
         WHERE 1 = 1
         <if test="supplierName != null and supplierName != ''">
             AND S.SUPPLIER_NAME LIKE '%' || #{supplierName} || '%'
@@ -578,8 +585,7 @@
             STATUS = CASE
                 WHEN REMAIN_AMOUNT - #{paidAmount} = 0 THEN 'PAID'
                 ELSE 'PARTIAL'
-            END,
-            UPDATED_AT = SYSDATE
+            END
         WHERE AP_ID = #{apId}
     </update>
 

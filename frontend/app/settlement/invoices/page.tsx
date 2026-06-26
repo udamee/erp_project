@@ -21,6 +21,8 @@ export default function SalesInvoiceListPage() {
     const [list, setList] = useState<SalesInvoice[]>([]);
     const [status, setStatus] = useState("");
     const [customerName, setCustomerName] = useState("");
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
 
@@ -38,15 +40,13 @@ export default function SalesInvoiceListPage() {
 
     const fetchList = () => {
         setLoading(true);
-
-        const query = customerName || status
-            ? `?${[
-                customerName ? `customerName=${encodeURIComponent(customerName)}` : "",
-                status ? `status=${encodeURIComponent(status)}` : "",
-            ]
-            .filter(Boolean)
-            .join("&")}`
-        : "";
+        const params = new URLSearchParams();
+        
+        if (customerName) params.append("customerName", customerName);
+        if (status) params.append("status", status);
+        if (startDate) params.append("startDate", startDate);
+        if (endDate) params.append("endDate", endDate);
+        const query = params.toString() ? `?${params.toString()}` : "";
 
         fetch(`http://localhost:8080/api/settlement/invoices${query}`)
         .then((res) => res.json())
@@ -86,11 +86,22 @@ export default function SalesInvoiceListPage() {
                     onChange={(e) => setStatus(e.target.value)}
                 >
                     <option value="">전체 상태</option>
-                    <option value="PENDING">대기</option>
-                    <option value="APPROVED">승인</option>
-                    <option value="PAID">완납</option>
-                    <option value="UNPAID">미수</option>
+                    <option value="ISSUED">ISSUED</option>
                 </select>
+
+                <input
+                    className="erp-input"
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                />
+
+                <input
+                    className="erp-input"
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                />
 
                 <button className="erp-btn primary" onClick={fetchList}>
                     조회
@@ -101,11 +112,19 @@ export default function SalesInvoiceListPage() {
                     onClick={() => {
                         setCustomerName("");
                         setStatus("");
+                        setStartDate("");
+                        setEndDate("");
                         setTimeout(fetchList, 0);
                     }}
                 >
                     초기화
                 </button>
+                {/* <button
+                    className="erp-btn primary"
+                    onClick={() => router.push("/settlement/receivables?mode=invoice")}
+                >
+                    매출청구 등록
+                </button> */}
             </div>
 
             <div className="erp-table-wrap">
@@ -137,14 +156,15 @@ export default function SalesInvoiceListPage() {
                         ) : (
                             pagedList.map((item) => (
                                 <tr key={item.salesInvoiceId}>
-                                    <td>{item.salesInvoiceId}</td>
-                                    <td>{item.soId}</td>
-                                    <td
+                                    <td>SI-{String(item.salesInvoiceId).padStart(4, "0")}</td>
+                                    <td>SO-{String(item.soId).padStart(4, "0")}</td>
+                                    <td>{item.customerName}</td>
+                                    {/* <td
                                         className="link"
                                         onClick={() => router.push(`/settlement/invoices/${item.customerId}`)}
                                     >
                                         {item.customerName ?? `거래처 ${item.customerId}`}
-                                    </td>
+                                    </td> */}
                                     <td>{item.issueDate?.slice(0, 10)}</td>
                                     <td className="num">{formatMoney(item.totalAmount)}</td>
                                     <td>{item.status}</td>

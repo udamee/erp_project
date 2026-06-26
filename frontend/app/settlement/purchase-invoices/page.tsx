@@ -19,6 +19,8 @@ export default function PurchaseInvoiceListPage() {
     const [list, setList] = useState<PurchaseInvoice[]>([]);
     const [supplierName, setSupplierName] = useState("");
     const [status, setStatus] = useState("");
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     
@@ -38,14 +40,14 @@ export default function PurchaseInvoiceListPage() {
     const fetchList = () => {
         setLoading(true);
         
-        const query = supplierName || status
-            ? `?${[
-                supplierName ? `supplierName=${encodeURIComponent(supplierName)}` : "",
-                status ? `status=${encodeURIComponent(status)}` : "",
-            ]
-            .filter(Boolean)
-            .join("&")}`
-        : "";
+        const params = new URLSearchParams();
+
+        if (supplierName) params.append("supplierName", supplierName);
+        if (status) params.append("status", status);
+        if (startDate) params.append("startDate", startDate);
+        if (endDate) params.append("endDate", endDate);
+
+        const query = params.toString() ? `?${params.toString()}` : "";
         
         fetch(`http://localhost:8080/api/settlement/purchase-invoices${query}`)
         .then((res) => res.json())
@@ -85,9 +87,23 @@ export default function PurchaseInvoiceListPage() {
                     onChange={(e) => setStatus(e.target.value)}
                 >
                     <option value="">전체 상태</option>
-                    <option value="PENDING">대기</option>
-                    <option value="APPROVED">승인</option>
+                    <option value="ISSUED">ISSUED</option>
+                    <option value="APPROVED">APPROVED</option>
                 </select>
+
+                <input
+                    className="erp-input"
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                />
+
+                <input
+                    className="erp-input"
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                />
 
                 <button className="erp-btn primary" onClick={fetchList}>
                     검색
@@ -98,6 +114,8 @@ export default function PurchaseInvoiceListPage() {
                     onClick={() => {
                         setSupplierName("");
                         setStatus("");
+                        setStartDate("");
+                        setEndDate("");
                         setTimeout(fetchList, 0);
                     }}
                 >
@@ -134,12 +152,8 @@ export default function PurchaseInvoiceListPage() {
                         ) : (
                             pagedList.map((item) => (
                                 <tr key={item.purchaseInvoiceId}>
-                                    <td className="link">
-                                        {String(item.purchaseInvoiceId).padStart(4, "0")}
-                                    </td>
-                                    <td>
-                                        {String(item.poId).padStart(4, "0")}
-                                    </td>
+                                    <td>PI-{String(item.purchaseInvoiceId).padStart(4, "0")}</td>
+                                    <td>PO-{String(item.poId).padStart(4, "0")}</td>
                                     <td>{item.supplierName ?? `공급처 ${item.supplierId}`}</td>
                                     <td>{item.issueDate?.slice(0, 10)}</td>
                                     <td className="num">{formatMoney(item.totalAmount)}</td>

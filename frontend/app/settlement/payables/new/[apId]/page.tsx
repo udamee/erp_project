@@ -26,7 +26,7 @@ export default function PayablePaymentPage() {
     const [paymentDate, setPaymentDate] = useState("");
     const [paymentAmount, setPaymentAmount] = useState("");
     const [paymentType, setPaymentType] = useState("계좌이체");
-    const createdBy = 1;
+    const createdBy = 1; // TODO: 로그인 연동 시 사용자 ID로 변경
     const [loading, setLoading] = useState(true);
     
     const formatMoney = (value?: number) => {

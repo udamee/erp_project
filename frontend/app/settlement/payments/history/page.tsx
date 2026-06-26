@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import ErpLayout from "@/components/ErpLayout";
 import { paymentTypeLabel } from "@/lib/display-labels";
 import "../../settlement.css";
@@ -14,10 +15,12 @@ type PaymentHistory = {
     paymentAmount: number;
     paymentType: string;
     createdBy: number;
+    createdByName: string;
     createdAt: string;
 };
 
 export default function PaymentHistoryPage() {
+    const router = useRouter();
     const [list, setList] = useState<PaymentHistory[]>([]);
     const [customerName, setCustomerName] = useState("");
     const [startDate, setStartDate] = useState("");
@@ -109,6 +112,13 @@ export default function PaymentHistoryPage() {
                 >
                     초기화
                 </button>
+
+                <button
+                    className="erp-btn"
+                    onClick={() => router.push("/settlement/receivables")}
+                >
+                    미수금 관리
+                </button>
             </div>
 
             <div className="erp-table-wrap">
@@ -147,7 +157,7 @@ export default function PaymentHistoryPage() {
                                     <td>{item.paymentDate?.slice(0, 10)}</td>
                                     <td className="num">{formatMoney(item.paymentAmount)}</td>
                                     <td>{paymentTypeLabel(item.paymentType)}</td>
-                                    <td>{item.createdBy}</td>
+                                    <td>{item.createdByName}</td>
                                 </tr>
                             ))
                         )}

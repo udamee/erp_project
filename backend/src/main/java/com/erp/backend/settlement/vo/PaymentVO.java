@@ -18,6 +18,7 @@ public class PaymentVO {
     private BigDecimal paymentAmount; // 입금금액
     private String paymentType; // 입금 유형
     private Integer createdBy; // 생성자 ID
+    private String createdByName; // 생성자 이름
     private LocalDate createdAt; // 생성일자
 
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import ErpLayout from "@/components/ErpLayout";
 import { paymentTypeLabel } from "@/lib/display-labels";
 import "../../settlement.css";
@@ -14,10 +15,12 @@ type PayablePayment = {
     paymentAmount: number;
     paymentType: string;
     createdBy: number;
+    createdByName: string;
     createdAt: string;
 };
 
 export default function PayablePaymentHistoryPage() {
+    const router = useRouter();
     const [list, setList] = useState<PayablePayment[]>([]);
     const [supplierName, setSupplierName] = useState("");
     const [startDate, setStartDate] = useState("");
@@ -122,6 +125,13 @@ export default function PayablePaymentHistoryPage() {
                 >
                     초기화
                 </button>
+
+                <button
+                    className="erp-btn"
+                    onClick={() => router.push("/settlement/payables")}
+                >
+                    미지급금 관리
+                </button>
             </div>
 
             <div className="erp-table-wrap">
@@ -135,26 +145,25 @@ export default function PayablePaymentHistoryPage() {
                             <th className="num">지급금액</th>
                             <th>지급방법</th>
                             <th>처리자</th>
-                            <th>등록일</th>
                         </tr>
                     </thead>
 
                     <tbody>
                         {loading ? (
                             <tr>
-                                <td colSpan={8} style={{ textAlign: "center", padding: 40 }}>
+                                <td colSpan={7} style={{ textAlign: "center", padding: 40 }}>
                                     불러오는 중...
                                 </td>
                             </tr>
                         ) : errorMessage ? (
                             <tr>
-                                <td colSpan={8} style={{ textAlign: "center", padding: 40 }}>
+                                <td colSpan={7} style={{ textAlign: "center", padding: 40 }}>
                                     {errorMessage}
                                 </td>
                             </tr>
                         ) : list.length === 0 ? (
                             <tr>
-                                <td colSpan={8} style={{ textAlign: "center", padding: 40 }}>
+                                <td colSpan={7} style={{ textAlign: "center", padding: 40 }}>
                                     조회된 지급내역이 없습니다.
                                 </td>
                             </tr>
@@ -167,8 +176,7 @@ export default function PayablePaymentHistoryPage() {
                                     <td>{item.paymentDate?.slice(0, 10)}</td>
                                     <td className="num">{formatMoney(item.paymentAmount)}</td>
                                     <td>{paymentTypeLabel(item.paymentType)}</td>
-                                    <td>{item.createdBy}</td>
-                                    <td>{item.createdAt?.slice(0, 10)}</td>
+                                    <td>{item.createdByName}</td>
                                 </tr>
                             ))
                         )}

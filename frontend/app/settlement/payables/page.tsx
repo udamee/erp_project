@@ -91,9 +91,9 @@ export default function PayablesPage() {
                     onChange={(e) => setStatus(e.target.value)}
                 >
                     <option value="">전체 상태</option>
-                    <option value="UNPAID">미지급</option>
-                    <option value="PARTIAL">부분지급</option>
-                    <option value="PAID">지급완료</option>
+                    <option value="UNPAID">UNPAID</option>
+                    <option value="PARTIAL">PARTIAL</option>
+                    <option value="PAID">PAID</option>
                 </select>
             
                 <input
@@ -126,6 +126,13 @@ export default function PayablesPage() {
                 >
                     초기화
                 </button>
+
+                <button
+                    className="erp-btn"
+                    onClick={() => router.push("/settlement/payables/history")}
+                >
+                    지급내역
+                </button>
             </div>
         
             <div className="erp-table-wrap">
@@ -140,19 +147,20 @@ export default function PayablesPage() {
                             <th className="num">지급완료금액</th>
                             <th className="num">미지급잔액</th>
                             <th>상태</th>
+                            <th>지급등록</th>
                         </tr>
                     </thead>
 
                     <tbody>
                         {loading ? (
                             <tr>
-                                <td colSpan={8} style={{ textAlign: "center", padding: 40 }}>
+                                <td colSpan={9} style={{ textAlign: "center", padding: 40 }}>
                                     불러오는 중...
                                 </td>
                             </tr>
                         ) : list.length === 0 ? (
                             <tr>
-                                <td colSpan={8} style={{ textAlign: "center", padding: 40 }}>
+                                <td colSpan={9} style={{ textAlign: "center", padding: 40 }}>
                                     조회된 미지급금이 없습니다.
                                 </td>
                             </tr>
@@ -161,17 +169,21 @@ export default function PayablesPage() {
                                 <tr key={item.apId}>
                                     <td>AP-{String(item.apId).padStart(4, "0")}</td>
                                     <td>PI-{String(item.purchaseInvoiceId).padStart(4, "0")}</td>
-                                    <td
-                                         className="link"
-                                         onClick={() => router.push(`/settlement/payables/new/${item.apId}`)}
-                                    >
-                                        {item.supplierName ?? `공급처 ${item.supplierId}`}
-                                    </td>
+                                    <td>{item.supplierName ?? `공급처 ${item.supplierId}`}</td>
                                     <td>{item.dueDate?.slice(0, 10)}</td>
                                     <td className="num">{formatMoney(item.totalAmount)}</td>
                                     <td className="num">{formatMoney(item.paidAmount)}</td>
                                     <td className="num">{formatMoney(item.remainAmount)}</td>
                                     <td>{item.status}</td>
+                                    <td>
+                                        <button
+                                            className="erp-btn primary"
+                                            disabled={item.remainAmount <= 0}
+                                            onClick={() => router.push(`/settlement/payables/new/${item.apId}`)}
+                                        >
+                                            등록
+                                        </button>
+                                    </td>
                                 </tr>
                             ))
                         )}

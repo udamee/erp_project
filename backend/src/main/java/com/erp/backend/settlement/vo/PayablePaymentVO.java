@@ -18,6 +18,7 @@ public class PayablePaymentVO {
     private BigDecimal paymentAmount;
     private String paymentType;
     private Integer createdBy;
+    private String createdByName;
     private LocalDate createdAt;
 
 }
