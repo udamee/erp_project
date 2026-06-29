@@ -63,6 +63,7 @@ public enum ErrorCode {
     SALES_ALREADY_APPROVED(HttpStatus.BAD_REQUEST,"승인이 이미 되었습니다"),
     SALES_LOT_ALLOCATE_FAILED(HttpStatus.CONFLICT,"로트번호 배정 작업이 실패했습니다"),
     SALES_INSUFFICIENT_STOCK(HttpStatus.BAD_REQUEST, "재고가 충분하지 않습니다"),
+    SALES_CREDIT_LIMIT_EXCEED(HttpStatus.BAD_REQUEST, "여신 한도를 초과하여 주문 등록 불가합니다"),
 
     // 거래처 관련
     DUPLICATE_BUSINESS_NO(HttpStatus.CONFLICT, "이미 등록된 사업자번호입니다."),

@@ -7,12 +7,10 @@ import com.erp.backend.sales.dto.SalesOrderListResponseDTO;
 import com.erp.backend.sales.dto.SalesOrderRequestDTO;
 import com.erp.backend.sales.service.SalesOrderService;
 import com.erp.backend.sales.vo.*;
-import lombok.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -34,7 +32,7 @@ public class SalesOrderController {
                                                                                                    @RequestParam(defaultValue = "1") Integer offset,
                                                                                                    @RequestParam(defaultValue = "10") Integer size) {
         size = salesOrderService.findCountsForSalesOrders(status);
-        PageResponse<SalesOrderListResponseDTO> result = salesOrderService.findALllSalesOrdersPaging(status, offset, size);
+        PageResponse<SalesOrderListResponseDTO> result = salesOrderService.findAllSalesOrdersPaging(status, offset, size);
         return ResponseEntity.ok(ApiResponse.success(result.getSize()+"의건이 조회되었습니다",result));
     }
 

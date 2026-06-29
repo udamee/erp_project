@@ -48,10 +48,6 @@ public class ShipmentService {
         return shipmentMapper.preventDuplicatingShipment(salesOrderId);
     }
 
-//    public List<ShipmentDetailVO> findShipmentDetail(int shipmentId){
-//        return shipmentMapper.findShipmentDetails(shipmentId);
-//    }
-
     //출고 정보 생성
     private int arrangeShipmentHeader(ShipmentVO shipmentVO) {
         return shipmentMapper.arrangeShipmentHeader(shipmentVO);
@@ -101,17 +97,6 @@ public class ShipmentService {
         }
     }
 
-    private int calculateShippableQty(List<ItemLotVO> itemLotVOList) {
-        int availableQty = 0;
-        int safetyQty = 0;
-        for (ItemLotVO itemLotVO : itemLotVOList) {
-            if (itemLotVO.getCurrentQty() != null) {
-                availableQty += itemLotVO.getCurrentQty();
-            }
-        }
-        return availableQty - safetyQty;
-    }
-
     /*승인돈 주문 FEFO에 따른 재고 차감
      *
      *승인된 주문 기준 출고를 생성하고
@@ -126,6 +111,9 @@ public class ShipmentService {
 
     @Transactional
     public int processShipment(Integer salesOrderId, Integer employeeId) {
+        if (salesOrderId == null || employeeId == null) {
+            throw new CustomException(ErrorCode.NOT_FOUND);
+        }
         SalesOrderVO order = verifySalesOrderStatus(salesOrderId);
         if (order == null) {
             throw new CustomException(ErrorCode.SALES_APPROVE_FAILED);
@@ -161,12 +149,9 @@ public class ShipmentService {
         if (orderUpdated != 1) {
             throw new CustomException(ErrorCode.NOT_FOUND);
         }
+        createSalesInvoiceAfterShipment(salesOrderId);
         for (Integer productId : shippedProductIds) {
             alertService.checkAfterShipment(productId);
-        }
-        boolean invoiceCreated = createSalesInvoiceAfterShipment(salesOrderId);
-        if (!invoiceCreated) {
-            throw new CustomException(ErrorCode.NOT_FOUND);//매출청구 미수금 생성
         }
         return shipmentId;
     }
@@ -186,15 +171,9 @@ public class ShipmentService {
 
         //안전재고 반영 수량 계산
         int availableQty = salesOrderMapper.findAvailableQtyByProductId(productId);
-        int safetyQty = salesOrderMapper.findSafetyQtyByProductId(productId);
         if (orderQty > availableQty) {
             throw new CustomException(ErrorCode.SALES_NOT_AVAILABLE_STOCK);
         }
-
-//        int afterAvailableQty = availableQty - orderQty;
-//        if (afterAvailableQty <= safetyQty) {
-//            createSafetyStockAlert(productId, afterAvailableQty, safetyQty);
-//        }
 
         Map<Integer, Integer> allocatableLots = new LinkedHashMap<>();
         int remains = orderQty;
@@ -237,7 +216,7 @@ public class ShipmentService {
         shipmentDetailVO.setInventoryLotId(lotId);
         shipmentDetailVO.setProductId(productId);
         shipmentDetailVO.setShippedQty(assignedQty);
-        int inserted = shipmentMapper.arrangeShipmentDetail(shipmentDetailVO);
+        int inserted = arrangeShipmentDetail(shipmentDetailVO);
         if (inserted != 1) {
             throw new CustomException(ErrorCode.SHIPMENT_DETAIL_FAILED);
         }
@@ -308,7 +287,7 @@ public class ShipmentService {
     }
 
     //청구 생성
-    public boolean createSalesInvoiceAfterShipment(int salesOrderId) {
+    private void createSalesInvoiceAfterShipment(int salesOrderId) {
         SalesOrderVO salesOrder = salesOrderMapper.findOrderHeaderById(salesOrderId);
         if (salesOrder == null) {
             throw new CustomException(ErrorCode.SALES_ORDER_FAILED);
@@ -319,8 +298,7 @@ public class ShipmentService {
         salesInvoiceVO.setTotalAmount(salesOrder.getTotalAmount());
         salesInvoiceVO.setIssueDate(LocalDate.now());
         salesInvoiceVO.setStatus("ISSUED");
-        AccountReceivableVO accountPayable = new AccountReceivableVO();
-        settlementService.createSalesInvoice(salesInvoiceVO, accountPayable);
-        return true;
+        AccountReceivableVO accountReceivable = new AccountReceivableVO();
+        settlementService.createSalesInvoice(salesInvoiceVO, accountReceivable);
     }
 }
