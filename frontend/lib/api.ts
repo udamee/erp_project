@@ -31,28 +31,28 @@ export interface AuthUser {
 
 export const userStorage = {
   set: (u: AuthUser) => {
-    localStorage.setItem("authUser", JSON.stringify(u));
-    localStorage.setItem("empId", String(u.empId));
-    localStorage.setItem("loginId", u.loginId);
-    localStorage.setItem("empName", u.empName);
-    localStorage.setItem("role", u.role);
-    localStorage.setItem("deptId", String(u.deptId));
+    localStorage.setItem('authUser', JSON.stringify(u));
+    localStorage.setItem('empId', String(u.empId));
+    localStorage.setItem('loginId', u.loginId);
+    localStorage.setItem('empName', u.empName);
+    localStorage.setItem('role', u.role);
+    localStorage.setItem('deptId', String(u.deptId));
     if (u.deptCode) {
-      localStorage.setItem("deptCode", u.deptCode);
+      localStorage.setItem('deptCode', u.deptCode);
     } else {
-      localStorage.removeItem("deptCode");
+      localStorage.removeItem('deptCode');
     }
   },
   get: (): AuthUser | null => {
-    if (typeof window === "undefined") return null;
-    const raw = localStorage.getItem("authUser");
+    if (typeof window === 'undefined') return null;
+    const raw = localStorage.getItem('authUser');
     if (raw) return JSON.parse(raw) as AuthUser;
 
-    const empId = localStorage.getItem("empId");
-    const loginId = localStorage.getItem("loginId");
-    const empName = localStorage.getItem("empName");
-    const role = localStorage.getItem("role");
-    const deptId = localStorage.getItem("deptId");
+    const empId = localStorage.getItem('empId');
+    const loginId = localStorage.getItem('loginId');
+    const empName = localStorage.getItem('empName');
+    const role = localStorage.getItem('role');
+    const deptId = localStorage.getItem('deptId');
 
     if (!empId || !loginId || !empName || !role || !deptId) return null;
 
@@ -62,17 +62,17 @@ export const userStorage = {
       empName,
       role,
       deptId: Number(deptId),
-      deptCode: localStorage.getItem("deptCode") ?? undefined,
+      deptCode: localStorage.getItem('deptCode') ?? undefined,
     };
   },
   clear: () => {
-    localStorage.removeItem("authUser");
-    localStorage.removeItem("empId");
-    localStorage.removeItem("loginId");
-    localStorage.removeItem("empName");
-    localStorage.removeItem("role");
-    localStorage.removeItem("deptId");
-    localStorage.removeItem("deptCode");
+    localStorage.removeItem('authUser');
+    localStorage.removeItem('empId');
+    localStorage.removeItem('loginId');
+    localStorage.removeItem('empName');
+    localStorage.removeItem('role');
+    localStorage.removeItem('deptId');
+    localStorage.removeItem('deptCode');
   },
 };
 
@@ -91,8 +91,8 @@ export interface LoginResponse {
 function forceLogout(): void {
   tokenStorage.clear();
   userStorage.clear();
-  if (typeof window !== "undefined" && window.location.pathname !== "/login") {
-    window.location.href = "/login";
+  if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+    window.location.href = '/login';
   }
 }
 
@@ -104,8 +104,8 @@ function refreshAccessToken(): Promise<string | null> {
     refreshPromise = (async () => {
       try {
         const res = await fetch(`${BASE_URL}/api/auth/refresh`, {
-          method: "POST",
-          credentials: "include", // refreshToken 쿠키 전송
+          method: 'POST',
+          credentials: 'include', // refreshToken 쿠키 전송
         });
         if (!res.ok) return null;
         const body: ApiResponse<LoginResponse> = await res.json();
@@ -126,16 +126,12 @@ function refreshAccessToken(): Promise<string | null> {
 }
 
 // 공통 fetch 래퍼: JWT 자동 첨부 + 401 시 토큰 재발급 후 1회 재시도
-async function request<T>(
-    path: string,
-    options: RequestInit = {},
-    allowRetry = true,
-): Promise<T> {
+async function request<T>(path: string, options: RequestInit = {}, allowRetry = true): Promise<T> {
   const token = tokenStorage.get();
 
   const res = await fetch(`${BASE_URL}${path}`, {
     ...options,
-    credentials: "include", // 인증 쿠키(refreshToken 등) 동반
+    credentials: 'include', // 인증 쿠키(refreshToken 등) 동반
     headers: {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -149,7 +145,7 @@ async function request<T>(
     const newToken = await refreshAccessToken();
     if (newToken) return request<T>(path, options, false);
     forceLogout();
-    throw new Error("인증이 만료되었습니다.");
+    throw new Error('인증이 만료되었습니다.');
   }
 
   // 빈 본문(예: 204, 일부 보안 필터의 거부 응답)에도 res.json()이 터지지 않도록 방어
@@ -168,7 +164,7 @@ async function request<T>(
     throw new Error(body?.message || `요청 처리 중 오류가 발생했습니다. (HTTP ${res.status})`);
   }
   if (body && !body.success) {
-    throw new Error(body.message || "요청 처리 중 오류가 발생했습니다.");
+    throw new Error(body.message || '요청 처리 중 오류가 발생했습니다.');
   }
   // 성공인데 본문이 없으면(204 등) data 없음
   return (body ? body.data : undefined) as T;
@@ -177,11 +173,11 @@ async function request<T>(
 export const api = {
   get: <T>(path: string) => request<T>(path),
   post: <T>(path: string, data?: unknown) =>
-      request<T>(path, { method: "POST", body: data ? JSON.stringify(data) : undefined }),
+    request<T>(path, { method: 'POST', body: data ? JSON.stringify(data) : undefined }),
   put: <T>(path: string, data?: unknown) =>
-      request<T>(path, { method: "PUT", body: data ? JSON.stringify(data) : undefined }),
+    request<T>(path, { method: 'PUT', body: data ? JSON.stringify(data) : undefined }),
   patch: <T>(path: string, data?: unknown) =>
-      request<T>(path, { method: "PATCH", body: data ? JSON.stringify(data) : undefined }),
+    request<T>(path, { method: 'PATCH', body: data ? JSON.stringify(data) : undefined }),
 };
 
 // ===== 인증 API =====
@@ -198,21 +194,13 @@ export interface SignupRequest {
 export const authApi = {
   // 로그인 실패(401 LOGIN_FAILED)는 refresh 재시도 없이 백엔드 메시지를 그대로 노출해야 하므로 allowRetry=false
   login: (loginId: string, password: string) =>
-      request<LoginResponse>(
-          "/api/auth/login",
-          { method: "POST", body: JSON.stringify({ loginId, password }) },
-          false,
-      ),
-  signup: (data: SignupRequest) => api.post<void>("/api/auth/signup", data),
+    request<LoginResponse>('/api/auth/login', { method: 'POST', body: JSON.stringify({ loginId, password }) }, false),
+  signup: (data: SignupRequest) => api.post<void>('/api/auth/signup', data),
   // 재발급 실패로 로그인 화면에 튕기지 않도록 refresh 재시도는 비활성화
-  logout: () =>
-      request<void>("/api/auth/logout", { method: "POST" }, false),
+  logout: () => request<void>('/api/auth/logout', { method: 'POST' }, false),
   // 본인 비밀번호 변경
-  changePassword: (data: {
-    currentPassword: string;
-    newPassword: string;
-    checkNewPassword: string;
-  }) => api.patch<void>("/api/auth/password", data),
+  changePassword: (data: { currentPassword: string; newPassword: string; checkNewPassword: string }) =>
+    api.patch<void>('/api/auth/password', data),
 };
 
 // ===== 부서 API (회원가입 폼 등) =====
@@ -224,7 +212,7 @@ export interface Department {
 }
 
 export const departmentApi = {
-  list: () => api.get<Department[]>("/api/departments"),
+  list: () => api.get<Department[]>('/api/departments'),
 };
 
 // ===== 도메인 타입 (백엔드 DTO와 매핑) =====
@@ -445,7 +433,7 @@ export const purchaseOrderApi = {
   }) => api.post<number>('/api/purchase-orders', data),
   approve: (poId: number) => api.put<void>(`/api/purchase-orders/${poId}/approve`),
   reject: (poId: number, rejectReason: string) =>
-      api.put<void>(`/api/purchase-orders/${poId}/reject`, { rejectReason }),
+    api.put<void>(`/api/purchase-orders/${poId}/reject`, { rejectReason }),
   listPaging: (status: string, page: number, size = 10) => {
     const params = new URLSearchParams();
     if (status) params.set('status', status);
@@ -481,13 +469,9 @@ export const salesOrderApi = {
   detail: (soId: number) => api.get<SalesOrder>(`/api/sales-order/${soId}/details`),
   customers: () => api.get<{ customerId: number; customerName: string }[]>(`/api/sales-order/customers`),
   products: () => api.get<Record<string, unknown>[]>(`/api/sales-order/products`),
-  approve: (soId: number, data: { employeeId: number }) => api.patch<void>(`/api/sales-order/${soId}/approve`, data),
-  create: (data: {
-    customerId: number;
-    employeeId: number;
-    memo?: string;
-    details: { productId: number; orderQty: number }[];
-  }) => api.post<number>('/api/sales-order', data),
+  approve: (soId: number) => api.patch<SalesOrder>(`/api/sales-order/${soId}/approve`),
+  create: (data: { customerId: number; memo?: string; details: { productId: number; orderQty: number }[] }) =>
+    api.post<SalesOrder>('/api/sales-order', data),
 };
 
 export const shipmentApi = {
@@ -518,11 +502,10 @@ export const shipmentApi = {
     return api.get<ShipmentDetail[]>(`/api/shipment/${shipmentId}${query ? `?${query}` : ''}`);
   },
   verify: (salesOrderId: number) => api.get<unknown[]>(`/api/shipment/verify/${salesOrderId}`),
-  process: (salesOrderId: number, employeeId: number) => {
+  process: (salesOrderId: number) => {
     const param = new URLSearchParams();
     param.set('salesOrderId', String(salesOrderId));
-    param.set('employeeId', String(employeeId));
-    return api.post(`/api/shipment/process?${param}`);
+    return api.post<number>(`/api/shipment/process?${param}`);
   },
 };
 
@@ -589,8 +572,7 @@ export const customerApi = {
   },
   detail: (customerId: number) => api.get<Customer>(`/api/customers/${customerId}`),
   create: (data: CustomerInput) => api.post<void>('/api/customers', data),
-  update: (customerId: number, data: CustomerInput) =>
-    api.put<void>(`/api/customers/${customerId}`, data),
+  update: (customerId: number, data: CustomerInput) => api.put<void>(`/api/customers/${customerId}`, data),
   searchPharmacy: (sido?: string, sigungu?: string, name?: string) => {
     const params = new URLSearchParams();
     if (sido) params.set('sido', sido);
@@ -607,8 +589,7 @@ export const customerApi = {
     const qs = params.toString();
     return api.get<MedicalInst[]>(`/api/customers/search/hospital${qs ? `?${qs}` : ''}`);
   },
-  checkBusiness: (businessNo: string) =>
-    api.post<BusinessStatus>('/api/customers/check-business', { businessNo }),
+  checkBusiness: (businessNo: string) => api.post<BusinessStatus>('/api/customers/check-business', { businessNo }),
 };
 
 export interface RecallDrug {
@@ -728,14 +709,12 @@ export const employeeApi = {
   detail: (empId: number) => api.get<Employee>(`/api/employees/${empId}`),
   create: (data: EmployeeCreateInput) => api.post<number>('/api/employees', data),
   me: () => api.get<Employee>('/api/employees/me'),
-  updateMyInfo: (data: { phone?: string; email?: string }) =>
-    api.put<void>('/api/employees/me', data),
+  updateMyInfo: (data: { phone?: string; email?: string }) => api.put<void>('/api/employees/me', data),
   update: (
     empId: number,
     data: { empName?: string; phone?: string; email?: string; deptId?: number; hireDate?: string },
   ) => api.put<void>(`/api/employees/${empId}`, data),
-  updateRole: (empId: number, roleCode: RoleCode) =>
-    api.patch<void>(`/api/employees/${empId}/role`, { roleCode }),
+  updateRole: (empId: number, roleCode: RoleCode) => api.patch<void>(`/api/employees/${empId}/role`, { roleCode }),
   updateStatus: (empId: number, status: 'ACTIVE' | 'INACTIVE') =>
     api.patch<void>(`/api/employees/${empId}/status`, { status }),
   resetPassword: (empId: number, newPassword: string) =>
@@ -746,8 +725,7 @@ export const adminEmployeeApi = {
   pending: () => api.get<Employee[]>('/api/admin/employees/pending'),
   approve: (empId: number) => api.post<void>(`/api/admin/employees/${empId}/approve`),
   reject: (empId: number) => api.post<void>(`/api/admin/employees/${empId}/reject`),
-  remove: (empId: number) =>
-    request<void>(`/api/admin/employees/${empId}`, { method: 'DELETE' }),
+  remove: (empId: number) => request<void>(`/api/admin/employees/${empId}`, { method: 'DELETE' }),
 };
 
 export interface Attendance {
@@ -767,8 +745,7 @@ export const attendanceApi = {
   checkIn: () => api.post<Attendance>('/api/attendance/check-in'),
   checkOut: () => api.patch<Attendance>('/api/attendance/check-out'),
   today: () => api.get<Attendance>('/api/attendance/me/today'),
-  myList: (from: string, to: string) =>
-    api.get<Attendance[]>(`/api/attendance/me?from=${from}&to=${to}`),
+  myList: (from: string, to: string) => api.get<Attendance[]>(`/api/attendance/me?from=${from}&to=${to}`),
 };
 
 export interface AdminAttendanceSearch {

@@ -38,7 +38,7 @@ export default function SalesOrderDetailPage() {
 
   const canApprove = order?.status === 'REQUESTED' && (role === 'MANAGER' || role === 'ADMIN');
 
-  const handleApprove = () => {
+  const handleApprove = async () => {
     modal.confirm({
       title: '판매 주문 승인',
       content: '이 판매주문 주문을 승인하시겠습니까?',
@@ -48,8 +48,7 @@ export default function SalesOrderDetailPage() {
         setProcessing(true);
 
         try {
-          //employeeId: 자신의 번호로 바꿔야함
-          await salesOrderApi.approve(Number(soId), { employeeId: 1 });
+          await salesOrderApi.approve(Number(soId));
           message.success('주문이 승인되었습니다.');
           router.push('/sales-orders');
         } catch (e) {
@@ -105,7 +104,7 @@ export default function SalesOrderDetailPage() {
     });
   };
 
-  const handleShipping = () => {
+  const handleShipping = async () => {
     modal.confirm({
       title: '출고 승인',
       content: '이 출고요청을 승낙하시겠습니다?',
@@ -119,7 +118,7 @@ export default function SalesOrderDetailPage() {
             message.error('출고 가능한 주문이 아닙니다.');
             return;
           }
-          await shipmentApi.process(Number(soId), 10); //담당자 번호로 바꿔야함
+          await shipmentApi.process(Number(soId));
           message.success('출고 처리과 완료되었습니다.');
           router.push('/shipments');
         } catch (e) {

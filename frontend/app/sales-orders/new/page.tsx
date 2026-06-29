@@ -152,7 +152,6 @@ export default function SalesOrderCreatePage() {
     try {
       await salesOrderApi.create({
         customerId,
-        employeeId: 1, //employeeId: 자신의 번호로 바꿔야함
         memo: memo || undefined,
         details: rows,
       });
