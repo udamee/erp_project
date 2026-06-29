@@ -204,10 +204,36 @@ export default function SalesOrderDetailPage() {
         </Descriptions>
       </Card>
       {order.status !== 'CANCELED' && (
-        <Steps
-          current={currentStep}
-          items={[{ title: '주문 생성' }, { title: '승인대기' }, { title: '승인 완료' }, { title: '출고 완료' }]}
-        />
+        <Card style={{ marginTop: 16, marginBottom: 16 }}>
+          <div className="order-detail-steps">
+            <Steps
+              current={currentStep}
+              titlePlacement="vertical"
+              items={[{ title: '주문 생성' }, { title: '승인대기' }, { title: '승인 완료' }, { title: '출고 완료' }]}
+            />
+          </div>
+          <style jsx global>{`
+            .order-detail-steps {
+              padding: 16px 24px;
+            }
+            .order-detail-steps .ant-steps-item-icon {
+              width: 48px;
+              height: 48px;
+              line-height: 48px;
+              font-size: 20px;
+            }
+            .order-detail-steps .ant-steps-icon {
+              font-size: 20px;
+            }
+            .order-detail-steps .ant-steps-item-title {
+              font-size: 18px;
+              font-weight: 700;
+            }
+            .order-detail-steps .ant-steps-item-tail {
+              top: 23px;
+            }
+          `}</style>
+        </Card>
       )}
 
       <Card title="주문 품목">

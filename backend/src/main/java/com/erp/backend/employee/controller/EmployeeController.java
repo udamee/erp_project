@@ -38,13 +38,13 @@ public class EmployeeController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAuthority('DEPT_HR')") // HR 부서 + ADMIN(부서권한 자동 보유)
+    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN') and hasAuthority('DEPT_HR')") // 직원 관리는 인사부 매니저 + 관리자
     public ApiResponse<List<EmployeeResponseDto>> getEmployees(EmployeeSearchCondition condition) {
         return ApiResponse.success(employeeService.searchEmployees(condition));
     }
 
     @GetMapping("/{empId}")
-    @PreAuthorize("hasAuthority('DEPT_HR')") // 직원 단건 조회는 HR 부서 + ADMIN만 (본인 확인은 /me 사용)
+    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN') and hasAuthority('DEPT_HR')") // 직원 단건 조회는 인사부 매니저 + 관리자 (본인 확인은 /me 사용)
     public ApiResponse<EmployeeResponseDto> getEmployee(@PathVariable Long empId) {
         return ApiResponse.success(employeeService.getEmployee(empId));
     }

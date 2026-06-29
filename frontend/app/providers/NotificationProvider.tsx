@@ -34,10 +34,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, []);
 
   const markAsRead = useCallback(async (notificationId: number) => {
-    const user = userStorage.get();
-
     try {
-      await alertApi.markRead(notificationId, user?.empId ?? 0);
+      await alertApi.markRead(notificationId);
       setNotifications((prev) =>
         prev.map((item) => (item.notificationId === notificationId ? { ...item, isRead: true } : item)),
       );
@@ -61,6 +59,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
           content: received.content,
           dateTime: received.dateTime,
           isRead: false,
+          alertType: received.alertType,
         };
 
         setNotifications((prev) => {
@@ -81,14 +80,15 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     [notificationApi],
   );
   useEffect(() => {
-    const loginId = Number(localStorage.getItem('employeeId'));
+    const loginId = Number(localStorage.getItem('empId'));
     if (!loginId) return;
     alertApi
-      .list(loginId)
+      .list()
       .then((result) => {
         const mapped: NotificationMessage[] = result.map((item) => ({
           notificationId: item.alertId,
           level: item.alertLevel ?? 'INFO',
+          alertType: item.alertType,
           receiver: item.deptCode ?? '',
           content: item.message,
           dateTime: item.createdAt,
@@ -170,6 +170,6 @@ function getNotificationTitle(level: string) {
     case 'INFO':
       return '안내';
     default:
-      return 'New notification';
+      return '새로운 알림';
   }
 }

@@ -371,6 +371,7 @@ export interface NotificationMessage {
   content: string;
   dateTime: string;
   isRead: boolean;
+  alertType?: string;
 }
 
 export interface AlertMessage {
@@ -523,17 +524,11 @@ export const stockMovementApi = {
 };
 
 export const alertApi = {
-  list: (loginId: number) => {
-    const params = new URLSearchParams();
-    params.set('loginId', String(loginId));
-    const qs = params.toString();
-    return api.get<AlertMessage[]>(`/api/alert${qs ? `?${qs}` : ''}`);
+  list: () => {
+    return api.get<AlertMessage[]>(`/api/alert`);
   },
-  markRead: (alertId: number, loginId: number) => {
-    const param = new URLSearchParams();
-    param.set('loginId', String(loginId));
-    const qs = param.toString();
-    return api.put<void>(`/api/alert/${alertId}${qs ? `?${qs}` : ''}`);
+  markRead: (alertId: number) => {
+    return api.put<void>(`/api/alert/${alertId}`);
   },
 };
 

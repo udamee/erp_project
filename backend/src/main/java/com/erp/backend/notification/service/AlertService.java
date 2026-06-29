@@ -152,11 +152,11 @@ public class AlertService {
         }
     }
 
-    public void readMessage(int messageId,int loginId){
+    public void readMessage(int messageId, long loginId) {
         alertMapper.markRead(messageId,loginId);
     }
 
-    public List<AlertVO> getUserAlertList(int currentId){
+    public List<AlertVO> getUserAlertList(long currentId) {
         return alertMapper.findUserAlertList(currentId);
     }
 

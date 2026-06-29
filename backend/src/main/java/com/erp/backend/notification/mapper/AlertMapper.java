@@ -18,8 +18,10 @@ public interface AlertMapper {
     void insertAlertDetail(@Param("alertId")int alertId,@Param("deptCode")String deptCode,@Param("roleCode")String roleCode);
     List<AlertVO> findTargetReceiverList(@Param("deptCode") String deptCode,@Param("roleCode")String roleCode);
     List<AlertVO> findAlertItemList();
-    List<AlertVO> findUserAlertList(int empId);
-    void markRead(@Param("alertId")int alertId, @Param("empId")int loginId);
+
+    List<AlertVO> findUserAlertList(long empId);
+
+    void markRead(@Param("alertId") int alertId, @Param("empId") long loginId);
     void markAlertDelivered(@Param("alertId")int alertId,@Param("empId")int empId);
     List<AlertVO> findUndeliveredAlertList();
     int countUnreadAlert(int empId);
