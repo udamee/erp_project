@@ -18,7 +18,9 @@ import java.util.List;
 @RequiredArgsConstructor
 @RequestMapping("/api/admin/employees")
 @RestController
-@PreAuthorize("hasAuthority('DEPT_HR')")
+// 직원 가입 승인/거절/퇴사는 인사부 매니저 + 관리자만.
+// (SecurityConfig 의 /api/admin/** MANAGER·ADMIN 제한 위에 DEPT_HR 부서권한을 추가로 요구)
+@PreAuthorize("hasAnyRole('MANAGER', 'ADMIN') and hasAuthority('DEPT_HR')")
 public class AdminEmployeeController {
 
     private final AdminEmployeeService adminEmployeeService;
@@ -43,10 +45,10 @@ public class AdminEmployeeController {
         return ResponseEntity.ok(ApiResponse.success("사원 가입 승인 거절", null));
     }
 
-    // 퇴사 처리: HR 매니저 이상만(클래스의 DEPT_HR + 메서드의 MANAGER 조합). 대상 역할 검사는 서비스에서.
+    // 퇴사 처리: 인사부 매니저 + 관리자만. 대상 역할 검사는 서비스에서.
     @Operation(summary = "직원 퇴사 처리")
     @DeleteMapping("/{empId}")
-    @PreAuthorize("hasRole('MANAGER') and hasAuthority('DEPT_HR')")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN') and hasAuthority('DEPT_HR')")
     public ResponseEntity<ApiResponse<Void>> deleteEmployee(
             @PathVariable Long empId,
             @AuthenticationPrincipal Long actorEmpId,

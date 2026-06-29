@@ -2,14 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { SafetyCertificateOutlined } from "@ant-design/icons";
 import ErpLayout from "@/components/ErpLayout";
 import EmployeeStatusBadge, { roleLabel } from "@/components/EmployeeStatusBadge";
-import { useAsyncData, useRole } from "@/lib/hooks";
+import { useAsyncData, useAuthUser } from "@/lib/hooks";
 import {
   adminEmployeeApi,
   departmentApi,
   employeeApi,
   type Department,
+  type Employee,
   type EmployeeSearchCondition,
 } from "@/lib/api";
 
@@ -22,7 +24,11 @@ const ROLES = [
 
 export default function EmployeeListPage() {
   const router = useRouter();
-  const isAdmin = useRole() === "ADMIN";
+  const user = useAuthUser();
+  const role = user?.role ?? "";
+  const isAdmin = role === "ADMIN";
+  // 직원 관리 = 인사부 매니저 + 관리자 (백엔드 권한 기준과 일치)
+  const canManage = isAdmin || (role === "MANAGER" && user?.deptCode === "DEPT_HR");
 
   const [tab, setTab] = useState<"active" | "pending">("active");
   const [depts, setDepts] = useState<Department[]>([]);
@@ -31,8 +37,15 @@ export default function EmployeeListPage() {
   const [cond, setCond] = useState<EmployeeSearchCondition>({});
   const [committed, setCommitted] = useState<EmployeeSearchCondition>({});
 
-  const active = useAsyncData(() => employeeApi.list(committed), [committed]);
-  const pending = useAsyncData(() => adminEmployeeApi.pending(), []);
+  // 권한 없는 사용자는 admin API를 호출하지 않도록 빈 결과로 단락 처리
+  const active = useAsyncData(
+    () => (canManage ? employeeApi.list(committed) : Promise.resolve([] as Employee[])),
+    [committed, canManage],
+  );
+  const pending = useAsyncData(
+    () => (canManage ? adminEmployeeApi.pending() : Promise.resolve([] as Employee[])),
+    [canManage],
+  );
 
   useEffect(() => {
     departmentApi.list().then(setDepts).catch(() => {});
@@ -63,6 +76,20 @@ export default function EmployeeListPage() {
       alert((e as Error).message);
     }
   };
+
+  if (!canManage) {
+    return (
+      <ErpLayout title="직원 관리">
+        <div className="erp-card" style={{ textAlign: "center", padding: 48 }}>
+          <SafetyCertificateOutlined style={{ fontSize: 40, color: "var(--erp-text-muted)" }} />
+          <h3 style={{ margin: "12px 0 4px" }}>접근 권한이 없습니다</h3>
+          <p style={{ margin: 0, color: "var(--erp-text-muted)" }}>
+            직원 관리는 인사팀 매니저 또는 관리자만 접근할 수 있습니다.
+          </p>
+        </div>
+      </ErpLayout>
+    );
+  }
 
   return (
     <ErpLayout title="직원 관리">

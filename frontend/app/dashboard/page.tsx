@@ -19,7 +19,6 @@ import {
   adminEmployeeApi,
   attendanceApi,
   customerApi,
-  departmentApi,
   employeeApi,
   purchaseOrderApi,
   recallApi,
@@ -107,14 +106,11 @@ export default function HomePage() {
   const isAdmin = role === "ADMIN";
   const isManager = role === "MANAGER" || isAdmin;
 
-  // 본인 정보 + 부서 (HR 여부 판정용)
+  // 본인 정보
   const meData = useAsyncData(() => employeeApi.me(), []);
-  const deptData = useAsyncData(() => departmentApi.list(), []);
   const me = meData.data;
-  const deptCode = me && deptData.data
-    ? deptData.data.find((d) => d.deptId === me.deptId)?.deptCode ?? null
-    : null;
-  const isHR = deptCode === "DEPT_HR" || isAdmin;
+  // 직원 관리 권한은 인사부 매니저 + 관리자 (백엔드 권한 기준과 일치)
+  const isHR = isAdmin || (role === "MANAGER" && authUser?.deptCode === "DEPT_HR");
 
   // ===== 운영 지표 =====
   const poData = useAsyncData(() => purchaseOrderApi.statusCounts(), []);

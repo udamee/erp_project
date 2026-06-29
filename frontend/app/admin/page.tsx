@@ -11,7 +11,6 @@ import {
 import ErpLayout from "@/components/ErpLayout";
 import {
   adminEmployeeApi,
-  departmentApi,
   employeeApi,
   type Employee,
 } from "@/lib/api";
@@ -36,7 +35,6 @@ export default function AdminPage() {
   const cached = typeof window !== "undefined" ? userStorage.get() : null;
 
   const [me, setMe] = useState<Employee | null>(null);
-  const [deptCode, setDeptCode] = useState<string | null>(null);
   const [pending, setPending] = useState<Employee[]>([]);
   const [activeCount, setActiveCount] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
@@ -44,15 +42,13 @@ export default function AdminPage() {
   const role = me?.roleCode ?? cached?.role ?? "STAFF";
   const isAdmin = role === "ADMIN";
   const isManager = role === "MANAGER" || isAdmin;
-  const isHR = deptCode === "DEPT_HR" || isAdmin;
-  const canAccess = isManager || isHR;
+  // 직원 관리 권한은 인사부 매니저 + 관리자 (백엔드 권한 기준과 일치)
+  const isHR = isAdmin || (role === "MANAGER" && cached?.deptCode === "DEPT_HR");
+  const canAccess = isManager;
 
   useEffect(() => {
-    Promise.all([employeeApi.me(), departmentApi.list()])
-      .then(([info, depts]) => {
-        setMe(info);
-        setDeptCode(depts.find((d) => d.deptId === info.deptId)?.deptCode ?? null);
-      })
+    employeeApi.me()
+      .then(setMe)
       .catch(() => {});
   }, []);
 
