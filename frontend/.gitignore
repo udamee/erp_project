@@ -43,3 +43,8 @@ next-env.d.ts
 # Claude Code
 CLAUDE.md
 AGENTS.md
+/app/global-error.tsx
+/instrumentation.ts
+/instrumentation-client.ts
+/sentry.edge.config.ts
+/sentry.server.config.ts
