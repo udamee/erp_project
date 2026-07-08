@@ -1,0 +1,39 @@
+# ============================================================
+# 약통 ERP - docker-compose (로컬 테스트용)
+# DB는 OCI(클라우드)라서 여기엔 없음. 백엔드+프론트만.
+# 실행: docker compose up --build
+# 위치: 프로젝트 루트 (backend/, frontend/ 상위)
+# ============================================================
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile      # backend/Dockerfile
+    container_name: yaktong-backend
+    ports:
+      - "8080:8080"
+    environment:
+      # DB 비밀번호 (실제 ADMIN 비번)
+      - DB_PASSWORD=Yaktongerp0520
+      # Wallet 경로 (이미지에 포함된 위치)
+      - TNS_ADMIN_PATH=/app/Wallet
+    # Redis가 필요하면 아래 주석 해제 (분산락·캐싱)
+    # depends_on:
+    #   - redis
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile      # frontend/Dockerfile
+    container_name: yaktong-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+  # Redis (분산락·캐싱에 필요하면 주석 해제)
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: yaktong-redis
+  #   ports:
+  #     - "6379:6379"

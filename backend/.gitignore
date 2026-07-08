@@ -24,5 +24,15 @@ Thumbs.db
 # Application 설정 (DB 정보 보안)
 src/main/resources/application.yml
 
-# Wallet 설정 (DB 정보 보안)
+
+# Oracle Wallet (DB 접속 정보 - 절대 커밋 금지!)
 **/Wallet/
+Wallet/
+*.sso
+*.p12
+*.jks
+ojdbc.properties
+tnsnames.ora
+sqlnet.ora
+
+backend/src/main/resources/Wallet/

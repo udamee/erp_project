@@ -51,37 +51,56 @@ export default function PurchaseOrderCreatePage() {
   const [memo, setMemo] = useState('');
   const [rows, setRows] = useState<OrderRow[]>([]);
   const [processing, setProcessing] = useState(false);
+  const [productResults, setProductResults] = useState<Product[]>([]);
+  
 
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [keyword, setKeyword] = useState('');
+  const [productKeyword, setProductKeyword] = useState('');
+  console.log('★★★ productKeyword 현재값:', productKeyword);
   const [checked, setChecked] = useState<Set<number>>(new Set());
 
   useEffect(() => {
-    purchaseOrderApi
-      .suppliers()
-      .then(setSuppliers)
-      .catch((e) => message.error(e.message));
-
-    purchaseOrderApi
-      .products()
-      .then((data) => setProducts(data as unknown as Product[]))
-      .catch((e) => message.error(e.message));
+  purchaseOrderApi
+    .suppliers()
+    .then(setSuppliers)
+    .catch((e) => message.error(e.message));
   }, [message]);
+
+  useEffect(() => {
+  console.log('🔵 useEffect 실행, productKeyword =', JSON.stringify(productKeyword));
+
+  if (!productKeyword.trim()) {
+    console.log('🔴 검색어 비어서 return');
+    setProductResults([]);
+    return;
+  }
+
+  console.log('🟢 검색 타이머 시작');
+  const timer = setTimeout(() => {
+    console.log('🟡 API 호출 직전');
+    purchaseOrderApi
+      .searchProducts(productKeyword)
+      .then((data) => {
+        console.log('✅ 검색 결과:', data);
+        setProductResults(data as unknown as Product[]);
+      })
+      .catch((e) => {
+        console.log('❌ 에러:', e);
+        message.error(e.message);
+      });
+  }, 300);
+  return () => clearTimeout(timer);
+}, [productKeyword, message]);
+
+  
 
   const selectedIds = useMemo(() => new Set(rows.map((row) => row.productId)), [rows]);
 
   const productMap = useMemo(() => new Map(products.map((p) => [p.productId, p])), [products]);
 
   const filteredProducts = useMemo(() => {
-    const lower = keyword.toLowerCase();
-
-    return products.filter((p) => {
-      if (selectedIds.has(p.productId)) return false;
-      if (!keyword) return true;
-
-      return p.productName.toLowerCase().includes(lower) || p.productCode.toLowerCase().includes(lower);
-    });
-  }, [keyword, products, selectedIds]);
+    return productResults.filter((p) => !selectedIds.has(p.productId));
+  }, [productResults, selectedIds]);
 
   const totalAmount = rows.reduce((sum, row) => sum + row.orderQty * row.unitPrice, 0);
 
@@ -94,10 +113,11 @@ export default function PurchaseOrderCreatePage() {
   };
 
   const openPicker = () => {
-    setChecked(new Set());
-    setKeyword('');
-    setPickerOpen(true);
-  };
+  setChecked(new Set());
+  setProductKeyword('');    
+  setProductResults([]);    
+  setPickerOpen(true);
+};
 
   const toggleCheck = (productId: number) => {
     setChecked((prev) => {
@@ -300,15 +320,15 @@ export default function PurchaseOrderCreatePage() {
         cancelText="취소"
         width={620}
       >
-        <Space direction="vertical" style={{ width: '100%' }}>
+        <Space orientation="vertical" style={{ width: '100%' }}>
           <Typography.Text type="secondary">
             추가할 의약품을 검색하고 선택하세요. 이미 담긴 의약품은 제외됩니다.
           </Typography.Text>
 
           <Input.Search
             placeholder="의약품명 또는 코드 검색"
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
+            value={productKeyword}
+            onChange={(e) => setProductKeyword(e.target.value)}
             allowClear
           />
 
@@ -317,7 +337,7 @@ export default function PurchaseOrderCreatePage() {
             style={{ maxHeight: 360, overflow: 'auto' }}
             dataSource={filteredProducts}
             locale={{
-              emptyText: keyword ? '검색 결과가 없습니다.' : '추가할 수 있는 의약품이 없습니다.',
+              emptyText: productKeyword ? '검색 결과가 없습니다.' : '추가할 수 있는 의약품이 없습니다.',
             }}
             renderItem={(p) => (
               <List.Item

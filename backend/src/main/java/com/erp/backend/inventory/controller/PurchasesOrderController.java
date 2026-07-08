@@ -35,9 +35,10 @@ public class PurchasesOrderController {
 
     @Operation(summary = "의약품 목록 조회")
     @GetMapping("/products")
-    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getProducts() {
-        return ResponseEntity.ok(
-                ApiResponse.success(purchaseOrderService.getProducts()));
+    public Map<String, Object> getProducts(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return purchaseOrderService.getProducts(page, size);
     }
 
     @Operation(summary = "발주 목록 조회")
@@ -85,6 +86,11 @@ public class PurchasesOrderController {
         return ResponseEntity.ok(ApiResponse.success("발주가 등록되었습니다.", null));
     }
 
+    // 검색
+    @GetMapping("/products/search")
+    public ApiResponse<List<Map<String, Object>>> searchProducts(@RequestParam String keyword){
+        return ApiResponse.success(purchaseOrderService.searchProducts(keyword));
+    }
 
     @Operation(summary = "발주 승인 (MANAGER)")
     @PutMapping("/{poId}/approve")

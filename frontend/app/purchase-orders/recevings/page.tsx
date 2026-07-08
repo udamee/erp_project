@@ -1,3 +1,4 @@
+// app/receivings/page.tsx — 입고 가능 목록 (APPROVED 발주)
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -64,12 +65,8 @@ export default function ReceivableListPage() {
         width: 110,
         align: "center",
         render: (_, record) => (
-          <Button
-            type="primary"
-            size="small"
-            onClick={() => router.push(`/purchase-orders/recevings/${record.poId}`)}
-          >
-            입고 처리
+          <Button type="primary" size="small" onClick={() => router.push(`/purchase-orders/recevings/${record.poId}`)}>
+            입고하기
           </Button>
         ),
       },

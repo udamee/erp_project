@@ -447,6 +447,10 @@ export const purchaseOrderApi = {
     return api.get<PageResult<PurchaseOrder>>(`/api/purchase-orders/paging?${params}`);
   },
   statusCounts: () => api.get<Record<string, number>>('/api/purchase-orders/status-counts'),
+  searchProducts: (keyword: string) =>
+  api.get<Record<string, unknown>[]>(
+    `/api/purchase-orders/products/search?keyword=${encodeURIComponent(keyword)}`
+  ),
 };
 
 export const receivingApi = {

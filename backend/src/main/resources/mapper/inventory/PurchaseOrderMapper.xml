@@ -14,21 +14,41 @@
         ORDER BY SUPPLIER_NAME
     </select>
 
-    <!-- 의약품 목록 조회 -->
+    <!-- 의약품 목록 조회 (페이징) -->
     <select id="findAllProducts" resultType="map">
-        SELECT P.PRODUCT_ID              AS "productId",
-        P.PRODUCT_CODE            AS "productCode",
-        P.PRODUCT_NAME            AS "productName",
-        P.UNIT                    AS "unit",
-        P.STANDARD_PURCHASE_PRICE AS "standardPurchasePrice",
-        P.STANDARD_SALES_PRICE    AS "standardSalesPrice",
-        P.IS_PRESCRIPTION         AS "isPrescription",
-        P.STORAGE_TYPE            AS "storageType",
-        P.STATUS                  AS "status"
-        FROM PRODUCT P
-        WHERE P.STATUS = 'ACTIVE'
-        ORDER BY P.PRODUCT_NAME
+        SELECT
+        PRODUCT_ID              AS "productId",
+        PRODUCT_CODE            AS "productCode",
+        PRODUCT_NAME            AS "productName",
+        STORAGE_TYPE            AS "storageType",
+        UNIT                    AS "unit",
+        STANDARD_PURCHASE_PRICE AS "standardPurchasePrice",
+        STANDARD_SALES_PRICE    AS "standardSalesPrice",
+        IS_PRESCRIPTION         AS "isPrescription",
+        STATUS                  AS "status"
+        FROM PRODUCT
+        ORDER BY UPDATED_AT DESC
+        OFFSET #{offset} ROWS FETCH NEXT #{size} ROWS ONLY
     </select>
+
+    <select id="countProducts" resultType="int">
+        SELECT COUNT(*) FROM PRODUCT
+    </select>
+
+    <!-- 의약품 검색 -->
+    <select id="searchProducts" resultType="map">
+        SELECT
+            PRODUCT_ID       AS "productId",
+            PRODUCT_CODE     AS "productCode",
+            PRODUCT_NAME     AS "productName",
+            UNIT             AS "unit",
+            STANDARD_PURCHASE_PRICE AS "standardPurchasePrice"
+        FROM PRODUCT
+        WHERE PRODUCT_NAME LIKE '%' || #{keyword} || '%'
+            OR PRODUCT_CODE LIKE '%' || #{keyword} || '%'
+        FETCH FIRST 50 ROWS ONLY
+    </select>
+
 
     <!-- 발주 목록 조회 -->
     <select id="findAllPurchaseOrders" parameterType="map" resultType="com.erp.backend.inventory.dto.PurchaseOrderResponseDto">
@@ -187,6 +207,7 @@
         WHERE SUPPLIER_ID = #{supplierId}
             AND STATUS = 'ACTIVE'
     </select>
+
     <!-- 의약품 존재여부 확인 -->
     <select id="findProductById" parameterType="Long" resultType="map">
     SELECT PRODUCT_ID, PRODUCT_NAME

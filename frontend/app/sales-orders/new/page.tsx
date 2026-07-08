@@ -20,7 +20,7 @@ import {
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import ErpLayout from '@/components/ErpLayout';
-import { salesOrderApi } from '@/lib/api';
+import { salesOrderApi, purchaseOrderApi } from '@/lib/api';
 
 interface Customer {
   customerId: number;
@@ -46,6 +46,7 @@ export default function SalesOrderCreatePage() {
   const { message } = App.useApp();
 
   const [products, setProducts] = useState<Product[]>([]);
+  const [productResults, setProductResults] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [customerId, setCustomerId] = useState<number>();
   const [memo, setMemo] = useState('');
@@ -56,29 +57,31 @@ export default function SalesOrderCreatePage() {
   const [checked, setChecked] = useState<Set<number>>(new Set());
 
   useEffect(() => {
-    salesOrderApi
-      .customers()
-      .then(setCustomers)
-      .catch((e) => message.error(e.message));
-
-    salesOrderApi
-      .products()
-      .then((data) => setProducts(data as unknown as Product[]))
-      .catch((e) => message.error(e.message));
+  salesOrderApi
+    .customers()
+    .then(setCustomers)
+    .catch((e) => message.error(e.message));
   }, [message]);
+
+  useEffect(() => {
+    if (!keyword.trim()) {
+      setProductResults([]);
+      return;
+    }
+    const timer = setTimeout(() => {
+      purchaseOrderApi
+        .searchProducts(keyword)
+        .then((data) => setProductResults(data as unknown as Product[]))
+        .catch((e) => message.error(e.message));
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [keyword, message]);
 
   const selectedIds = useMemo(() => new Set(rows.map((row) => row.productId)), [rows]);
   const productMap = useMemo(() => new Map(products.map((product) => [product.productId, product])), [products]);
   const filteredProducts = useMemo(() => {
-    const lower = keyword.toLowerCase();
-
-    return products.filter((product) => {
-      if (selectedIds.has(product.productId)) return false;
-      if (!keyword) return true;
-
-      return product.productName.toLowerCase().includes(lower) || product.productCode.toLowerCase().includes(lower);
-    });
-  }, [keyword, products, selectedIds]);
+  return productResults.filter((product) => !selectedIds.has(product.productId));
+}, [productResults, selectedIds]);
 
   const totalAmount = rows.reduce((sum, row) => sum + row.orderQty * row.unitPrice, 0);
 

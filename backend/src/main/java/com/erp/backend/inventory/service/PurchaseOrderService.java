@@ -12,9 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -47,22 +45,42 @@ public class PurchaseOrderService {
     }
 
 
-    // 의약품 목록 조회 (캐싱)
+    // 의약품 목록 조회 (페이지 단위 캐싱)
     @SuppressWarnings("unchecked")
-    public List<Map<String, Object>> getProducts() {
-        Object cached = redisTemplate.opsForValue().get(PRODUCTS_KEY);
+    public Map<String, Object> getProducts(int page, int size) {
+        int offset = (page - 1) * size;
+        String cacheKey = PRODUCTS_KEY + ":" + page + ":" + size;
+
+        Object cached = redisTemplate.opsForValue().get(cacheKey);
         if (cached != null) {
-            log.info("의약품 목록 - 캐시 HIT");
-            return (List<Map<String, Object>>) cached;
+            log.info("의약품 목록 - 캐시 HIT (page={}, size={})", page, size);
+            return (Map<String, Object>) cached;
         }
 
-        log.info("의약품 목록 - 캐시 MISS, DB 조회");
-        List<Map<String, Object>> products = purchaseOrderMapper.findAllProducts();
+        log.info("의약품 목록 - 캐시 MISS, DB 조회 (page={}, size={})", page, size);
+        List<Map<String, Object>> content = purchaseOrderMapper.findAllProducts(offset, size);
+        int totalCount = purchaseOrderMapper.countProducts();
 
-        redisTemplate.opsForValue().set(PRODUCTS_KEY, products, Duration.ofMinutes(10));
-        return products;
+        Map<String, Object> result = new HashMap<>();
+        result.put("content", content);
+        result.put("page", page);
+        result.put("size", size);
+        result.put("totalCount", totalCount);
+        result.put("totalPages", (int) Math.ceil((double) totalCount / size));
+
+        redisTemplate.opsForValue().set(cacheKey, result, Duration.ofDays(1));
+        return result;
+
     }
 
+
+    public List<Map<String, Object>> searchProducts(String keyword) {
+        // 검색어가 비어있으면 빈 목록 반환 (전체 조회 방지)
+        if (keyword == null || keyword.isBlank()) {
+            return Collections.emptyList();
+        }
+        return purchaseOrderMapper.searchProducts(keyword.trim());
+    }
 
     // 발주 목록 조회
     public List<Map<String, Object>> getPurchaseOrders(String status, Long supplierId){
@@ -200,8 +218,12 @@ public class PurchaseOrderService {
         log.info("공급처 캐시 무효화");
     }
 
+    // 캐시 무효화 (의약품 동기화·수정 시 호출)
     public void evictProductsCache() {
-        redisTemplate.delete(PRODUCTS_KEY);
+        Set<String> keys = redisTemplate.keys(PRODUCTS_KEY + ":*");
+        if (keys != null && !keys.isEmpty()) {
+            redisTemplate.delete(keys);
+        }
         log.info("의약품 캐시 무효화");
     }
 

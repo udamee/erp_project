@@ -3,6 +3,7 @@ package com.erp.backend.inventory.mapper;
 import com.erp.backend.inventory.dto.PurchaseOrderDetailResponseDto;
 import com.erp.backend.inventory.dto.PurchaseOrderResponseDto;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 import java.util.Map;
@@ -13,7 +14,12 @@ public interface PurchaseOrderMapper {
     // 공급처 목록 조회
     List<Map<String, Object>> findAllSuppliers();
     // 의약품 목록 조회
-    List<Map<String, Object>> findAllProducts();
+    List<Map<String, Object>> findAllProducts(@Param("offset") int offset, @Param("size") int size);
+    int countProducts();
+
+    // 의약품 검색
+    List<Map<String, Object>> searchProducts(@Param("keyword") String keyword);
+
     // 발주 목록 조회
     List<Map<String, Object>> findAllPurchaseOrders(Map<String, Object> params);
 

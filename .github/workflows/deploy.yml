@@ -1,0 +1,48 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Docker Hub 로그인
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # 백엔드 이미지 빌드 & 푸시
+      - name: Build & push backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: marshall10823/yaktong-backend:latest
+
+      # 프론트엔드 이미지 빌드 & 푸시
+      - name: Build & push frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          tags: marshall10823/yaktong-frontend:latest
+
+      # kubeconfig 설정
+      - name: Set up kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
+
+      # K8s 재배포 (새 이미지로 롤링 업데이트)
+      - name: Deploy to K8s
+        run: |
+          kubectl set image deployment/backend backend=marshall10823/yaktong-backend:latest
+          kubectl set image deployment/frontend frontend=marshall10823/yaktong-frontend:latest
+          kubectl rollout status deployment/backend
+          kubectl rollout status deployment/frontend

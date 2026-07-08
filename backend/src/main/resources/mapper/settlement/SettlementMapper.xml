@@ -467,7 +467,7 @@
     <!-- 입고 완료 발주 기준 매입전표 등록 -->
     <insert id="insertPurchaseInvoiceFromPurchaseOrder" parameterType="map">
         <selectKey keyProperty="purchaseInvoiceId" resultType="int" order="BEFORE">
-            SELECT SEQ_PURCHASE_INVOICE.NEXTVAL FROM DUAL
+            SELECT SEQ_PURCHASE_INV.NEXTVAL FROM DUAL
         </selectKey>
         INSERT INTO PURCHASE_INVOICE (
             PURCHASE_INVOICE_ID,
@@ -510,7 +510,7 @@
             CREATED_AT
         )
         SELECT
-            SEQ_ACCOUNT_PAYABLE.NEXTVAL,
+            SEQ_AP.NEXTVAL,
             PI.SUPPLIER_ID,
             PI.PURCHASE_INVOICE_ID,
             PI.TOTAL_AMOUNT,
