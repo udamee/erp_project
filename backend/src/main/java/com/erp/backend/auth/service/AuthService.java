@@ -92,8 +92,14 @@ public class AuthService {
         authMapper.insertEmployee(dto, passwordEncoder.encode(dto.getPassword()));
     }
 
-    // 3. 토큰 재발급
-    @Transactional
+    // 3. 토큰 재발급 (Access Token만 재발급 — Refresh Token은 회전시키지 않는다)
+    //
+    // 회전(1회용) 방식은 같은 Refresh Token이 두 번 제시되면 한쪽이 무효화되어
+    // "Refresh Token이 유효하지 않습니다" 로그아웃을 유발한다.
+    //   - 다중 탭: 쿠키는 공유되지만 탭마다 재발급을 독립 수행 → 한 탭이 회전하면 다른 탭이 죽음
+    //   - reload/bfcache 등으로 이전 쿠키가 재제시되는 경우
+    // 그래서 재발급 시 기존 Refresh Token을 그대로 유지해 동시성에 안전하게 만든다.
+    // (Refresh Token은 로그아웃/비밀번호 초기화 또는 만료 전까지 유효)
     public LoginResult refreshToken(String refreshToken) {
         if (!StringUtils.hasText(refreshToken) || !jwtTokenProvider.validateToken(refreshToken)) {
             throw new CustomException(ErrorCode.REFRESH_TOKEN_INVALID);
@@ -103,11 +109,11 @@ public class AuthService {
             throw new CustomException(ErrorCode.REFRESH_TOKEN_INVALID);
         }
 
+        // DB에 남아 있는 토큰만 유효 (로그아웃·비밀번호 초기화 시 삭제되어 재발급이 막힌다)
         String jwtId = jwtTokenProvider.getTokenId(refreshToken);
         if (refreshTokenMapper.findByJwtId(jwtId) == null) {
             throw new CustomException(ErrorCode.REFRESH_TOKEN_INVALID);
         }
-        refreshTokenMapper.deleteByJwtId(jwtId); // 오래된 Refresh Token 삭제
 
         Long empId = jwtTokenProvider.getEmpId(refreshToken);
         EmployeeVO employee = authMapper.findEmployeeByEmpId(empId);
@@ -119,14 +125,9 @@ public class AuthService {
         String deptCode = employee.getDeptCode();
         List<String> exAuths = authMapper.findExceptionAuths(deptCode, "ROLE_" + role);
         String newAccessToken = jwtTokenProvider.generateAccessToken(empId, deptCode, role, exAuths);
-        String newRefreshToken = jwtTokenProvider.generateRefreshToken(empId);
 
-        refreshTokenMapper.saveRefreshToken(
-                jwtTokenProvider.getTokenId(newRefreshToken),
-                empId,
-                LocalDateTime.now().plus(refreshTokenExpiration, ChronoUnit.MILLIS));
-
-        return new LoginResult(newRefreshToken, buildResponse(employee, newAccessToken));
+        // Refresh Token은 회전하지 않고 그대로 다시 내려준다(쿠키 갱신 = 동일 토큰).
+        return new LoginResult(refreshToken, buildResponse(employee, newAccessToken));
     }
 
     // 4. 로그아웃 (Refresh Token 삭제 - Access Token은 만료될 때까지 유지)
