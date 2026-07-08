@@ -3,9 +3,11 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import {
+  ClockCircleOutlined,
   CrownOutlined,
   DollarOutlined,
   InboxOutlined,
+  MedicineBoxOutlined,
   SafetyCertificateOutlined,
   ShoppingCartOutlined,
   TeamOutlined,
@@ -22,7 +24,10 @@ import {
   employeeApi,
   purchaseOrderApi,
   recallApi,
+  stockMovementApi,
   type Employee,
+  type LotStock,
+  type ProductStock,
 } from "@/lib/api";
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
@@ -133,6 +138,9 @@ export default function HomePage() {
   const isAdmin = role === "ADMIN";
   const isManager = role === "MANAGER" || isAdmin;
   const isHR = isAdmin || (role === "MANAGER" && authUser?.deptCode === "DEPT_HR");
+  // 출고·재고 데이터는 /api/shipment/** (DEPT_LOG 전용). ADMIN은 모든 부서 통과.
+  // 물류부/관리자가 아니면 아예 호출하지 않아 403 깨진 위젯을 방지한다.
+  const isLogistics = isAdmin || authUser?.deptCode === "DEPT_LOG";
 
   const meData = useAsyncData(() => employeeApi.me(), []);
   const poData = useAsyncData(() => purchaseOrderApi.statusCounts(), []);
@@ -143,6 +151,14 @@ export default function HomePage() {
     [isHR],
   );
   const todayData = useAsyncData(() => attendanceApi.today(), []);
+  const productStockData = useAsyncData(
+    () => (isLogistics ? stockMovementApi.searchProductList() : Promise.resolve([] as ProductStock[])),
+    [isLogistics],
+  );
+  const lotStockData = useAsyncData(
+    () => (isLogistics ? stockMovementApi.searchLotStockList() : Promise.resolve([] as LotStock[])),
+    [isLogistics],
+  );
 
   const poCounts = poData.data ?? {};
   const requested = poCounts.REQUESTED ?? 0;
@@ -152,6 +168,15 @@ export default function HomePage() {
   const receivableSum = customers.reduce((sum, customer) => sum + (customer.receivableBalance ?? 0), 0);
   const pendingCount = (pendingData.data ?? []).length;
   const today = todayData.data;
+
+  // 재고 알림 집계 (재고 부족 / 유효기간 임박)
+  const products = productStockData.data ?? [];
+  const lots = lotStockData.data ?? [];
+  const lowStock = products.filter((p) => p.availableQty <= p.safetyQty);
+  const expirySoon = lots
+    .filter((l) => (l.qty ?? 0) > 0 && l.daysLeft != null && l.daysLeft <= 30)
+    .sort((a, b) => a.daysLeft - b.daysLeft);
+  const logisticsLoading = productStockData.loading || lotStockData.loading;
 
   const [busy, setBusy] = useState(false);
   const [now, setNow] = useState(() => new Date());
@@ -217,6 +242,7 @@ export default function HomePage() {
     { href: "/customers", label: "거래처 관리" },
     { href: "/product", label: "상품 관리" },
     { href: "/purchase-orders", label: "발주 관리" },
+    ...(isLogistics ? [{ href: "/shipments", label: "출고 관리" }, { href: "/stock", label: "재고 관리" }] : []),
     ...(isManager ? [{ href: "/admin", label: "관리자" }] : []),
   ];
 
@@ -281,6 +307,28 @@ export default function HomePage() {
             loading={pendingData.loading}
             onClick={() => router.push("/employees")}
           />
+        )}
+        {isLogistics && (
+          <>
+            <StatCard
+              icon={<MedicineBoxOutlined />}
+              label="재고 부족 품목"
+              value={lowStock.length}
+              unit="종"
+              tone={lowStock.length > 0 ? "danger" : "default"}
+              loading={logisticsLoading}
+              onClick={() => router.push("/stock")}
+            />
+            <StatCard
+              icon={<ClockCircleOutlined />}
+              label="유효기간 임박"
+              value={expirySoon.length}
+              unit="건"
+              tone={expirySoon.length > 0 ? "danger" : "default"}
+              loading={logisticsLoading}
+              onClick={() => router.push("/stock")}
+            />
+          </>
         )}
       </div>
 
