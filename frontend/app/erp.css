@@ -223,9 +223,9 @@ a {
   box-shadow: var(--erp-shadow-soft);
 }
 
-.erp-card + .erp-card,
-.erp-table-wrap + .erp-card,
-.erp-card + .erp-table-wrap {
+.erp-content > .erp-card + .erp-card,
+.erp-content > .erp-table-wrap + .erp-card,
+.erp-content > .erp-card + .erp-table-wrap {
   margin-top: 16px;
 }
 
