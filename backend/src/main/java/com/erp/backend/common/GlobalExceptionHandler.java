@@ -1,7 +1,9 @@
 package com.erp.backend.common;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -31,6 +33,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .badRequest()
                 .body(ApiResponse.fail(message));
+    }
+
+    // 인가 실패 (@PreAuthorize 등 메서드 보안) → 403
+    // 필터체인(SecurityConfig URL 규칙) 거부는 accessDeniedHandler가 처리하지만,
+    // 메서드 보안(@PreAuthorize) 거부는 컨트롤러 호출 중 던져져 여기로 온다. (미처리 시 500)
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAccessDenied(AccessDeniedException e) {
+        log.warn("AccessDenied: {}", e.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.fail("접근 권한이 없습니다."));
     }
 
     // 그 외 예외
