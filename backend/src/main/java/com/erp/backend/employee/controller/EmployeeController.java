@@ -17,6 +17,7 @@ import com.erp.backend.auth.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,11 +31,16 @@ public class EmployeeController {
     private final EmployeeService employeeService;
     private final AuthService authService;
 
-    // 관리자 직원 직접 등록 : 승인 절차 없이 역할·상태·입사일을 지정해 생성 (ADMIN 전용)
+    // 직원 직접 등록 : 승인 절차 없이 역할·상태·입사일을 지정해 생성
+    // 인사부 매니저 + 관리자 (authorization-guide.md 4-1 · POST /api/employees)
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public ApiResponse<Long> createEmployee(@Valid @RequestBody EmployeeCreateRequestDto request) {
-        return ApiResponse.success("직원 등록 완료", employeeService.createEmployee(request));
+    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN') and hasAuthority('DEPT_HR')")
+    public ApiResponse<Long> createEmployee(@Valid @RequestBody EmployeeCreateRequestDto request,
+                                            Authentication authentication) {
+        // 권한 상승 방지: 역할 부여는 ADMIN만 가능 (서비스에서 STAFF 외 역할 차단)
+        boolean creatorIsAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+        return ApiResponse.success("직원 등록 완료", employeeService.createEmployee(request, creatorIsAdmin));
     }
 
     @GetMapping

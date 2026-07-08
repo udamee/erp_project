@@ -11,7 +11,7 @@ import {
   type EmployeeCreateInput,
   type RoleCode,
 } from "@/lib/api";
-import { useRole } from "@/lib/hooks";
+import { useAuthUser } from "@/lib/hooks";
 
 // 라벨-입력 한 줄
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
@@ -28,7 +28,11 @@ function Field({ label, required, children }: { label: string; required?: boolea
 export default function EmployeeCreatePage() {
   const router = useRouter();
 
-  const isAdmin = useRole() === "ADMIN";
+  // 직원 등록 = 인사부 매니저 이상 (authorization-guide.md 4-1 · POST /api/employees)
+  const user = useAuthUser();
+  const canRegister =
+    user?.deptCode === "DEPT_HR" && (user.role === "MANAGER" || user.role === "ADMIN");
+  const isAdmin = user?.role === "ADMIN"; // 역할 지정은 관리자만
   const [depts, setDepts] = useState<Department[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -87,12 +91,12 @@ export default function EmployeeCreatePage() {
     }
   };
 
-  if (!isAdmin) {
+  if (!canRegister) {
     return (
       <ErpLayout title="직원 등록">
         <div className="erp-card" style={{ textAlign: "center", padding: 48 }}>
-          <h3 style={{ margin: "0 0 4px" }}>관리자 전용 기능입니다</h3>
-          <p style={{ margin: 0, color: "var(--erp-text-muted)" }}>직원 직접 등록은 관리자만 가능합니다.</p>
+          <h3 style={{ margin: "0 0 4px" }}>인사부 매니저 전용 기능입니다</h3>
+          <p style={{ margin: 0, color: "var(--erp-text-muted)" }}>직원 직접 등록은 인사부 매니저 이상만 가능합니다.</p>
           <button className="erp-btn" style={{ marginTop: 16 }} onClick={() => router.push("/employees")}>
             직원 목록으로
           </button>
@@ -135,12 +139,19 @@ export default function EmployeeCreatePage() {
           </select>
         </Field>
         <Field label="역할">
-          <select className="erp-select" style={{ width: "100%" }} value={form.roleCode}
-            onChange={(e) => set("roleCode", e.target.value as RoleCode)}>
-            <option value="STAFF">사원</option>
-            <option value="MANAGER">매니저</option>
-            <option value="ADMIN">관리자</option>
-          </select>
+          {/* 역할 부여는 관리자 전용. 인사부 매니저는 STAFF(사원)만 등록할 수 있다. */}
+          {isAdmin ? (
+            <select className="erp-select" style={{ width: "100%" }} value={form.roleCode}
+              onChange={(e) => set("roleCode", e.target.value as RoleCode)}>
+              <option value="STAFF">사원</option>
+              <option value="MANAGER">매니저</option>
+              <option value="ADMIN">관리자</option>
+            </select>
+          ) : (
+            <div style={{ fontSize: 13, color: "var(--erp-text-muted)", padding: "6px 0" }}>
+              사원 <span style={{ marginLeft: 6, fontSize: 12 }}>· 역할 지정은 관리자만 가능합니다</span>
+            </div>
+          )}
         </Field>
         <Field label="계정 상태">
           <select className="erp-select" style={{ width: "100%" }} value={form.status}
