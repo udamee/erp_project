@@ -1,0 +1,6 @@
+node_modules
+.next
+.git
+# 로컬 개발용 env(localhost)가 프로덕션 빌드에 끼어들지 않도록 제외
+.env.local
+.env*.local

@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.erp.backend.product.mapper.ProductMapper">
+
+    <!--
+        상품 목록 조회.
+        keyword는 상품명/상품코드 부분검색이며, 나머지 조건은 정확히 일치할 때만 필터링한다.
+        동기화 데이터가 대량일 수 있어 최신 수정순으로 최대 300건만 반환한다.
+    -->
+    <select id="findProducts"
+            parameterType="com.erp.backend.product.dto.ProductSearchRequestDto"
+            resultType="com.erp.backend.product.dto.ProductSearchResponseDto">
+        SELECT * FROM (
+            SELECT
+                PRODUCT_ID               AS "productId",
+                PRODUCT_CODE             AS "productCode",
+                PRODUCT_NAME             AS "productName",
+                MAKER_NAME               AS "makerName",
+                UNIT                     AS "unit",
+                STANDARD_PURCHASE_PRICE  AS "standardPurchasePrice",
+                STANDARD_SALES_PRICE     AS "standardSalesPrice",
+                IS_PRESCRIPTION          AS "isPrescription",
+                STORAGE_TYPE             AS "storageType",
+                STATUS                   AS "status",
+                UPDATED_AT               AS "updatedAt"
+            FROM PRODUCT
+            <where>
+                <if test="keyword != null and keyword != ''">
+                    AND (
+                        UPPER(PRODUCT_NAME) LIKE '%' || UPPER(#{keyword}) || '%'
+                        OR UPPER(PRODUCT_CODE) LIKE '%' || UPPER(#{keyword}) || '%'
+                    )
+                </if>
+                <if test="status != null and status != ''">
+                    AND STATUS = #{status}
+                </if>
+                <if test="isPrescription != null and isPrescription != ''">
+                    AND IS_PRESCRIPTION = #{isPrescription}
+                </if>
+                <if test="storageType != null and storageType != ''">
+                    AND STORAGE_TYPE = #{storageType}
+                </if>
+            </where>
+            ORDER BY UPDATED_AT DESC NULLS LAST, PRODUCT_ID DESC
+        )
+        WHERE ROWNUM &lt;= 300
+    </select>
+
+    <!--
+        기본 API -> PRODUCT 반영.
+        PRODUCT_CODE를 자연키로 사용하며, 저장된 값이 달라진 경우에만 UPDATE가 실행된다.
+        따라서 월간 동기화 시 변경되지 않은 행은 다시 쓰지 않는다.
+    -->
+    <insert id="mergeBasicProduct"
+            parameterType="com.erp.backend.product.api.dto.ProductSyncDto">
+        <![CDATA[
+        MERGE INTO PRODUCT p
+        USING (
+            SELECT
+                TRIM(#{itemSeq}) AS PRODUCT_CODE,
+                NVL(SUBSTRB(TRIM(#{itemName}), 1, 150), 'UNKNOWN') AS PRODUCT_NAME,
+                SUBSTRB(TRIM(#{entpName}), 1, 100) AS MAKER_NAME,
+                NVL(TRIM(#{spcltyPblc}), 'N') AS IS_PRESCRIPTION
+            FROM DUAL
+            WHERE TRIM(#{itemSeq}) IS NOT NULL
+        ) src
+        ON (p.PRODUCT_CODE = src.PRODUCT_CODE)
+        WHEN MATCHED THEN UPDATE SET
+            p.PRODUCT_NAME = src.PRODUCT_NAME,
+            p.MAKER_NAME = src.MAKER_NAME,
+            p.IS_PRESCRIPTION = src.IS_PRESCRIPTION,
+            p.STATUS = 'ACTIVE',
+            p.UPDATED_AT = SYSDATE
+        WHERE
+            NVL(p.PRODUCT_NAME, CHR(0)) <> NVL(src.PRODUCT_NAME, CHR(0))
+            OR NVL(p.MAKER_NAME, CHR(0)) <> NVL(src.MAKER_NAME, CHR(0))
+            OR NVL(p.IS_PRESCRIPTION, CHR(0)) <> NVL(src.IS_PRESCRIPTION, CHR(0))
+            OR NVL(p.STATUS, CHR(0)) <> 'ACTIVE'
+        WHEN NOT MATCHED THEN INSERT (
+            PRODUCT_ID,
+            PRODUCT_CODE,
+            PRODUCT_NAME,
+            MAKER_NAME,
+            UNIT,
+            SAFETY_QTY,
+            STANDARD_PURCHASE_PRICE,
+            STANDARD_SALES_PRICE,
+            IS_PRESCRIPTION,
+            STORAGE_TYPE,
+            STATUS,
+            CREATED_AT,
+            UPDATED_AT
+        ) VALUES (
+            (SELECT NVL(MAX(PRODUCT_ID), 0) + 1 FROM PRODUCT),
+            src.PRODUCT_CODE,
+            src.PRODUCT_NAME,
+            src.MAKER_NAME,
+            'EA',
+            0,
+            0,
+            0,
+            src.IS_PRESCRIPTION,
+            'ROOM',
+            'ACTIVE',
+            SYSDATE,
+            SYSDATE
+        )
+        ]]>
+    </insert>
+
+    <!--
+        기본 API -> PRODUCT_SPEC 반영.
+        제품 분류, 허가 번호, EDI 코드를 상품별 BASIC_INFO 메타데이터로 저장한다.
+    -->
+    <insert id="mergeBasicProductSpec"
+            parameterType="com.erp.backend.product.api.dto.ProductSyncDto">
+        <![CDATA[
+        MERGE INTO PRODUCT_SPEC ps
+        USING (
+            SELECT
+                p.PRODUCT_ID,
+                'BASIC_INFO' AS SPEC_NAME,
+                SUBSTR(
+                    'type=' || NVL(TRIM(#{prductType}), '')
+                    || ', permitNo=' || NVL(TRIM(#{prductPrmisnNo}), '')
+                    || ', ediCode=' || NVL(TRIM(#{ediCode}), ''),
+                    1,
+                    300
+                ) AS DESCRIPTION
+            FROM PRODUCT p
+            WHERE p.PRODUCT_CODE = TRIM(#{itemSeq})
+        ) src
+        ON (ps.PRODUCT_ID = src.PRODUCT_ID AND ps.SPEC_NAME = src.SPEC_NAME)
+        WHEN MATCHED THEN UPDATE SET
+            ps.DESCRIPTION = src.DESCRIPTION,
+            ps.USE_YN = 'Y'
+        WHERE
+            NVL(ps.DESCRIPTION, CHR(0)) <> NVL(src.DESCRIPTION, CHR(0))
+            OR NVL(ps.USE_YN, CHR(0)) <> 'Y'
+        WHEN NOT MATCHED THEN INSERT (
+            SPEC_ID,
+            PRODUCT_ID,
+            SPEC_NAME,
+            DESCRIPTION,
+            USE_YN,
+            CREATED_AT
+        ) VALUES (
+            (SELECT NVL(MAX(SPEC_ID), 0) + 1 FROM PRODUCT_SPEC),
+            src.PRODUCT_ID,
+            src.SPEC_NAME,
+            src.DESCRIPTION,
+            'Y',
+            SYSDATE
+        )
+        ]]>
+    </insert>
+
+    <!--
+        상세 API -> PRODUCT 반영.
+        상세 데이터 중 보관 유형과 포장 단위만 갱신하며, 여기서는 신규 PRODUCT 행을 만들지 않는다.
+    -->
+    <insert id="mergeDetailProduct"
+            parameterType="com.erp.backend.product.api.dto.ProductSyncDto">
+        <![CDATA[
+        MERGE INTO PRODUCT p
+        USING (
+            SELECT
+                TRIM(#{itemSeq}) AS PRODUCT_CODE,
+                NVL(SUBSTRB(TRIM(#{packUnit}), 1, 20), 'EA') AS UNIT,
+                NVL(SUBSTRB(TRIM(#{storageType}), 1, 20), 'ROOM') AS STORAGE_TYPE
+            FROM DUAL
+            WHERE TRIM(#{itemSeq}) IS NOT NULL
+        ) src
+        ON (p.PRODUCT_CODE = src.PRODUCT_CODE)
+        WHEN MATCHED THEN UPDATE SET
+            p.UNIT = src.UNIT,
+            p.STORAGE_TYPE = src.STORAGE_TYPE,
+            p.UPDATED_AT = SYSDATE
+        WHERE
+            NVL(p.UNIT, CHR(0)) <> NVL(src.UNIT, CHR(0))
+            OR NVL(p.STORAGE_TYPE, CHR(0)) <> NVL(src.STORAGE_TYPE, CHR(0))
+        ]]>
+    </insert>
+
+    <!--
+        상세 API -> PRODUCT_SPEC 반영.
+        PRODUCT 컬럼 길이가 짧으므로 긴 상세 값은 DETAIL_INFO 메타데이터로 분리해 저장한다.
+    -->
+    <insert id="mergeDetailProductSpec"
+            parameterType="com.erp.backend.product.api.dto.ProductSyncDto">
+        <![CDATA[
+        MERGE INTO PRODUCT_SPEC ps
+        USING (
+            SELECT
+                p.PRODUCT_ID,
+                'DETAIL_INFO' AS SPEC_NAME,
+                SUBSTR(
+                    'storageMethod=' || NVL(TRIM(#{storageMethod}), '')
+                    || ', validTerm=' || NVL(TRIM(#{validTerm}), '')
+                    || ', packUnit=' || NVL(TRIM(#{packUnit}), ''),
+                    1,
+                    300
+                ) AS DESCRIPTION
+            FROM PRODUCT p
+            WHERE p.PRODUCT_CODE = TRIM(#{itemSeq})
+        ) src
+        ON (ps.PRODUCT_ID = src.PRODUCT_ID AND ps.SPEC_NAME = src.SPEC_NAME)
+        WHEN MATCHED THEN UPDATE SET
+            ps.DESCRIPTION = src.DESCRIPTION,
+            ps.USE_YN = 'Y'
+        WHERE
+            NVL(ps.DESCRIPTION, CHR(0)) <> NVL(src.DESCRIPTION, CHR(0))
+            OR NVL(ps.USE_YN, CHR(0)) <> 'Y'
+        WHEN NOT MATCHED THEN INSERT (
+            SPEC_ID,
+            PRODUCT_ID,
+            SPEC_NAME,
+            DESCRIPTION,
+            USE_YN,
+            CREATED_AT
+        ) VALUES (
+            (SELECT NVL(MAX(SPEC_ID), 0) + 1 FROM PRODUCT_SPEC),
+            src.PRODUCT_ID,
+            src.SPEC_NAME,
+            src.DESCRIPTION,
+            'Y',
+            SYSDATE
+        )
+        ]]>
+    </insert>
+
+    <!--
+        성분 API -> PRODUCT_SPEC 반영.
+        각 성분 행은 PRODUCT_ID와 생성된 성분 스펙명을 기준으로 병합한다.
+    -->
+    <insert id="mergeIngredientProductSpec"
+            parameterType="com.erp.backend.product.api.dto.ProductSyncDto">
+        <![CDATA[
+        MERGE INTO PRODUCT_SPEC ps
+        USING (
+            SELECT
+                p.PRODUCT_ID,
+                SUBSTR(
+                    'INGREDIENT_' || NVL(TRIM(#{itemIngrCnt}), NVL(TRIM(#{itemIngrName}), 'UNKNOWN')),
+                    1,
+                    100
+                ) AS SPEC_NAME,
+                SUBSTR(
+                    'name=' || NVL(TRIM(#{itemIngrName}), '')
+                    || ', count=' || NVL(TRIM(#{itemIngrCnt}), '')
+                    || ', main=' || NVL(TRIM(#{mainItemIngr}), '')
+                    || ', amount=' || NVL(TRIM(#{totalAmount}), '')
+                    || ', unit=' || NVL(TRIM(#{ingredientUnit}), ''),
+                    1,
+                    300
+                ) AS DESCRIPTION
+            FROM PRODUCT p
+            WHERE p.PRODUCT_CODE = TRIM(#{itemSeq})
+        ) src
+        ON (ps.PRODUCT_ID = src.PRODUCT_ID AND ps.SPEC_NAME = src.SPEC_NAME)
+        WHEN MATCHED THEN UPDATE SET
+            ps.DESCRIPTION = src.DESCRIPTION,
+            ps.USE_YN = 'Y'
+        WHERE
+            NVL(ps.DESCRIPTION, CHR(0)) <> NVL(src.DESCRIPTION, CHR(0))
+            OR NVL(ps.USE_YN, CHR(0)) <> 'Y'
+        WHEN NOT MATCHED THEN INSERT (
+            SPEC_ID,
+            PRODUCT_ID,
+            SPEC_NAME,
+            DESCRIPTION,
+            USE_YN,
+            CREATED_AT
+        ) VALUES (
+            (SELECT NVL(MAX(SPEC_ID), 0) + 1 FROM PRODUCT_SPEC),
+            src.PRODUCT_ID,
+            src.SPEC_NAME,
+            src.DESCRIPTION,
+            'Y',
+            SYSDATE
+        )
+        ]]>
+    </insert>
+
+</mapper>

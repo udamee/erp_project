@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.erp.backend.inventory.mapper.RecallMapper">
+
+    <!-- 회수 품목코드(ITEM_SEQ) 목록과 매칭되는 우리 PRODUCT 조회 -->
+    <select id="findProductsByCodes" resultType="map">
+        SELECT PRODUCT_ID   AS "productId",
+        PRODUCT_CODE AS "productCode",
+        PRODUCT_NAME AS "productName"
+        FROM PRODUCT
+        WHERE PRODUCT_CODE IN
+        <foreach collection="codes" item="code" open="(" separator="," close=")">
+            #{code}
+        </foreach>
+    </select>
+
+</mapper>

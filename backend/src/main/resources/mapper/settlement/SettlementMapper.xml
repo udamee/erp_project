@@ -1,0 +1,880 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.erp.backend.settlement.mapper.SettlementMapper">
+    <!-- 매출청구 목록/조건 조회 -->
+    <select id="findAllSalesInvoices"
+            parameterType="map"
+            resultType="com.erp.backend.settlement.vo.SalesInvoiceVO">
+        SELECT
+            SI.SALES_INVOICE_ID,
+            SI.SO_ID,
+            SI.CUSTOMER_ID,
+            C.CUSTOMER_NAME,
+            SI.ISSUE_DATE,
+            SI.TOTAL_AMOUNT,
+            SI.STATUS,
+            SI.CREATED_AT
+        FROM SALES_INVOICE SI
+        JOIN CUSTOMER C
+            ON C.CUSTOMER_ID = SI.CUSTOMER_ID
+        WHERE 1 = 1
+        <if test="status != null and status != ''">
+            AND SI.STATUS = #{status}
+        </if>
+        <if test="customerName != null and customerName != ''">
+            AND C.CUSTOMER_NAME LIKE '%' || #{customerName} || '%'
+        </if>
+        <if test="startDate != null and startDate != ''">
+            AND SI.ISSUE_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND SI.ISSUE_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+        </if>
+
+        ORDER BY SI.SALES_INVOICE_ID DESC
+    </select>
+
+    <!-- 매입청구 목록/조건 조회 -->
+    <select id="findAllPurchaseInvoices"
+            parameterType="map"
+            resultType="com.erp.backend.settlement.vo.PurchaseInvoiceVO">
+        SELECT
+            PI.PURCHASE_INVOICE_ID,
+            PI.PO_ID,
+            PI.SUPPLIER_ID,
+            S.SUPPLIER_NAME,
+            PI.ISSUE_DATE,
+            PI.TOTAL_AMOUNT,
+            PI.STATUS,
+            PI.CREATED_AT
+        FROM PURCHASE_INVOICE PI
+        JOIN SUPPLIER S
+            ON S.SUPPLIER_ID = PI.SUPPLIER_ID
+        WHERE 1 = 1
+        <if test="status != null and status != ''">
+            AND PI.STATUS = #{status}
+        </if>
+        <if test="supplierName != null and supplierName != ''">
+            AND S.SUPPLIER_NAME LIKE '%' || #{supplierName} || '%'
+        </if>
+        <if test="startDate != null and startDate != ''">
+            AND PI.ISSUE_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND PI.ISSUE_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+        </if>
+
+        ORDER BY PI.PURCHASE_INVOICE_ID DESC
+    </select>
+
+    <!-- 매출채권/미수금 목록/조건 조회 -->
+    <select id="findAllAccountReceivables"
+            parameterType="map"
+            resultType="com.erp.backend.settlement.vo.AccountReceivableVO">
+        SELECT
+            AR.AR_ID,
+            AR.CUSTOMER_ID,
+            C.CUSTOMER_NAME,
+            AR.SALES_INVOICE_ID,
+            AR.TOTAL_AMOUNT,
+            AR.PAID_AMOUNT,
+            AR.REMAIN_AMOUNT,
+            AR.DUE_DATE,
+            AR.STATUS,
+            AR.CREATED_AT
+        FROM ACCOUNT_RECEIVABLE AR
+        JOIN CUSTOMER C
+            ON C.CUSTOMER_ID = AR.CUSTOMER_ID
+        WHERE 1 = 1
+        <if test="customerName != null and customerName != ''">
+            AND C.CUSTOMER_NAME LIKE '%' || #{customerName} || '%'
+        </if>
+        <if test="status != null and status != ''">
+            AND AR.STATUS = #{status}
+        </if>
+        <if test="startDate != null and startDate != ''">
+            AND AR.DUE_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND AR.DUE_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+        </if>
+        ORDER BY AR.AR_ID DESC
+    </select>
+
+    <!-- 거래처별 외상/미수금 목록 -->
+    <select id="findCustomerReceivableSummary"
+            parameterType="map"
+            resultType="com.erp.backend.settlement.vo.AccountReceivableVO">
+        SELECT
+            C.CUSTOMER_ID,
+            C.CUSTOMER_NAME,
+            NVL(SI.MONTH_SALES_AMOUNT, 0) AS MONTH_SALES_AMOUNT,
+            NVL(AR.REMAIN_AMOUNT, 0) AS REMAIN_AMOUNT,
+            10000000 AS CREDIT_LIMIT,
+            10000000 - NVL(AR.REMAIN_AMOUNT, 0) AS CREDIT_BALANCE
+        FROM CUSTOMER C
+        LEFT JOIN (
+            SELECT
+                CUSTOMER_ID,
+                SUM(TOTAL_AMOUNT) AS MONTH_SALES_AMOUNT
+            FROM SALES_INVOICE
+            WHERE ISSUE_DATE &gt;= TRUNC(SYSDATE, 'MM')
+                AND ISSUE_DATE &lt; ADD_MONTHS(TRUNC(SYSDATE, 'MM'), 1)
+                GROUP BY CUSTOMER_ID
+        ) SI
+            ON SI.CUSTOMER_ID = C.CUSTOMER_ID
+        LEFT JOIN (
+            SELECT
+                CUSTOMER_ID,
+                SUM(REMAIN_AMOUNT) AS REMAIN_AMOUNT
+            FROM ACCOUNT_RECEIVABLE
+            GROUP BY CUSTOMER_ID
+        ) AR
+            ON AR.CUSTOMER_ID = C.CUSTOMER_ID
+        WHERE 1 = 1
+        <if test="customerName != null and customerName != ''">
+            AND C.CUSTOMER_NAME LIKE '%' || #{customerName} || '%'
+        </if>
+        ORDER BY NVL(AR.REMAIN_AMOUNT, 0) DESC
+    </select>
+
+    <!-- 매입채무/미지급금 목록/조건 조회 -->
+    <select id="findAllAccountPayables"
+            parameterType="map"
+            resultType="com.erp.backend.settlement.vo.AccountPayableVO">
+        SELECT
+            AP.AP_ID,
+            AP.SUPPLIER_ID,
+            S.SUPPLIER_NAME,
+            AP.PURCHASE_INVOICE_ID,
+            AP.TOTAL_AMOUNT,
+            AP.PAID_AMOUNT,
+            AP.REMAIN_AMOUNT,
+            AP.DUE_DATE,
+            AP.STATUS,
+            AP.CREATED_AT
+        FROM ACCOUNT_PAYABLE AP
+        JOIN SUPPLIER S
+            ON S.SUPPLIER_ID = AP.SUPPLIER_ID
+        WHERE 1 = 1
+        <if test="status != null and status != ''">
+            AND AP.STATUS = #{status}
+        </if>
+        <if test="supplierName != null and supplierName != ''">
+            AND S.SUPPLIER_NAME LIKE '%' || #{supplierName} || '%'
+        </if>
+        <if test="startDate != null and startDate != ''">
+            AND AP.DUE_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND AP.DUE_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+        </if>
+
+        ORDER BY AP.AP_ID DESC
+    </select>
+
+    <!-- 수금 대상 목록 조회 -->
+    <select id="findPaymentTargets"
+            parameterType="map"
+            resultType="com.erp.backend.settlement.vo.AccountReceivableVO">
+        SELECT
+            AR.AR_ID,
+            AR.CUSTOMER_ID,
+            C.CUSTOMER_NAME,
+            AR.TOTAL_AMOUNT,
+            AR.PAID_AMOUNT,
+            AR.REMAIN_AMOUNT,
+            AR.DUE_DATE,
+            AR.STATUS
+        FROM ACCOUNT_RECEIVABLE AR
+        JOIN CUSTOMER C
+            ON C.CUSTOMER_ID = AR.CUSTOMER_ID
+        WHERE AR.REMAIN_AMOUNT > 0
+        <if test="customerName != null and customerName != ''">
+            AND C.CUSTOMER_NAME LIKE '%' || #{customerName} || '%'
+        </if>
+        ORDER BY AR.AR_ID DESC
+    </select>
+
+    <!-- 수금내역 조회 -->
+    <select id="findAllPayments"
+            resultType="com.erp.backend.settlement.vo.PaymentVO">
+        SELECT
+            P.PAYMENT_ID,
+            P.AR_ID,
+            P.CUSTOMER_ID,
+            C.CUSTOMER_NAME,
+            P.PAYMENT_DATE,
+            P.PAYMENT_AMOUNT,
+            P.PAYMENT_TYPE,
+            P.CREATED_BY,
+            E.EMP_NAME AS CREATED_BY_NAME,
+            P.CREATED_AT
+        FROM PAYMENT P
+        JOIN CUSTOMER C
+            ON C.CUSTOMER_ID = P.CUSTOMER_ID
+        JOIN EMPLOYEE E
+            ON E.EMP_ID = P.CREATED_BY
+        WHERE 1 = 1
+        <if test="customerName != null and customerName != ''">
+            AND C.CUSTOMER_NAME LIKE '%' || #{customerName} || '%'
+        </if>
+        <if test="startDate != null and startDate != ''">
+            AND P.PAYMENT_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND P.PAYMENT_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+        </if>
+        ORDER BY P.PAYMENT_ID DESC
+    </select>
+
+    <!-- 손익정산 조회 -->
+    <select id="findAllSettlements"
+            parameterType="map"
+            resultType="com.erp.backend.settlement.vo.SettlementVO">
+        SELECT *
+        FROM SETTLEMENT
+        WHERE 1 = 1
+        <if test="startDate != null and startDate != ''">
+            AND START_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND END_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+        </if>
+        ORDER BY SETTLEMENT_ID DESC
+    </select>
+
+    <!-- 매출청구 상세 조회 -->
+    <select id="findSalesInvoiceById"
+            resultType="com.erp.backend.settlement.vo.SalesInvoiceVO">
+        SELECT
+            SI.SALES_INVOICE_ID,
+            SI.SO_ID,
+            SI.CUSTOMER_ID,
+            C.CUSTOMER_NAME,
+            SI.ISSUE_DATE,
+            SI.TOTAL_AMOUNT,
+            SI.STATUS,
+            SI.CREATED_AT
+        FROM SALES_INVOICE SI
+        JOIN CUSTOMER C
+             ON C.CUSTOMER_ID = SI.CUSTOMER_ID
+        WHERE SI.SALES_INVOICE_ID = #{salesInvoiceId}
+    </select>
+
+    <!-- 매입청구 상세 조회 -->
+    <select id="findPurchaseInvoiceById"
+            resultType="com.erp.backend.settlement.vo.PurchaseInvoiceVO">
+        SELECT
+            PI.PURCHASE_INVOICE_ID,
+            PI.PO_ID,
+            PI.SUPPLIER_ID,
+            S.SUPPLIER_NAME,
+            PI.ISSUE_DATE,
+            PI.TOTAL_AMOUNT,
+            PI.STATUS,
+            PI.CREATED_AT
+        FROM PURCHASE_INVOICE PI
+        JOIN SUPPLIER S
+            ON S.SUPPLIER_ID = PI.SUPPLIER_ID
+        WHERE PI.PURCHASE_INVOICE_ID = #{purchaseInvoiceId}
+    </select>
+
+    <!-- 매출채권/미수금 상세 조회 -->
+    <select id="findAccountReceivableById"
+            resultType="com.erp.backend.settlement.vo.AccountReceivableVO">
+        SELECT
+            AR.AR_ID,
+            AR.CUSTOMER_ID,
+            C.CUSTOMER_NAME,
+            AR.SALES_INVOICE_ID,
+            AR.TOTAL_AMOUNT,
+            AR.PAID_AMOUNT,
+            AR.REMAIN_AMOUNT,
+            AR.DUE_DATE,
+            AR.STATUS,
+            AR.CREATED_AT
+        FROM ACCOUNT_RECEIVABLE AR
+        JOIN CUSTOMER C
+             ON C.CUSTOMER_ID = AR.CUSTOMER_ID
+        WHERE AR.AR_ID = #{arId}
+    </select>
+
+    <!-- 매입채무/미지급금 상세 조회 -->
+    <select id="findAccountPayableById"
+            resultType="com.erp.backend.settlement.vo.AccountPayableVO">
+        SELECT
+            AP.AP_ID,
+            AP.SUPPLIER_ID,
+            S.SUPPLIER_NAME,
+            AP.PURCHASE_INVOICE_ID,
+            AP.TOTAL_AMOUNT,
+            AP.PAID_AMOUNT,
+            AP.REMAIN_AMOUNT,
+            AP.DUE_DATE,
+            AP.STATUS,
+            AP.CREATED_AT
+        FROM ACCOUNT_PAYABLE AP
+        JOIN SUPPLIER S
+            ON S.SUPPLIER_ID = AP.SUPPLIER_ID
+        WHERE AP.AP_ID = #{apId}
+    </select>
+
+    <!-- 지급내역 조회 -->
+    <resultMap id="payablePaymentMap"
+               type="com.erp.backend.settlement.vo.PayablePaymentVO">
+        <id property="payablePaymentId" column="PAYABLE_PAYMENT_ID"/>
+        <result property="apId" column="AP_ID"/>
+        <result property="supplierId" column="SUPPLIER_ID"/>
+        <result property="supplierName" column="SUPPLIER_NAME"/>
+        <result property="paymentDate" column="PAYMENT_DATE"/>
+        <result property="paymentAmount" column="PAYMENT_AMOUNT"/>
+        <result property="paymentType" column="PAYMENT_TYPE"/>
+        <result property="createdBy" column="CREATED_BY"/>
+        <result property="createdByName" column="CREATED_BY_NAME"/>
+        <result property="createdAt" column="CREATED_AT"/>
+    </resultMap>
+
+    <select id="findAllPayablePayments"
+            parameterType="map"
+            resultMap="payablePaymentMap">
+        SELECT
+            PP.PAYABLE_PAYMENT_ID,
+            PP.AP_ID,
+            PP.SUPPLIER_ID,
+            S.SUPPLIER_NAME,
+            PP.PAYMENT_DATE,
+            PP.PAYMENT_AMOUNT,
+            PP.PAYMENT_TYPE,
+            PP.CREATED_BY,
+            E.EMP_NAME AS CREATED_BY_NAME,
+            PP.CREATED_AT
+        FROM PAYABLE_PAYMENT PP
+        JOIN SUPPLIER S
+            ON S.SUPPLIER_ID = PP.SUPPLIER_ID
+        JOIN EMPLOYEE E
+            ON E.EMP_ID = PP.CREATED_BY
+        WHERE 1 = 1
+        <if test="supplierName != null and supplierName != ''">
+            AND S.SUPPLIER_NAME LIKE '%' || #{supplierName} || '%'
+        </if>
+        <if test="startDate != null and startDate != ''">
+            AND PP.PAYMENT_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND PP.PAYMENT_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+        </if>
+        ORDER BY PP.PAYABLE_PAYMENT_ID DESC
+    </select>
+
+    <!-- 지급내역 등록 -->
+    <insert id="insertPayablePayment"
+            parameterType="com.erp.backend.settlement.vo.PayablePaymentVO">
+        INSERT INTO PAYABLE_PAYMENT (
+            PAYABLE_PAYMENT_ID,
+            AP_ID,
+            SUPPLIER_ID,
+            PAYMENT_DATE,
+            PAYMENT_AMOUNT,
+            PAYMENT_TYPE,
+            CREATED_BY,
+            CREATED_AT
+        ) VALUES (
+            SEQ_PAYABLE_PAYMENT.NEXTVAL,
+            #{apId},
+            #{supplierId},
+            #{paymentDate},
+            #{paymentAmount},
+            #{paymentType},
+            #{createdBy},
+            SYSDATE
+        )
+    </insert>
+
+    <!-- 수금내역 상세 조회 -->
+    <select id="findPaymentById"
+            resultType="com.erp.backend.settlement.vo.PaymentVO">
+        SELECT *
+        FROM PAYMENT
+        WHERE PAYMENT_ID = #{paymentId}
+    </select>
+
+    <!-- 손익정산 상세 조회 -->
+    <select id="findSettlementById"
+            resultType="com.erp.backend.settlement.vo.SettlementVO">
+        SELECT *
+        FROM SETTLEMENT
+        WHERE SETTLEMENT_ID = #{settlementId}
+    </select>
+
+    <!-- 매출청구 등록 -->
+    <insert id="insertSalesInvoice"
+            parameterType="com.erp.backend.settlement.vo.SalesInvoiceVO">
+        <selectKey keyProperty="salesInvoiceId"
+                   resultType="int"
+                   order="BEFORE">
+            SELECT SEQ_SALES_INVOICE.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO SALES_INVOICE (
+            SALES_INVOICE_ID,
+            SO_ID,
+            CUSTOMER_ID,
+            ISSUE_DATE,
+            TOTAL_AMOUNT,
+            STATUS,
+            CREATED_AT
+        ) VALUES (
+            #{salesInvoiceId},
+            #{soId},
+            #{customerId},
+            #{issueDate},
+            #{totalAmount},
+            #{status},
+            SYSDATE
+        )
+    </insert>
+
+    <!-- 매출채권(미수금) 등록 -->
+    <insert id="insertAccountReceivable"
+            parameterType="com.erp.backend.settlement.vo.AccountReceivableVO">
+        INSERT INTO ACCOUNT_RECEIVABLE (
+            AR_ID,
+            CUSTOMER_ID,
+            SALES_INVOICE_ID,
+            TOTAL_AMOUNT,
+            PAID_AMOUNT,
+            REMAIN_AMOUNT,
+            DUE_DATE,
+            STATUS,
+            CREATED_AT
+        ) VALUES (
+            SEQ_ACCOUNT_RECEIVABLE.NEXTVAL,
+            #{customerId},
+            #{salesInvoiceId},
+            #{totalAmount},
+            #{paidAmount},
+            #{remainAmount},
+            #{dueDate},
+            #{status},
+            SYSDATE
+        )
+    </insert>
+
+    <!-- 입고 완료 발주 기준 매입전표 등록 -->
+    <insert id="insertPurchaseInvoiceFromPurchaseOrder" parameterType="map">
+        <selectKey keyProperty="purchaseInvoiceId" resultType="int" order="BEFORE">
+            SELECT SEQ_PURCHASE_INVOICE.NEXTVAL FROM DUAL
+        </selectKey>
+        INSERT INTO PURCHASE_INVOICE (
+            PURCHASE_INVOICE_ID,
+            PO_ID,
+            SUPPLIER_ID,
+            ISSUE_DATE,
+            TOTAL_AMOUNT,
+            STATUS,
+            CREATED_AT
+        )
+        SELECT
+            #{purchaseInvoiceId},
+            PO.PO_ID,
+            PO.SUPPLIER_ID,
+            SYSDATE,
+            PO.TOTAL_AMOUNT,
+            'ISSUED',
+            SYSDATE
+        FROM PURCHASE_ORDER PO
+        WHERE PO.PO_ID = #{poId}
+          AND PO.STATUS = 'COMPLETED'
+          AND NOT EXISTS (
+              SELECT 1
+              FROM PURCHASE_INVOICE PI
+              WHERE PI.PO_ID = PO.PO_ID
+          )
+    </insert>
+
+    <!-- 매입전표 기준 매입채무 등록 -->
+    <insert id="insertAccountPayableFromPurchaseInvoice" parameterType="int">
+        INSERT INTO ACCOUNT_PAYABLE (
+            AP_ID,
+            SUPPLIER_ID,
+            PURCHASE_INVOICE_ID,
+            TOTAL_AMOUNT,
+            PAID_AMOUNT,
+            REMAIN_AMOUNT,
+            DUE_DATE,
+            STATUS,
+            CREATED_AT
+        )
+        SELECT
+            SEQ_ACCOUNT_PAYABLE.NEXTVAL,
+            PI.SUPPLIER_ID,
+            PI.PURCHASE_INVOICE_ID,
+            PI.TOTAL_AMOUNT,
+            0,
+            PI.TOTAL_AMOUNT,
+            PI.ISSUE_DATE + 30,
+            'UNPAID',
+            SYSDATE
+        FROM PURCHASE_INVOICE PI
+        WHERE PI.PURCHASE_INVOICE_ID = #{purchaseInvoiceId}
+          AND NOT EXISTS (
+              SELECT 1
+              FROM ACCOUNT_PAYABLE AP
+              WHERE AP.PURCHASE_INVOICE_ID = PI.PURCHASE_INVOICE_ID
+          )
+    </insert>
+
+    <!-- 수금 처리 -->
+    <insert id="insertPayment"
+            parameterType="com.erp.backend.settlement.vo.PaymentVO">
+        INSERT INTO PAYMENT (
+            PAYMENT_ID,
+            AR_ID,
+            CUSTOMER_ID,
+            PAYMENT_DATE,
+            PAYMENT_AMOUNT,
+            PAYMENT_TYPE,
+            CREATED_BY,
+            CREATED_AT
+        ) VALUES (
+            SEQ_PAYMENT.NEXTVAL,
+            #{arId},
+            #{customerId},
+            #{paymentDate},
+            #{paymentAmount},
+            #{paymentType},
+            #{createdBy},
+            SYSDATE
+        )
+    </insert>
+
+    <!-- 미수금 차감 -->
+    <update id="updateAccountReceivablePayment"
+            parameterType="com.erp.backend.settlement.vo.PaymentVO">
+        UPDATE ACCOUNT_RECEIVABLE
+        SET
+            PAID_AMOUNT = PAID_AMOUNT + #{paymentAmount},
+            REMAIN_AMOUNT = REMAIN_AMOUNT - #{paymentAmount},
+            STATUS = CASE
+                WHEN REMAIN_AMOUNT - #{paymentAmount} = 0 THEN 'PAID'
+                ELSE 'PARTIAL'
+            END
+        WHERE AR_ID = #{arId}
+    </update>
+
+    <!-- 여신한도 체크용 현재 미수금 조회 -->
+    <select id="findCurrentReceivableAmount"
+            parameterType="int"
+            resultType="java.math.BigDecimal">
+        SELECT NVL(SUM(REMAIN_AMOUNT), 0)
+        FROM ACCOUNT_RECEIVABLE
+        WHERE CUSTOMER_ID = #{customerId}
+    </select>
+
+    <!-- 미지급금 차감 -->
+    <update id="updateAccountPayablePayment"
+            parameterType="com.erp.backend.settlement.vo.AccountPayableVO">
+        UPDATE ACCOUNT_PAYABLE
+        SET
+            PAID_AMOUNT = PAID_AMOUNT + #{paidAmount},
+            REMAIN_AMOUNT = REMAIN_AMOUNT - #{paidAmount},
+            STATUS = CASE
+                WHEN REMAIN_AMOUNT - #{paidAmount} = 0 THEN 'PAID'
+                ELSE 'PARTIAL'
+            END
+        WHERE AP_ID = #{apId}
+    </update>
+
+    <!-- 기간별 총매출 조회 -->
+    <select id="findTotalSalesAmount"
+            parameterType="map"
+            resultType="java.math.BigDecimal">
+        SELECT NVL(SUM(TOTAL_AMOUNT), 0)
+        FROM SALES_INVOICE
+        WHERE ISSUE_DATE BETWEEN #{startDate} AND #{endDate}
+    </select>
+
+    <!-- 기간별 총매입 조회 -->
+    <select id="findTotalPurchaseAmount"
+            parameterType="map"
+            resultType="java.math.BigDecimal">
+        SELECT NVL(SUM(TOTAL_AMOUNT), 0)
+        FROM PURCHASE_INVOICE
+        WHERE ISSUE_DATE BETWEEN #{startDate} AND #{endDate}
+    </select>
+
+    <!-- 기간별 총미수금 조회 -->
+    <select id="findTotalReceivableAmount"
+            parameterType="map"
+            resultType="java.math.BigDecimal">
+        SELECT NVL(SUM(REMAIN_AMOUNT), 0)
+        FROM ACCOUNT_RECEIVABLE
+        WHERE CREATED_AT BETWEEN #{startDate} AND #{endDate}
+    </select>
+
+    <!-- 기간별 총미지급금 조회 -->
+    <select id="findTotalPayableAmount"
+            parameterType="map"
+            resultType="java.math.BigDecimal">
+        SELECT NVL(SUM(REMAIN_AMOUNT), 0)
+        FROM ACCOUNT_PAYABLE
+        WHERE CREATED_AT BETWEEN #{startDate} AND #{endDate}
+    </select>
+
+    <!-- 손익정산 등록 -->
+    <insert id="insertSettlement"
+            parameterType="com.erp.backend.settlement.vo.SettlementVO">
+        INSERT INTO SETTLEMENT (
+            SETTLEMENT_ID,
+            START_DATE,
+            END_DATE,
+            TOTAL_PURCHASE,
+            TOTAL_SALES,
+            TOTAL_RECEIVABLE,
+            TOTAL_PAYABLE,
+            GROSS_PROFIT,
+            PROFIT_RATE,
+            CREATED_BY,
+            CREATED_AT
+        ) VALUES (
+            SEQ_SETTLEMENT.NEXTVAL,
+            #{startDate},
+            #{endDate},
+            #{totalPurchase},
+            #{totalSales},
+            #{totalReceivable},
+            #{totalPayable},
+            #{grossProfit},
+            #{profitRate},
+            #{createdBy},
+            SYSDATE
+        )
+    </insert>
+
+    <!-- 대시보드 조회 -->
+    <select id="getDashboardSummary"
+            parameterType="map"
+            resultType="com.erp.backend.settlement.vo.DashboardVO">
+        SELECT
+            (SELECT NVL(SUM(TOTAL_AMOUNT),0)
+            FROM SALES_INVOICE
+            WHERE 1 = 1
+              <if test="startDate != null and startDate != ''">
+                AND ISSUE_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+              </if>
+              <if test="endDate != null and endDate != ''">
+                AND ISSUE_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+              </if>
+              <if test="customerId != null">
+                AND CUSTOMER_ID = #{customerId}
+              </if>
+            ) AS TOTAL_SALES,
+            (SELECT NVL(SUM(TOTAL_AMOUNT),0)
+            FROM PURCHASE_INVOICE
+            WHERE 1 = 1
+              <if test="startDate != null and startDate != ''">
+                AND ISSUE_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+              </if>
+              <if test="endDate != null and endDate != ''">
+                AND ISSUE_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+              </if>
+            ) AS TOTAL_PURCHASE,
+            (SELECT NVL(SUM(REMAIN_AMOUNT),0)
+            FROM ACCOUNT_RECEIVABLE
+            WHERE 1 = 1
+              <if test="startDate != null and startDate != ''">
+                AND DUE_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+              </if>
+              <if test="endDate != null and endDate != ''">
+                AND DUE_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+              </if>
+              <if test="customerId != null">
+                AND CUSTOMER_ID = #{customerId}
+              </if>
+            ) AS TOTAL_RECEIVABLE,
+            (SELECT NVL(SUM(REMAIN_AMOUNT),0)
+            FROM ACCOUNT_PAYABLE
+            WHERE 1 = 1
+              <if test="startDate != null and startDate != ''">
+                AND DUE_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+              </if>
+              <if test="endDate != null and endDate != ''">
+                AND DUE_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+              </if>
+            ) AS TOTAL_PAYABLE,
+            (
+                (SELECT NVL(SUM(TOTAL_AMOUNT),0)
+                 FROM SALES_INVOICE
+                 WHERE 1 = 1
+                   <if test="startDate != null and startDate != ''">
+                    AND ISSUE_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+                   </if>
+                   <if test="endDate != null and endDate != ''">
+                    AND ISSUE_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+                   </if>
+                   <if test="customerId != null">
+                    AND CUSTOMER_ID = #{customerId}
+                   </if>
+                 )
+                                      -
+                (SELECT NVL(SUM(TOTAL_AMOUNT),0)
+                 FROM PURCHASE_INVOICE
+                 WHERE 1 = 1
+                   <if test="startDate != null and startDate != ''">
+                    AND ISSUE_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+                   </if>
+                   <if test="endDate != null and endDate != ''">
+                    AND ISSUE_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+                   </if>
+                 )
+            ) AS GROSS_PROFIT,
+            NVL(
+                ROUND(
+                    (
+                        (
+                            (SELECT NVL(SUM(TOTAL_AMOUNT), 0)
+                             FROM SALES_INVOICE
+                             WHERE 1 = 1
+                            <if test="startDate != null and startDate != ''">
+                                AND ISSUE_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+                            </if>
+                            <if test="endDate != null and endDate != ''">
+                                AND ISSUE_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+                            </if>
+                            <if test="customerId != null">
+                                AND CUSTOMER_ID = #{customerId}
+                            </if>
+                            )
+                            -
+                            (SELECT NVL(SUM(TOTAL_AMOUNT), 0)
+                             FROM PURCHASE_INVOICE
+                             WHERE 1 = 1
+                            <if test="startDate != null and startDate != ''">
+                                AND ISSUE_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+                            </if>
+                            <if test="endDate != null and endDate != ''">
+                                AND ISSUE_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+                            </if>
+                            )
+                        )
+                        /
+                        NULLIF(
+                        (SELECT NVL(SUM(TOTAL_AMOUNT),0)
+                         FROM SALES_INVOICE
+                         WHERE 1 = 1
+                        <if test="startDate != null and startDate != ''">
+                            AND ISSUE_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+                        </if>
+                        <if test="endDate != null and endDate != ''">
+                            AND ISSUE_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+                        </if>
+                        <if test="customerId != null">
+                            AND CUSTOMER_ID = #{customerId}
+                        </if>
+                        ),
+                        0
+                    )
+                ) * 100,
+                2
+            ),
+            0
+            ) AS PROFIT_RATE
+        FROM DUAL
+    </select>
+
+    <!-- 미수금 잔액 조회 -->
+    <select id="findRemainAmountByArId"
+            parameterType="int"
+            resultType="java.math.BigDecimal">
+        SELECT REMAIN_AMOUNT
+        FROM ACCOUNT_RECEIVABLE
+        WHERE AR_ID = #{arId}
+    </select>
+
+    <!-- 기간별 매출 차트 조회 -->
+    <select id="getSalesChart"
+            parameterType="map"
+            resultType="com.erp.backend.settlement.vo.SalesChartVO">
+        SELECT
+            TO_CHAR(SI.ISSUE_DATE, 'YYYY-MM') AS PERIOD,
+            NVL(SUM(SI.TOTAL_AMOUNT), 0) AS SALES_AMOUNT
+        FROM SALES_INVOICE SI
+        WHERE 1 = 1
+        <choose>
+            <when test="startDate != null and startDate != ''">
+                AND SI.ISSUE_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+            </when>
+            <otherwise>
+                AND SI.ISSUE_DATE &gt;= ADD_MONTHS(TRUNC(SYSDATE, 'MM'), -5)
+            </otherwise>
+        </choose>
+        <choose>
+            <when test="endDate != null and endDate != ''">
+                AND SI.ISSUE_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+            </when>
+            <otherwise>
+                AND SI.ISSUE_DATE &lt; ADD_MONTHS(TRUNC(SYSDATE, 'MM'), 1)
+            </otherwise>
+        </choose>
+        <if test="customerId != null">
+            AND SI.CUSTOMER_ID = #{customerId}
+        </if>
+        GROUP BY TO_CHAR(SI.ISSUE_DATE, 'YYYY-MM')
+        ORDER BY PERIOD
+    </select>
+
+    <!-- 거래처별 매출 TOP 5 조회 -->
+    <select id="getCustomerTop5"
+            parameterType="map"
+            resultType="com.erp.backend.settlement.vo.SalesChartVO">
+        SELECT
+            NULL AS PERIOD,
+            SI.CUSTOMER_ID,
+            C.CUSTOMER_NAME,
+            SUM(SI.TOTAL_AMOUNT) AS SALES_AMOUNT
+        FROM SALES_INVOICE SI
+        JOIN CUSTOMER C
+            ON C.CUSTOMER_ID = SI.CUSTOMER_ID
+        WHERE 1 = 1
+        <if test="startDate != null and startDate != ''">
+            AND SI.ISSUE_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND SI.ISSUE_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+        </if>
+        GROUP BY SI.CUSTOMER_ID, C.CUSTOMER_NAME
+        ORDER BY SALES_AMOUNT DESC
+        FETCH FIRST 5 ROWS ONLY
+    </select>
+
+    <!-- 품목별 매출 TOP 5 조회 -->
+    <select id="getProductTop5"
+            parameterType="map"
+            resultType="com.erp.backend.settlement.vo.SalesChartVO">
+        SELECT
+            SOD.PRODUCT_ID,
+            P.PRODUCT_NAME,
+            SUM(SOD.AMOUNT) AS SALES_AMOUNT
+        FROM SALES_INVOICE SI
+        JOIN SALES_ORDER_DETAIL SOD
+            ON SOD.SO_ID = SI.SO_ID
+        JOIN PRODUCT P
+            ON P.PRODUCT_ID = SOD.PRODUCT_ID
+        WHERE 1 = 1
+        <if test="startDate != null and startDate != ''">
+            AND SI.ISSUE_DATE &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND SI.ISSUE_DATE &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+        </if>
+        GROUP BY
+            SOD.PRODUCT_ID, P.PRODUCT_NAME
+        ORDER BY
+            SALES_AMOUNT DESC
+        FETCH FIRST 5 ROWS ONLY
+    </select>
+</mapper>

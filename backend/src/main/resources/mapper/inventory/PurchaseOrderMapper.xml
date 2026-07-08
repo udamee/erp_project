@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.erp.backend.inventory.mapper.PurchaseOrderMapper">
+
+    <!-- 공급처 목록 조회 -->
+    <select id="findAllSuppliers" resultType="map">
+        SELECT SUPPLIER_ID    AS "supplierId",
+               SUPPLIER_NAME  AS "supplierName",
+               MANAGER_NAME   AS "managerName",
+               PHONE          AS "phone"
+        FROM SUPPLIER
+        WHERE STATUS = 'ACTIVE'
+        ORDER BY SUPPLIER_NAME
+    </select>
+
+    <!-- 의약품 목록 조회 -->
+    <select id="findAllProducts" resultType="map">
+        SELECT P.PRODUCT_ID              AS "productId",
+        P.PRODUCT_CODE            AS "productCode",
+        P.PRODUCT_NAME            AS "productName",
+        P.UNIT                    AS "unit",
+        P.STANDARD_PURCHASE_PRICE AS "standardPurchasePrice",
+        P.STANDARD_SALES_PRICE    AS "standardSalesPrice",
+        P.IS_PRESCRIPTION         AS "isPrescription",
+        P.STORAGE_TYPE            AS "storageType",
+        P.STATUS                  AS "status"
+        FROM PRODUCT P
+        WHERE P.STATUS = 'ACTIVE'
+        ORDER BY P.PRODUCT_NAME
+    </select>
+
+    <!-- 발주 목록 조회 -->
+    <select id="findAllPurchaseOrders" parameterType="map" resultType="com.erp.backend.inventory.dto.PurchaseOrderResponseDto">
+        SELECT PO.PO_ID             AS poId,
+        S.SUPPLIER_NAME      AS "supplierName",
+        RE.EMP_NAME          AS "requestEmpName",
+        AE.EMP_NAME          AS "approveEmpName",
+        PO.PO_DATE           AS "poDate",
+        PO.APPROVE_DATE      AS "approveDate",
+        PO.STATUS            AS "status",
+        PO.TOTAL_AMOUNT      AS "totalAmount",
+        PO.MEMO              AS "memo"
+        FROM PURCHASE_ORDER PO
+        JOIN SUPPLIER S         ON PO.SUPPLIER_ID    = S.SUPPLIER_ID
+        JOIN EMPLOYEE RE        ON PO.REQUEST_EMP_ID = RE.EMP_ID
+        LEFT JOIN EMPLOYEE AE   ON PO.APPROVE_EMP_ID = AE.EMP_ID
+        <where>
+            <if test="status != null and status != ''">
+                AND PO.STATUS = #{status}
+            </if>
+            <if test="supplierId != null">
+                AND PO.SUPPLIER_ID = #{supplierId}
+            </if>
+        </where>
+        ORDER BY PO.PO_DATE DESC
+    </select>
+
+    <!-- 발주 목록 조회 (페이징) -->
+    <select id="findPurchaseOrdersPaging" parameterType="map" resultType="map">
+        SELECT * FROM (
+        SELECT ROW_NUMBER() OVER (ORDER BY PO.PO_DATE DESC) AS "rn",
+        PO.PO_ID         AS "poId",
+        S.SUPPLIER_NAME  AS "supplierName",
+        RE.EMP_NAME      AS "requestEmpName",
+        PO.PO_DATE       AS "poDate",
+        PO.STATUS        AS "status",
+        PO.TOTAL_AMOUNT  AS "totalAmount"
+        FROM PURCHASE_ORDER PO
+        JOIN SUPPLIER S  ON PO.SUPPLIER_ID    = S.SUPPLIER_ID
+        JOIN EMPLOYEE RE ON PO.REQUEST_EMP_ID = RE.EMP_ID
+        <where>
+            <if test="status != null and status != ''">
+                AND PO.STATUS = #{status}
+            </if>
+        </where>
+        )
+        WHERE "rn" BETWEEN #{startRow} AND #{endRow}
+    </select>
+
+    <!-- 발주 총 개수 (페이징 계산용) -->
+    <select id="countPurchaseOrders" parameterType="map" resultType="int">
+        SELECT COUNT(*)
+        FROM PURCHASE_ORDER PO
+        <where>
+            <if test="status != null and status != ''">
+                AND PO.STATUS = #{status}
+            </if>
+        </where>
+    </select>
+
+    <!-- 상태별 개수 (탭 뱃지용) -->
+    <select id="countByStatus" resultType="map">
+        SELECT STATUS AS "status", COUNT(*) AS "count"
+        FROM PURCHASE_ORDER
+        GROUP BY STATUS
+    </select>
+
+    <!-- 발주 상세 헤더 조회 -->
+    <select id="findPurchaseOrderById" parameterType="Long"
+            resultType="com.erp.backend.inventory.dto.PurchaseOrderResponseDto">
+        SELECT PO.PO_ID       AS poId,
+               PO.SUPPLIER_ID AS supplierId,
+               S.SUPPLIER_NAME AS supplierName,
+               S.PHONE        AS phone,
+               RE.EMP_NAME    AS requestEmpName,
+               AE.EMP_NAME    AS approveEmpName,
+               PO.PO_DATE     AS poDate,
+               PO.STATUS      AS status,
+               PO.TOTAL_AMOUNT AS totalAmount,
+               PO.MEMO        AS memo
+        FROM PURCHASE_ORDER PO
+        JOIN SUPPLIER S         ON PO.SUPPLIER_ID   = S.SUPPLIER_ID
+        JOIN EMPLOYEE RE        ON PO.REQUEST_EMP_ID = RE.EMP_ID
+        LEFT JOIN EMPLOYEE AE   ON PO.APPROVE_EMP_ID = AE.EMP_ID
+        WHERE PO.PO_ID = #{poId}
+    </select>
+
+    <!-- 발주 상세 품목 조회 -->
+    <select id="findPurchaseOrderDetails" parameterType="Long"
+            resultType="com.erp.backend.inventory.dto.PurchaseOrderDetailResponseDto">
+        SELECT POD.PO_DETAIL_ID AS poDetailId,
+               POD.PRODUCT_ID   AS productId,
+               P.PRODUCT_CODE   AS productCode,
+               P.PRODUCT_NAME   AS productName,
+               P.UNIT           AS unit,
+               POD.ORDER_QTY    AS orderQty,
+               POD.UNIT_PRICE   AS unitPrice,
+               POD.AMOUNT       AS amount
+        FROM PURCHASE_ORDER_DETAIL POD
+        JOIN PRODUCT P ON POD.PRODUCT_ID = P.PRODUCT_ID
+        WHERE POD.PO_ID = #{poId}
+        ORDER BY POD.PO_DETAIL_ID
+    </select>
+
+    <!-- 발주 헤더 등록-->
+    <insert id="insertPurchaseOrder" parameterType="map">
+        INSERT INTO PURCHASE_ORDER (
+            PO_ID,
+            SUPPLIER_ID,
+            REQUEST_EMP_ID,
+            PO_DATE,
+            STATUS,
+            TOTAL_AMOUNT,
+            MEMO,
+            CREATED_AT
+        ) VALUES (
+            SEQ_PO.NEXTVAL,
+            #{supplierId},
+            #{requestEmpId},
+            SYSDATE,
+            'REQUESTED',
+            #{totalAmount},
+            #{memo, jdbcType=VARCHAR},
+            SYSDATE
+        )
+    </insert>
+
+    <insert id="insertPurchaseOrderDetail" parameterType="map">
+        INSERT INTO PURCHASE_ORDER_DETAIL (
+            PO_DETAIL_ID,
+            PO_ID,
+            PRODUCT_ID,
+            ORDER_QTY,
+            UNIT_PRICE,
+            AMOUNT
+        ) VALUES (
+            SEQ_PO_DETAIL.NEXTVAL,
+            #{poId},
+            #{productId},
+            #{orderQty},
+            #{unitPrice},
+            #{amount}
+        )
+    </insert>
+
+    <!-- 현재 PO 시퀀스 값 조회 -->
+    <select id="getCurrentPoId" resultType="Long">
+        SELECT SEQ_PO.CURRVAL FROM DUAL
+    </select>
+
+                 <!-- @@@@@@@@@ 발주 관련 유효성 검사 쿼리 @@@@@@@@@@@@@-->
+    <!-- 공급처 존재여부 확인 -->
+    <select id="findSupplierById" parameterType="Long" resultType="map">
+        SELECT SUPPLIER_ID, SUPPLIER_NAME
+        FROM SUPPLIER
+        WHERE SUPPLIER_ID = #{supplierId}
+            AND STATUS = 'ACTIVE'
+    </select>
+    <!-- 의약품 존재여부 확인 -->
+    <select id="findProductById" parameterType="Long" resultType="map">
+    SELECT PRODUCT_ID, PRODUCT_NAME
+    FROM PRODUCT
+    WHERE PRODUCT_ID = #{productId}
+        AND STATUS = 'ACTIVE'
+    </select>
+    <!-- 중복 발주 확인 -->
+    <select id="countRequestedPo" parameterType="Long" resultType="int">
+        SELECT COUNT(*)
+        FROM PURCHASE_ORDER
+        WHERE SUPPLIER_ID = #{supplierId}
+            AND STATUS = 'REQUESTED'
+    </select>
+
+
+    <!-- 발주 상태 조회 -->
+    <select id="findPoStatusById" parameterType="Long" resultType="map">
+        SELECT PO_ID,
+            REQUEST_EMP_ID,
+            STATUS
+        FROM PURCHASE_ORDER
+        WHERE PO_ID = #{poId}
+    </select>
+
+    <!-- 발주 승인 -->
+    <update id="approvePurchaseOrder" parameterType="map">
+        UPDATE PURCHASE_ORDER
+        SET STATUS = 'APPROVED',
+            APPROVE_EMP_ID = #{approveEmpId},
+            APPROVE_DATE = SYSDATE,
+            UPDATED_AT = SYSDATE
+        WHERE PO_ID = #{poId}
+            AND STATUS = 'REQUESTED'
+    </update>
+
+    <!-- 발주 반려 -->
+    <update id="rejectPurchaseOrder" parameterType="map">
+        UPDATE PURCHASE_ORDER
+        SET STATUS         = 'REJECTED',
+            APPROVE_EMP_ID = #{approveEmpId},
+            MEMO           = #{rejectReason},
+            UPDATED_AT     = SYSDATE
+        WHERE PO_ID  = #{poId}
+            AND STATUS = 'REQUESTED'
+    </update>
+
+</mapper>

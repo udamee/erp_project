@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.erp.backend.refundItem.mapper.RefundItemMapper">
+    <select id="getCurrentSeqReturnRequestId" resultType="Integer">
+        SELECT seq_return_request.nextval
+        FROM dual
+    </select>
+    <select id="getCurrentSeqForReturnRequestGroupId" resultType="Integer">
+        SELECT seq_return_request_group_id.nextval
+        FROM dual
+    </select>
+    <select id="findRefundableItemStatus" resultType="int">
+        SELECT sd.shipped_qty
+                   - NVL(SUM(
+                                 CASE
+                                     WHEN rr.status IN ('REQUESTED', 'APPROVED', 'COMPLETED')
+                                         THEN rr.return_qty
+                                     ELSE 0
+                                     END
+                         ), 0) AS returnable_qty
+        FROM shipment_detail sd
+                 LEFT JOIN return_request rr
+                           ON rr.shipment_detail_id = sd.shipment_detail_id
+        WHERE sd.shipment_detail_id = #{shipmentDetailId}
+        GROUP BY sd.shipped_qty
+    </select>
+    <select id="findReturnRequestsByGroupId" resultType="ReturnedItemRequestVO">
+        SELECT
+            return_id,
+            customer_id,
+            so_id,
+            product_id,
+            inventory_lot_id,
+            return_qty,
+            reason,
+            status,
+            created_by,
+            created_at,
+            shipment_detail_id,
+            approved_by,
+            approved_at,
+            completed_at,
+            reject_reason,
+            return_group_id
+            FROM return_request WHERE return_group_id=#{returnGroupId}
+        ORDER BY return_id
+    </select>
+    <update id="approveReturnRequest">
+        UPDATE RETURN_REQUEST
+        SET status='APPROVED',
+            approved_by=#{approvedBy},
+            approved_at=SYSTIMESTAMP
+        WHERE return_group_id=#{returnGroupId}
+        AND status='REQUESTED'
+    </update>
+    <update id="rejectReturnRequest">
+        UPDATE RETURN_REQUEST
+        SET status='REJECTED',
+            reject_reason=#{rejectReason}
+        WHERE return_group_id=#{returnGroupId}
+          AND status='REQUESTED'
+    </update>
+    <select id="existSalesOrder" resultType="SalesOrderVO">
+        SELECT sod.so_detail_id, so.so_id, sod.order_qty, sod.unit_price, so.total_amount
+        FROM sales_order so
+                 JOIN Sales_order_detail sod ON sod.so_id = so.so_id
+        WHERE so.so_id = #{salesOrderId}
+    </select>
+    <select id="findReturnRequestTarget" resultType="ReturnedItemRequestVO">
+        SELECT shd.shipment_detail_id,
+               sod.so_id,
+               sod.so_detail_id,
+               sod.product_id,
+               sod.order_qty,
+               il.lot_no,
+               il.inventory_lot_id,
+               shd.shipped_qty,
+               NVL(SUM(sm.qty), 0) AS out_qty
+        FROM sales_order_detail sod
+                 JOIN shipment_detail shd ON shd.so_detail_id = sod.so_detail_id
+                 JOIN inventory_lot il ON il.inventory_lot_id = shd.inventory_lot_id
+                 LEFT JOIN stock_movement sm ON sm.source_type = 'SHIPMENT_DETAIL'
+            AND sm.source_id = shd.shipment_detail_id
+            AND sm.movement_type = 'OUT'
+        WHERE sod.so_id = #{salesOrderId}
+        GROUP BY shd.shipment_detail_id, sod.so_id, sod.so_detail_id, sod.product_id, sod.order_qty, il.lot_no
+                 ,il.inventory_lot_id,shd.shipped_qty
+    </select>
+    <insert id="insertReturnRequest" parameterType="ReturnedItemRequestVO">
+        INSERT INTO return_request (return_id,
+                                    return_group_id,
+                                    customer_id,
+                                    so_id,
+                                    product_id,
+                                    inventory_lot_id,
+                                    return_qty,
+                                    reason,
+                                    status,
+                                    created_by,
+                                    created_at,
+                                    shipment_detail_id)
+        SELECT #{returnId},
+               #{returnGroupId},
+               so.customer_id,
+               sod.so_id,
+               sod.product_id,
+               shd.inventory_lot_id,
+               #{returnQty},
+               #{reason},
+               'REQUESTED',
+               #{createdBy},
+               SYSTIMESTAMP,
+               shd.shipment_detail_id
+        FROM sales_order_detail sod
+                 JOIN sales_order so
+                      ON so.so_id = sod.so_id
+                 JOIN shipment_detail shd
+                      ON shd.so_detail_id = sod.so_detail_id
+        WHERE sod.so_id = #{salesOrderId}
+          AND sod.so_detail_id = #{soDetailId}
+          AND shd.shipment_detail_id = #{shipmentDetailId}
+    </insert>
+    <update id="restoreLotStock">
+        UPDATE inventory_lot
+        SET current_qty=current_qty + #{returnQty}
+        WHERE inventory_lot_id = #{inventoryLotId}
+    </update>
+    <insert id="insertStockMovement">
+        INSERT INTO stock_movement (movement_id,
+                                    inventory_lot_id,
+                                    movement_type,
+                                    source_type,
+                                    source_id,
+                                    before_qty,
+                                    qty,
+                                    after_qty,
+                                    created_by,
+                                    created_at)
+        SELECT #{stmvSeq},
+               rr.inventory_lot_id,
+               'RETURN',
+               'RETURN_REQUEST',
+               rr.return_id,
+               il.current_qty - rr.return_qty,
+               rr.return_qty,
+               il.current_qty,
+               #{empId},
+               SYSTIMESTAMP
+        FROM return_request rr
+                 JOIN inventory_lot il
+                      ON il.inventory_lot_id = rr.inventory_lot_id
+        WHERE rr.return_id = #{returnId}
+    </insert>
+    <select id="verifyShippedQtyAndReturnedQty" resultType="ReturnedItemVO">
+        SELECT rr.return_id,
+               rr.shipment_detail_id,
+               rr.inventory_lot_id,
+               NVL((SELECT SUM(sm.qty)
+                    FROM stock_movement sm
+                    WHERE sm.movement_type = 'OUT'
+                      AND sm.source_type = 'SHIPMENT_DETAIL'
+                      AND sm.source_id = rr.shipment_detail_id
+                      AND sm.inventory_lot_id = rr.inventory_lot_id), 0) AS out_qty,
+               NVL((SELECT SUM(sm.qty)
+                    FROM stock_movement sm
+                             JOIN return_request r
+                                  ON r.return_id = sm.source_id
+                    WHERE sm.movement_type = 'RETURN'
+                      AND sm.source_type = 'RETURN_REQUEST'
+                      AND r.shipment_detail_id = rr.shipment_detail_id
+                      AND sm.inventory_lot_id = rr.inventory_lot_id), 0) AS returned_qty
+        FROM return_request rr
+        WHERE rr.return_id = #{returnId}
+    </select>
+    <select id="calculateReturnedRequestAmount" resultType="BigDecimal">
+        SELECT NVL(SUM(sod.unit_price * rr.return_qty), 0) AS return_amount
+        FROM return_request rr
+                 JOIN shipment_detail shd
+                      ON shd.shipment_detail_id = rr.shipment_detail_id
+                 JOIN sales_order_detail sod
+                      ON sod.so_detail_id = shd.so_detail_id
+        WHERE rr.return_group_id = #{returnGroupId}
+    </select>
+    <update id="modifyBalance">
+        UPDATE sales_order
+        SET total_amount = total_amount - (SELECT NVL(SUM(sod.unit_price * rr.return_qty), 0)
+                                           FROM return_request rr
+                                                    JOIN shipment_detail shd
+                                                         ON shd.shipment_detail_id = rr.shipment_detail_id
+                                                    JOIN sales_order_detail sod
+                                                         ON sod.so_detail_id = shd.so_detail_id
+                                           WHERE rr.return_group_id = #{returnGroupId})
+        WHERE so_id = #{salesOrderId}
+          AND total_amount >= (SELECT NVL(SUM(sod.unit_price * rr.return_qty), 0)
+                               FROM return_request rr
+                                        JOIN shipment_detail shd
+                                             ON shd.shipment_detail_id = rr.shipment_detail_id
+                                        JOIN sales_order_detail sod
+                                             ON sod.so_detail_id = shd.so_detail_id
+                               WHERE rr.return_group_id = #{returnGroupId})
+    </update>
+    <update id="updateReturnRequestStatus">
+        UPDATE return_request
+        SET status = 'COMPLETED',
+            completed_at=SYSTIMESTAMP
+        WHERE return_group_id = #{returnGroupId}
+          AND status = 'APPROVED'
+    </update>
+</mapper>

@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.erp.backend.disposal.mapper.DisposalMapper">
+    <select id="getCurrentDisposalSeq" resultType="int">
+        SELECT SEQ_DISPOSAL.nextval
+        FROM dual
+    </select>
+    <select id="getCurrentDisposalDetailSeq" resultType="int">
+        SELECT SEQ_DISPOSAL_DETAIL.nextval
+        FROM dual
+    </select>
+    <insert id="insertDisposalRequest">
+        INSERT INTO disposal (disposal_id,
+                              reason,
+                              status,
+                              created_by,
+                              created_at)
+        VALUES (#{disposalId},
+                #{reason},
+                'REQUESTED',
+                #{empId},
+                SYSTIMESTAMP)
+    </insert>
+    <select id="findDisposalStatus" resultType="String">
+        SELECT status
+        FROM disposal
+        WHERE disposal_id = #{disposalId}
+    </select>
+    <insert id="insertDisposalDetail">
+        INSERT INTO disposal_detail (disposal_detail_id,
+                                     disposal_id,
+                                     inventory_lot_id,
+                                     product_id,
+                                     disposal_qty,
+                                     reason)
+        VALUES (#{disposalDetailId},
+                #{disposalId},
+                #{inventoryLotId},
+                #{productId},
+                #{disposalQty},
+                #{reason})
+    </insert>
+    <update id="approveDisposalRequest">
+        UPDATE disposal
+        SET status='APPROVED',
+            approved_by=#{approvedBy},
+            approved_at=SYSTIMESTAMP
+        WHERE disposal_id = #{disposalId}
+          AND status = 'REQUESTED'
+    </update>
+    <update id="rejectDisposalRequest">
+        UPDATE disposal
+        SET status='REJECTED',
+            reject_reason=#{rejectReason}
+        WHERE disposal_id = #{disposalId}
+          AND status = 'REQUESTED'
+    </update>
+    <update id="completeDisposal">
+        UPDATE disposal
+        SET status      = 'COMPLETED',
+            completed_at=SYSTIMESTAMP
+        WHERE disposal_id = #{disposalId}
+          AND status = 'APPROVED'
+    </update>
+    <select id="findInventoryLotForUpdate" resultType="map">
+        SELECT inventory_lot_id as "inventoryLotId",
+               product_id       as "productId",
+               current_qty      as "currentQty",
+               status           as "status"
+        FROM inventory_lot
+        WHERE inventory_lot_id = #{inventoryLotId}
+            FOR UPDATE WAIT 5
+    </select>
+    <update id="reduceLotStock">
+        UPDATE inventory_lot
+        SET current_qty=current_qty - #{disposalQty}
+        WHERE inventory_lot_id = #{inventoryLotId}
+          AND current_qty >= #{disposalQty}
+    </update>
+    <insert id="insertStockMovement">
+        INSERT INTO stock_movement (movement_id,
+                                    inventory_lot_id,
+                                    movement_type,
+                                    source_type,
+                                    source_id,
+                                    before_qty,
+                                    qty,
+                                    after_qty,
+                                    created_by,
+                                    created_at)
+        VALUES (#{stmvSeq},
+                #{inventoryLotId},
+                'DISPOSAL',
+                'DISPOSAL_DETAIL',
+                #{disposalDetailId},
+                #{beforeQty},
+                #{disposalQty},
+                #{afterQty},
+                #{empId},
+                SYSTIMESTAMP)
+    </insert>
+    <select id="findDisposalDetails" resultType="DisposalDetailVO">
+        SELECT disposal_detail_id,
+               disposal_id,
+               inventory_lot_id,
+               product_id,
+               disposal_qty,
+               reason
+        FROM disposal_detail
+        WHERE disposal_id = #{disposalId}
+        ORDER BY disposal_detail_id
+    </select>
+    <update id="updateInventoryLotStatus">
+        UPDATE inventory_lot
+        SET status = CASE
+                         WHEN current_qty = 0 THEN 'SOLD_OUT'
+                         ELSE 'NORMAL'
+            END
+        WHERE inventory_lot_id = #{inventoryLotId}
+    </update>
+</mapper>

@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.erp.backend.customer.mapper.CustomerMapper">
+
+    <!-- 거래처 등록 -->
+    <insert id="insertCustomer" parameterType="map">
+        INSERT INTO CUSTOMER (
+        CUSTOMER_ID,
+        CUSTOMER_NAME,
+        CUSTOMER_TYPE,
+        BUSINESS_NO,
+        CREDIT_LIMIT,
+        RECEIVABLE_BALANCE,
+        PHONE,
+        ADDRESS,
+        STATUS,
+        CREATED_AT
+        ) VALUES (
+        SEQ_CUSTOMER.NEXTVAL,
+        #{customerName},
+        #{customerType},
+        #{businessNo, jdbcType=VARCHAR},
+        #{creditLimit},
+        0,
+        #{phone, jdbcType=VARCHAR},
+        #{address, jdbcType=VARCHAR},
+        'ACTIVE',
+        SYSDATE
+        )
+    </insert>
+
+    <!-- 방금 등록된 CUSTOMER_ID 조회 -->
+    <select id="getCurrentCustomerId" resultType="long">
+        SELECT SEQ_CUSTOMER.CURRVAL FROM DUAL
+    </select>
+
+    <!-- 거래처 목록 조회 -->
+    <select id="findAllCustomers" parameterType="map"
+            resultType="com.erp.backend.customer.dto.CustomerResponseDto">
+        SELECT CUSTOMER_ID         AS customerId,
+        CUSTOMER_NAME        AS customerName,
+        CUSTOMER_TYPE        AS customerType,
+        BUSINESS_NO          AS businessNo,
+        CREDIT_LIMIT         AS creditLimit,
+        RECEIVABLE_BALANCE   AS receivableBalance,
+        PHONE                AS phone,
+        ADDRESS              AS address,
+        STATUS               AS status
+        FROM CUSTOMER
+        <where>
+            <if test="customerType != null and customerType != ''">
+                AND CUSTOMER_TYPE = #{customerType}
+            </if>
+            <if test="status != null and status != ''">
+                AND STATUS = #{status}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND CUSTOMER_NAME LIKE '%' || #{keyword} || '%'
+            </if>
+        </where>
+        ORDER BY CUSTOMER_ID DESC
+    </select>
+
+    <!-- 거래처 상세 조회 -->
+    <select id="findCustomerById" parameterType="long"
+            resultType="com.erp.backend.customer.dto.CustomerResponseDto">
+        SELECT CUSTOMER_ID         AS customerId,
+        CUSTOMER_NAME        AS customerName,
+        CUSTOMER_TYPE        AS customerType,
+        BUSINESS_NO          AS businessNo,
+        CREDIT_LIMIT         AS creditLimit,
+        RECEIVABLE_BALANCE   AS receivableBalance,
+        PHONE                AS phone,
+        ADDRESS              AS address,
+        STATUS               AS status
+        FROM CUSTOMER
+        WHERE CUSTOMER_ID = #{customerId}
+    </select>
+
+
+    <!-- 거래처 수정 -->
+    <update id="updateCustomer" parameterType="map">
+        UPDATE CUSTOMER
+        <set>
+            <if test="customerName != null">
+                CUSTOMER_NAME = #{customerName},
+            </if>
+            <if test="customerType != null">
+                CUSTOMER_TYPE = #{customerType},
+            </if>
+            <if test="businessNo != null">
+                BUSINESS_NO = #{businessNo, jdbcType=VARCHAR},
+            </if>
+            <if test="creditLimit != null">
+                CREDIT_LIMIT = #{creditLimit},
+            </if>
+            <if test="phone != null">
+                PHONE = #{phone, jdbcType=VARCHAR},
+            </if>
+            <if test="address != null">
+                ADDRESS = #{address, jdbcType=VARCHAR},
+            </if>
+            <if test="status != null">
+                STATUS = #{status},
+            </if>
+            UPDATED_AT = SYSDATE
+        </set>
+        WHERE CUSTOMER_ID = #{customerId}
+    </update>
+
+    <!-- 사업자번호 중복 확인 -->
+    <select id="countByBusinessNo" parameterType="string" resultType="int">
+        SELECT COUNT(*)
+        FROM CUSTOMER
+        WHERE BUSINESS_NO = #{businessNo}
+    </select>
+
+</mapper>

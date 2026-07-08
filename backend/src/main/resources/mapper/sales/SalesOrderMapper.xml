@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.erp.backend.sales.mapper.SalesOrderMapper">
+    <select id="existsRequestedOrderWithDetail" resultType="int" parameterType="int">
+        SELECT CASE
+                   WHEN EXISTS
+                       (SELECT 1
+                        FROM sales_order so
+                                 JOIN sales_order_detail sod
+                                      ON sod.so_id = so.so_id
+                        WHERE so.so_id = #{salesOrderId}
+                          AND so.status = 'REQUESTED')
+                       THEN 1
+                   ELSE 0
+                   END
+        FROM dual
+    </select>
+    <select id="findProductLotsById" resultType="ProductVO" parameterType="int">
+        select p.product_id,
+               p.product_code,
+               p.product_name,
+               p.maker_name,
+               p.is_prescription,
+               p.storage_type,
+               p.status  as pro_status,
+               il.lot_no,
+               il.expiry_date,
+               il.current_qty,
+               il.location,
+               il.status as lot_status
+        from product p
+                 join inventory_lot il
+                      on p.product_id = il.product_id
+        where p.PRODUCT_ID = #{productId}
+    </select>
+    <select id="findAvailableQtyByProductId" resultType="INTEGER" parameterType="int">
+        select NVL(SUM(il.current_qty), 0)
+        from product p
+                 join inventory_lot il
+                      on p.product_id = il.product_id
+        where p.product_id = #{productId}
+          and p.status = 'ACTIVE'
+          and il.status = 'NORMAL'
+          and il.current_qty > 0
+          and il.expiry_date >= TRUNC(SYSDATE) + 11
+    </select>
+    <select id="findAvailableProductLotsByProductId" resultType="ProductVO" parameterType="int">
+        select p.product_id,
+               p.product_code,
+               p.product_name,
+               p.maker_name,
+               p.status  as pro_status,
+               il.lot_no,
+               il.expiry_date,
+               il.current_qty,
+               il.location,
+               il.status as lot_status
+        from product p
+                 join inventory_lot il
+                      on p.product_id = il.product_id
+        where p.product_id = #{productId}
+          and p.status = 'ACTIVE'
+          and il.status = 'NORMAL'
+          and il.current_qty > 0
+          and il.expiry_date >= TRUNC(SYSDATE) + 11
+        order by il.expiry_date
+    </select>
+    <select id="findOrderStatus" resultType="SalesOrderVO">
+        SELECT
+        so.so_id,
+        so.status,
+        so.UPDATED_AT
+        FROM
+        sales_order so
+        WHERE
+        so.so_id = #{salesOrderId}
+        <if test="status != null and status != ' '">
+            AND so.status = #{status}
+        </if>
+    </select>
+    <select id="findAllOrderStatus" resultType="SalesOrderVO">
+        SELECT so.so_id,
+               so.status,
+               so.UPDATED_AT
+        FROM sales_order so
+    </select>
+    <select id="findAllSalesOrders" resultType="SalesOrderVO">
+        select
+        sales_order_id as so_id,
+        customer_name,
+        request_employee_name as req_employee_name,
+        approve_employee_name as app_employee_name,
+        order_date,
+        status,
+        approve_date as approve_date,
+        total_amount,
+        memo,
+        created_at,
+        updated_at
+        from
+        VW_SALES_ORDER_LIST
+        <where>
+            <if test="status != null and status != ''">
+                status = UPPER(#{status})
+            </if>
+        </where>
+        ORDER BY
+        created_at DESC,
+        so_id DESC
+        OFFSET #{offset} ROWS
+        FETCH NEXT #{size} ROWS ONLY
+    </select>
+    <select id="findOrderHeaderById" resultType="SalesOrderVO" parameterType="int">
+        select so.so_id,
+               so.customer_id,
+               cu.customer_name,
+               req_em.emp_id     as req_employee_id,
+               req_em.emp_name   as req_employee_name,
+               so.approve_emp_id as app_employee_id,
+               app_em.emp_name   as app_employee_name,
+               so.order_date,
+               so.approve_date,
+               so.status,
+               so.total_amount,
+               so.memo,
+               so.created_at,
+               so.updated_at
+        from sales_order so
+                 join customer cu on
+            so.customer_id = cu.customer_id
+                 join employee req_em on
+            req_em.emp_id = so.request_emp_id
+                 left join employee app_em on
+            app_em.emp_id = so.approve_emp_id
+        where so.so_id = #{soId}
+    </select>
+    <select id="findOrderDetailListByOrderId" resultType="SalesOrderDetailVO" parameterType="int">
+        select sod.so_id,
+               sod.so_detail_id,
+               sod.order_qty,
+               sod.unit_price,
+               sod.amount,
+               sod.product_id,
+               p.product_code,
+               p.product_name
+        from sales_order_detail sod
+                 JOIN
+             product p
+             ON
+                 p.product_id = sod.product_id
+        where sod.so_id = #{soId}
+        ORDER BY sod.so_detail_id
+    </select>
+    <select id="currentSalesOrderSeq" resultType="int">
+        SELECT seq_sales_order.nextval
+        FROM DUAL
+    </select>
+    <insert id="makeSalesOrder" parameterType="SalesOrderVO">
+        insert into sales_order (
+        SO_ID,
+        CUSTOMER_ID,
+        REQUEST_EMP_ID,
+        ORDER_DATE,
+        STATUS,
+        <if test="memo != null and memo != ''">
+            MEMO,
+        </if>
+        TOTAL_AMOUNT,
+        CREATED_AT
+        ) select
+        #{soId},
+        #{customerId},
+        #{reqEmployeeId},
+        SYSDATE,
+        #{status},
+        <if test="memo != null and memo != ''">
+            #{memo},
+        </if>
+        #{totalAmount},
+        SYSDATE
+        from customer c
+        where c.customer_id= #{customerId}
+    </insert>
+    <select id="currentSalesOrderDetailSeq" resultType="int">
+        SELECT seq_sales_order_detail.nextval
+        FROM DUAL
+    </select>
+    <select id="findActiveProduct" resultType="ProductVO" parameterType="int">
+        SELECT pr.product_id, pr.status, pr.standard_sales_price
+        FROM product pr
+        WHERE pr.product_id = #{productId}
+          AND pr.status = 'ACTIVE'
+          AND pr.standard_sales_price > 0
+    </select>
+    <insert id="makeSalesOrderDetail" parameterType="SalesOrderDetailVO">
+        insert into sales_order_detail (SO_DETAIL_ID,
+                                        SO_ID,
+                                        PRODUCT_ID,
+                                        ORDER_QTY,
+                                        UNIT_PRICE,
+                                        AMOUNT)
+        values (#{soDetailId},
+                #{soId},
+                #{productId},
+                #{orderQty},
+                #{unitPrice},
+                #{amount})
+    </insert>
+    <update id="approveRequest" parameterType="SalesOrderVO">
+        UPDATE sales_order
+        <set>
+            approve_emp_id=#{appEmployeeId},
+            approve_date=#{approveDate},
+            status=#{status},
+            updated_at=#{approveDate}
+        </set>
+        WHERE
+        so_id=#{soId}
+        AND
+        status='REQUESTED'
+    </update>
+    <select id="verifySalesOrderTotal" resultType="SalesOrderAmountCheckVO" parameterType="int">
+        SELECT so_id,
+               customer_id,
+               status,
+               total_amount,
+               detail_amount_sum,
+               header_detail_amount_matched_yn     as headerAmountMatched,
+               detail_line_count,
+               detail_calculated_amount_sum,
+               detail_amount_calculated_matched_yn as detailAmountMatched
+        FROM v_sales_order_amount_check vsac
+        WHERE vsac.so_id = #{soId}
+    </select>
+    <select id="findAvailableLotByProductId" resultType="ItemLotVO" parameterType="int">
+        SELECT il.inventory_lot_id,
+               il.product_id,
+               il.lot_no,
+               il.expiry_date,
+               il.current_qty
+        FROM inventory_lot il
+                 JOIN
+             product p
+             ON
+                 p.product_id = il.product_id
+        WHERE il.product_id = #{productId}
+          AND p.status = 'ACTIVE'
+          AND il.status = 'NORMAL'
+          AND il.current_qty > 0
+          AND il.expiry_date >= TRUNC(SYSDATE) + 11
+        ORDER BY il.expiry_date,
+                 il.lot_no
+            FOR UPDATE OF il.current_qty WAIT 5
+    </select>
+    <select id="findSafetyQtyByProductId" resultType="int" parameterType="int">
+        SELECT NVL(p.safety_qty, 0)
+        FROM product p
+        WHERE p.product_id = #{productId}
+          AND p.status = 'ACTIVE'
+    </select>
+    <select id="findCountsForSalesOrders" resultType="int">
+        SELECT COUNT(*)
+        FROM sales_order
+        <where>
+            <if test="status != null and status != ''">
+                status=#{status}
+            </if>
+        </where>
+    </select>
+    <select id="findCountsByStatus" resultType="SalesOrderStatusCountDTO">
+        SELECT status AS "status", COUNT(*) AS "count"
+        FROM sales_order
+        GROUP BY status
+    </select>
+    <select id="findAllActiveProducts" resultType="ProductVO">
+        SELECT pr.product_id,
+               pr.product_code,
+               pr.product_name,
+               pr.unit,
+               pr.standard_sales_price,
+               SUM(il.current_qty) as "availableQty"
+        FROM product pr
+                 JOIN inventory_lot il ON il.product_id = pr.product_id
+        WHERE pr.status = 'ACTIVE'
+          AND pr.standard_sales_price > 0
+          AND il.status = 'NORMAL'
+          AND il.current_qty > 0
+          AND il.expiry_date >= TRUNC(SYSDATE) + 11
+        GROUP BY pr.product_id,
+                 pr.product_code,
+                 pr.product_name,
+                 pr.unit,
+                 pr.standard_sales_price
+        HAVING SUM(il.current_qty) > 0
+        ORDER BY pr.product_name
+    </select>
+    <select id="findAllCustomers" resultType="SalesOrderVO">
+        SELECT customer_id, customer_name
+        FROM customer
+        WHERE status = 'ACTIVE'
+    </select>
+</mapper>

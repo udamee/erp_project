@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.erp.backend.employee.mapper.EmployeeMapper">
+
+    <insert id="insertEmployee"
+            parameterType="com.erp.backend.employee.vo.EmployeeVO">
+
+        <selectKey keyProperty="empId"
+                   resultType="long"
+                   order="BEFORE">
+            SELECT SEQ_EMPLOYEE.nextval
+            FROM DUAL
+        </selectKey>
+
+        INSERT INTO EMPLOYEE (
+        EMP_ID,
+        LOGIN_ID,
+        PASSWORD,
+        EMP_NAME,
+        PHONE,
+        EMAIL,
+        DEPT_ID,
+        ROLE_CODE,
+        STATUS,
+        HIRE_DATE,
+        CREATED_AT,
+        UPDATED_AT
+        ) VALUES (
+        #{empId},
+        #{loginId},
+        #{password},
+        #{empName},
+        #{phone},
+        #{email},
+        #{deptId},
+        #{roleCode},
+        #{status},
+        #{hireDate},
+        SYSDATE,
+        SYSDATE
+        )
+    </insert>
+
+    <select id="findAllEmployees"
+            resultType="com.erp.backend.employee.dto.EmployeeResponseDto">
+        SELECT
+            E.EMP_ID AS empId,
+            E.LOGIN_ID AS loginId,
+            E.EMP_NAME AS empName,
+            E.PHONE AS phone,
+            E.EMAIL AS email,
+            E.DEPT_ID AS deptId,
+            D.DEPT_CODE AS deptCode,
+            D.DEPT_NAME AS deptName,
+            E.ROLE_CODE AS roleCode,
+            E.STATUS AS status,
+            E.HIRE_DATE AS hireDate,
+            E.CREATED_AT AS createdAt,
+            E.UPDATED_AT AS updatedAt
+        FROM EMPLOYEE E
+                 LEFT JOIN DEPARTMENT D
+                           ON E.DEPT_ID = D.DEPT_ID
+        WHERE E.STATUS != 'TERMINATED'
+        ORDER BY E.EMP_ID DESC
+    </select>
+
+    <select id="findEmployeeById"
+            parameterType="long"
+            resultType="com.erp.backend.employee.dto.EmployeeResponseDto">
+        SELECT
+            E.EMP_ID AS empId,
+            E.LOGIN_ID AS loginId,
+            E.EMP_NAME AS empName,
+            E.PHONE AS phone,
+            E.EMAIL AS email,
+            E.DEPT_ID AS deptId,
+            D.DEPT_NAME AS deptName,
+            E.ROLE_CODE AS roleCode,
+            E.STATUS AS status,
+            E.HIRE_DATE AS hireDate,
+            E.CREATED_AT AS createdAt,
+            E.UPDATED_AT AS updatedAt
+        FROM EMPLOYEE E
+                 LEFT JOIN DEPARTMENT D
+                           ON E.DEPT_ID = D.DEPT_ID
+        WHERE E.EMP_ID = #{empId}
+          AND E.STATUS != 'TERMINATED'
+    </select>
+
+    <update id="updateEmployee"
+            parameterType="com.erp.backend.employee.vo.EmployeeVO">
+        UPDATE EMPLOYEE
+        SET
+            EMP_NAME = #{empName},
+            PHONE = #{phone},
+            EMAIL = #{email},
+            DEPT_ID = #{deptId},
+            HIRE_DATE = #{hireDate},
+            UPDATED_AT = SYSDATE
+        WHERE EMP_ID = #{empId}
+          AND STATUS != 'TERMINATED'
+    </update>
+
+    <!-- 퇴사 처리(소프트 삭제) : 실제 행 삭제 대신 STATUS를 TERMINATED로 변경 -->
+    <!-- LOGIN_ID를 변경해 원래 아이디를 재사용 가능하게 함 (EMP_ID 접미사로 유일성 보장, VARCHAR2(50) 초과 방지) -->
+    <update id="deleteEmployee"
+            parameterType="long">
+        UPDATE EMPLOYEE
+        SET STATUS = 'TERMINATED',
+            LOGIN_ID = SUBSTR(LOGIN_ID, 1, 30) || '_del_' || EMP_ID,
+            UPDATED_AT = SYSDATE
+        WHERE EMP_ID = #{empId}
+          AND STATUS != 'TERMINATED'
+    </update>
+
+    <select id="countByLoginId"
+            parameterType="string"
+            resultType="int">
+        SELECT COUNT(*)
+        FROM EMPLOYEE
+        WHERE LOGIN_ID = #{loginId}
+    </select>
+
+    <select id="searchEmployeesByCondition"
+            parameterType="com.erp.backend.employee.dto.EmployeeSearchCondition"
+            resultType="com.erp.backend.employee.dto.EmployeeResponseDto">
+        SELECT
+        E.EMP_ID AS empId,
+        E.LOGIN_ID AS loginId,
+        E.EMP_NAME AS empName,
+        E.PHONE AS phone,
+        E.EMAIL AS email,
+        E.DEPT_ID AS deptId,
+        D.DEPT_NAME AS deptName,
+        E.ROLE_CODE AS roleCode,
+        E.STATUS AS status,
+        E.HIRE_DATE AS hireDate,
+        E.CREATED_AT AS createdAt,
+        E.UPDATED_AT AS updatedAt
+        FROM EMPLOYEE E
+        LEFT JOIN DEPARTMENT D
+        ON E.DEPT_ID = D.DEPT_ID
+        WHERE E.STATUS != 'TERMINATED'
+        <if test="deptId != null">
+            AND E.DEPT_ID = #{deptId}
+        </if>
+        <if test="empName != null and empName != ''">
+            AND E.EMP_NAME LIKE '%' || #{empName} || '%'
+        </if>
+        <if test="roleCode != null and roleCode != ''">
+            AND E.ROLE_CODE = #{roleCode}
+        </if>
+        ORDER BY E.EMP_ID DESC
+    </select>
+
+    <!-- 마이페이지 : 본인 정보 수정 (연락처·이메일만) -->
+    <update id="updateMyInfo">
+        UPDATE EMPLOYEE
+        SET PHONE = #{phone},
+            EMAIL = #{email},
+            UPDATED_AT = SYSDATE
+        WHERE EMP_ID = #{empId}
+          AND STATUS != 'TERMINATED'
+    </update>
+
+    <!-- 권한(역할) 변경 : ADMIN 전용 -->
+    <update id="updateRole">
+        UPDATE EMPLOYEE
+        SET ROLE_CODE = #{roleCode},
+            UPDATED_AT = SYSDATE
+        WHERE EMP_ID = #{empId}
+          AND STATUS != 'TERMINATED'
+    </update>
+
+    <!-- 계정 활성/비활성 토글 : ADMIN 전용 (ACTIVE ↔ INACTIVE) -->
+    <update id="updateAccountStatus">
+        UPDATE EMPLOYEE
+        SET STATUS = #{status},
+            UPDATED_AT = SYSDATE
+        WHERE EMP_ID = #{empId}
+          AND STATUS IN ('ACTIVE', 'INACTIVE')
+    </update>
+
+</mapper>

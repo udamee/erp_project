@@ -23,3 +23,6 @@ Thumbs.db
 
 # Application 설정 (DB 정보 보안)
 src/main/resources/application.yml
+
+# Wallet 설정 (DB 정보 보안)
+**/Wallet/

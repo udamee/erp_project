@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.erp.backend.admin.mapper.AdminEmployeeMapper">
+
+    <!-- PENDING 직원 조회(등록 시) -->
+    <select id="findByStatus" resultType="com.erp.backend.employee.dto.EmployeeResponseDto">
+        SELECT EMP_ID,
+               DEPT_ID,
+               EMP_NAME,
+               LOGIN_ID,
+               EMAIL,
+               PHONE,
+               ROLE_CODE,
+               STATUS
+        FROM EMPLOYEE
+        WHERE ROLE_CODE = 'STAFF'
+          AND STATUS = #{status}
+
+    </select>
+    <!-- 직원 STATUS 상태 변경 -->
+    <update id="updateStatus">
+        UPDATE EMPLOYEE
+        SET STATUS=#{status}, UPDATED_AT=SYSDATE
+        WHERE EMP_ID=#{empId}
+          AND ROLE_CODE = 'STAFF'
+          AND STATUS = 'PENDING'
+    </update>
+</mapper>

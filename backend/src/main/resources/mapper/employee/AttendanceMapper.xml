@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.erp.backend.employee.mapper.AttendanceMapper">
+
+    <resultMap id="responseMap" type="com.erp.backend.employee.dto.AttendanceResponseDto">
+        <id     property="attendanceId" column="ATTENDANCE_ID"/>
+        <result property="empId"        column="EMP_ID"/>
+        <result property="empName"      column="EMP_NAME"/>
+        <result property="deptId"       column="DEPT_ID"/>
+        <result property="deptName"     column="DEPT_NAME"/>
+        <result property="workDate"     column="WORK_DATE"/>
+        <result property="checkIn"      column="CHECK_IN"/>
+        <result property="checkOut"     column="CHECK_OUT"/>
+        <result property="workHours"    column="WORK_HOURS"/>
+        <result property="status"       column="STATUS"/>
+        <result property="memo"         column="MEMO"/>
+    </resultMap>
+
+    <insert id="insertAttendance"
+            parameterType="com.erp.backend.employee.vo.AttendanceVO">
+
+        <selectKey keyProperty="attendanceId"
+                   resultType="long"
+                   order="BEFORE">
+            SELECT SEQ_ATTENDANCE.nextval
+            FROM DUAL
+        </selectKey>
+
+        INSERT INTO ATTENDANCE (
+        ATTENDANCE_ID,
+        EMP_ID,
+        WORK_DATE,
+        CHECK_IN,
+        CHECK_OUT,
+        WORK_HOURS,
+        STATUS,
+        MEMO,
+        CREATED_AT
+        ) VALUES (
+        #{attendanceId},
+        #{empId},
+        #{workDate},
+        #{checkIn,jdbcType=TIMESTAMP},
+        #{checkOut,jdbcType=TIMESTAMP},
+        #{workHours,jdbcType=DECIMAL},
+        #{status},
+        #{memo,jdbcType=VARCHAR},
+        SYSDATE
+        )
+    </insert>
+
+    <update id="updateCheckOut" parameterType="com.erp.backend.employee.vo.AttendanceVO">
+        UPDATE ATTENDANCE
+        SET CHECK_OUT  = #{checkOut},
+        WORK_HOURS = #{workHours},
+        STATUS     = #{status}
+        WHERE ATTENDANCE_ID = #{attendanceId}
+    </update>
+
+    <update id="updateAttendance" parameterType="com.erp.backend.employee.vo.AttendanceVO">
+        UPDATE ATTENDANCE
+        <set>
+            <if test="checkIn != null">  CHECK_IN   = #{checkIn},   </if>
+            <if test="checkOut != null"> CHECK_OUT  = #{checkOut},  </if>
+            <if test="workHours != null">WORK_HOURS = #{workHours}, </if>
+            <if test="status != null">   STATUS     = #{status},    </if>
+            <if test="memo != null">     MEMO       = #{memo},      </if>
+        </set>
+        WHERE ATTENDANCE_ID = #{attendanceId}
+    </update>
+
+    <select id="existsByEmpIdAndDate" resultType="boolean">
+        SELECT CASE WHEN COUNT(1) > 0 THEN 1 ELSE 0 END
+        FROM ATTENDANCE
+        WHERE EMP_ID = #{empId}
+        AND WORK_DATE = #{workDate}
+    </select>
+
+    <select id="findVoByEmpIdAndDate" resultType="com.erp.backend.employee.vo.AttendanceVO">
+        SELECT ATTENDANCE_ID AS attendanceId,
+        EMP_ID        AS empId,
+        WORK_DATE     AS workDate,
+        CHECK_IN      AS checkIn,
+        CHECK_OUT     AS checkOut,
+        WORK_HOURS    AS workHours,
+        STATUS        AS status,
+        MEMO          AS memo
+        FROM ATTENDANCE
+        WHERE EMP_ID = #{empId} AND WORK_DATE = #{workDate}
+    </select>
+
+    <select id="findByEmpIdAndDate" resultMap="responseMap">
+        SELECT a.*, e.EMP_NAME
+        FROM ATTENDANCE a
+        JOIN EMPLOYEE e ON a.EMP_ID = e.EMP_ID
+        WHERE a.EMP_ID = #{empId} AND a.WORK_DATE = #{workDate}
+    </select>
+
+    <select id="findById" resultMap="responseMap">
+        SELECT a.*, e.EMP_NAME
+        FROM ATTENDANCE a
+        JOIN EMPLOYEE e ON a.EMP_ID = e.EMP_ID
+        WHERE a.ATTENDANCE_ID = #{attendanceId}
+    </select>
+
+    <select id="findByEmpIdAndPeriod" resultMap="responseMap">
+        SELECT a.*, e.EMP_NAME
+        FROM ATTENDANCE a
+        JOIN EMPLOYEE e ON a.EMP_ID = e.EMP_ID
+        WHERE a.EMP_ID = #{empId}
+        AND a.WORK_DATE BETWEEN #{from} AND #{to}
+        ORDER BY a.WORK_DATE DESC
+    </select>
+
+    <select id="search" parameterType="com.erp.backend.employee.dto.AttendanceSearchCondition"
+            resultMap="responseMap">
+        SELECT a.*, e.EMP_NAME, e.DEPT_ID, d.DEPT_NAME
+        FROM ATTENDANCE a
+        JOIN EMPLOYEE e ON a.EMP_ID = e.EMP_ID
+        LEFT JOIN DEPARTMENT d ON e.DEPT_ID = d.DEPT_ID
+        <where>
+            <if test="empId != null">  AND a.EMP_ID = #{empId} </if>
+            <if test="deptId != null"> AND e.DEPT_ID = #{deptId} </if>
+            <if test="status != null"> AND a.STATUS = #{status} </if>
+            <if test="from != null">   AND a.WORK_DATE &gt;= #{from} </if>
+            <if test="to != null">     AND a.WORK_DATE &lt;= #{to} </if>
+        </where>
+        ORDER BY a.WORK_DATE DESC, e.EMP_NAME
+    </select>
+
+</mapper>

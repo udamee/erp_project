@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.erp.backend.department.mapper.DepartmentMapper">
+
+    <!-- 부서 전체 조회 -->
+    <select id="findAllDepartments" resultType="com.erp.backend.department.dto.DepartmentResponseDto">
+        SELECT DEPT_ID,
+               DEPT_CODE,
+               DEPT_NAME
+        FROM DEPARTMENT
+        ORDER BY DEPT_ID
+    </select>
+
+    <!-- 부서 단건 조회 -->
+    <select id="findDepartmentById" resultType="com.erp.backend.department.dto.DepartmentResponseDto">
+        SELECT DEPT_ID,
+               DEPT_CODE,
+               DEPT_NAME
+        FROM DEPARTMENT
+        WHERE DEPT_ID = #{deptId}
+    </select>
+</mapper>

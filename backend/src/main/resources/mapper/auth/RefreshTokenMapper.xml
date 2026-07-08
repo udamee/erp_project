@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.erp.backend.auth.mapper.RefreshTokenMapper">
+
+    <insert id="saveRefreshToken">
+        INSERT INTO REFRESH_TOKEN (JWT_ID, EMP_ID, EXPIRES_AT)
+        VALUES (#{jwtId}, #{empId}, #{expiresAt})
+    </insert>
+
+    <select id="findByJwtId" resultType="com.erp.backend.auth.vo.RefreshTokenVO">
+        SELECT JWT_ID, EMP_ID, EXPIRES_AT
+        FROM REFRESH_TOKEN
+        WHERE JWT_ID = #{jwtId}
+    </select>
+
+    <delete id="deleteByJwtId">
+        DELETE FROM REFRESH_TOKEN
+        WHERE JWT_ID = #{jwtId}
+    </delete>
+
+    <delete id="deleteByEmpId">
+        DELETE FROM REFRESH_TOKEN
+        WHERE EMP_ID = #{empId}
+    </delete>
+
+</mapper>

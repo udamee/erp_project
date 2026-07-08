@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.erp.backend.auth.mapper.AuthMapper">
+
+    <!-- 로그인 -->
+    <select id="findEmployeeByLoginId" parameterType="String" resultType="com.erp.backend.employee.vo.EmployeeVO">
+    SELECT E.EMP_ID,
+            E.DEPT_ID,
+            D.DEPT_CODE,
+            E.LOGIN_ID,
+            E.PASSWORD,
+            E.EMP_NAME,
+            E.ROLE_CODE,
+            E.STATUS
+    FROM EMPLOYEE E
+        LEFT JOIN DEPARTMENT D ON E.DEPT_ID = D.DEPT_ID
+    WHERE E.LOGIN_ID = #{loginId}
+    </select>
+    <select id="findEmployeeByEmpId" parameterType="long" resultType="com.erp.backend.employee.vo.EmployeeVO">
+        SELECT  E.EMP_ID, E.DEPT_ID, D.DEPT_CODE, E.LOGIN_ID, E.PASSWORD, E.EMP_NAME, E.ROLE_CODE, E.STATUS
+        FROM EMPLOYEE E
+            LEFT JOIN DEPARTMENT D ON E.DEPT_ID = D.DEPT_ID
+        WHERE E.EMP_ID = #{empId}
+            AND E.STATUS = 'ACTIVE'
+    </select>
+    <insert id="insertEmployee">
+        INSERT INTO EMPLOYEE (EMP_ID, LOGIN_ID, PASSWORD, EMP_NAME, DEPT_ID, PHONE, EMAIL, ROLE_CODE , STATUS)
+        VALUES (SEQ_EMPLOYEE.nextval, #{dto.loginId}, #{encodedPassword}, #{dto.empName}, #{dto.deptId}, #{dto.phone}, #{dto.email}, 'STAFF', 'PENDING')
+    </insert>
+    <!-- 회원가입 중복 체크 : STATUS 무관하게 LOGIN_ID 존재 여부 -->
+    <select id="existsEmployeeByLoginId" resultType="boolean">
+        SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END
+        FROM EMPLOYEE
+        WHERE LOGIN_ID = #{loginId}
+    </select>
+    <!-- 비밀번호 변경 -->
+    <update id="updatePassword">
+        UPDATE EMPLOYEE
+        SET PASSWORD = #{encodedPassword},
+            UPDATED_AT = SYSDATE
+        WHERE EMP_ID = #{empId}
+    </update>
+    <select id="findExceptionAuths" resultType="string">
+        SELECT exception_auth
+        FROM DEPT_ROLE_EXCEPTION
+        WHERE DEPT_CODE = #{deptCode}
+          AND ROLE_CODE = #{roleCode}
+          AND USE_YN = 'Y'
+    </select>
+</mapper>

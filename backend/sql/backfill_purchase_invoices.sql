@@ -1,0 +1,81 @@
+-- ============================================================================
+-- Backfill purchase invoices/payables for purchase orders completed before
+-- the receiving-to-settlement integration was introduced.
+--
+-- Oracle / repeatable: only missing rows are inserted.
+-- ============================================================================
+
+WHENEVER SQLERROR EXIT SQL.SQLCODE ROLLBACK;
+
+INSERT INTO PURCHASE_INVOICE (
+    PURCHASE_INVOICE_ID,
+    PO_ID,
+    SUPPLIER_ID,
+    ISSUE_DATE,
+    TOTAL_AMOUNT,
+    STATUS,
+    CREATED_AT
+)
+SELECT
+    SEQ_PURCHASE_INVOICE.NEXTVAL,
+    PO.PO_ID,
+    PO.SUPPLIER_ID,
+    NVL((
+        SELECT MAX(R.RECEIVING_DATE)
+        FROM RECEIVING R
+        WHERE R.PO_ID = PO.PO_ID
+          AND R.STATUS = 'COMPLETED'
+    ), SYSDATE),
+    PO.TOTAL_AMOUNT,
+    'ISSUED',
+    SYSDATE
+FROM PURCHASE_ORDER PO
+WHERE PO.STATUS = 'COMPLETED'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM PURCHASE_INVOICE PI
+      WHERE PI.PO_ID = PO.PO_ID
+  );
+
+INSERT INTO ACCOUNT_PAYABLE (
+    AP_ID,
+    SUPPLIER_ID,
+    PURCHASE_INVOICE_ID,
+    TOTAL_AMOUNT,
+    PAID_AMOUNT,
+    REMAIN_AMOUNT,
+    DUE_DATE,
+    STATUS,
+    CREATED_AT
+)
+SELECT
+    SEQ_ACCOUNT_PAYABLE.NEXTVAL,
+    PI.SUPPLIER_ID,
+    PI.PURCHASE_INVOICE_ID,
+    PI.TOTAL_AMOUNT,
+    0,
+    PI.TOTAL_AMOUNT,
+    PI.ISSUE_DATE + 30,
+    'UNPAID',
+    SYSDATE
+FROM PURCHASE_INVOICE PI
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM ACCOUNT_PAYABLE AP
+    WHERE AP.PURCHASE_INVOICE_ID = PI.PURCHASE_INVOICE_ID
+);
+
+COMMIT;
+
+SELECT
+    PI.PURCHASE_INVOICE_ID,
+    PI.PO_ID,
+    PI.TOTAL_AMOUNT,
+    PI.STATUS,
+    AP.AP_ID,
+    AP.REMAIN_AMOUNT,
+    AP.STATUS AS AP_STATUS
+FROM PURCHASE_INVOICE PI
+JOIN ACCOUNT_PAYABLE AP
+    ON AP.PURCHASE_INVOICE_ID = PI.PURCHASE_INVOICE_ID
+ORDER BY PI.PO_ID;

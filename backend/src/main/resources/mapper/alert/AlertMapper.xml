@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.erp.backend.notification.mapper.AlertMapper">
+    <select id="findSafetyStockCheckByProductId" resultType="StockAlertCheckVO">
+        SELECT p.product_id,
+               p.product_name,
+               NVL(p.safety_qty, 0)        AS safety_qty,
+               NVL(SUM(il.current_qty), 0) AS available_qty
+        FROM product p
+                 LEFT JOIN inventory_lot il
+                           ON p.product_id = il.product_id
+                               AND il.status = 'NORMAL'
+                               AND il.current_qty > 0
+                               AND il.expiry_date >= TRUNC(SYSDATE) + 91
+        WHERE p.product_id = #{productId}
+          AND p.status = 'ACTIVE'
+        GROUP BY p.product_id,
+                 p.product_name,
+                 p.safety_qty
+    </select>
+    <select id="findExpirySoonLotsByProductId" resultType="NotificationItemLotVO">
+        SELECT p.product_id,
+               p.product_name,
+               il.inventory_lot_id,
+               il.lot_no,
+               il.expiry_date,
+               il.current_qty
+        FROM product p
+                 JOIN inventory_lot il
+                      ON p.product_id = il.product_id
+        WHERE p.product_id = #{productId}
+          AND p.status = 'ACTIVE'
+          AND il.status = 'NORMAL'
+          AND il.current_qty > 0
+          AND il.expiry_date <![CDATA[<=]]> TRUNC(SYSDATE) + 91
+    </select>
+    <select id="findLotsForExpiryCheck" resultType="NotificationItemLotVO">
+        SELECT p.product_id,
+               p.product_name,
+               il.inventory_lot_id,
+               il.lot_no,
+               il.expiry_date,
+               il.current_qty
+        FROM product p
+                 JOIN inventory_lot il
+                      ON p.product_id = il.product_id
+        WHERE p.status = 'ACTIVE'
+          AND il.status = 'NORMAL'
+          AND il.current_qty > 0
+          AND il.expiry_date <![CDATA[<=]]> TRUNC(SYSDATE) + 91
+    </select>
+    <select id="existsAlert" resultType="int">
+        SELECT COUNT(*)
+        FROM alert
+        WHERE alert_type = #{alertType}
+        AND product_id = #{productId}
+        <if test="inventoryLotId != null">
+            AND inventory_lot_id = #{inventoryLotId}
+        </if>
+        <if test="inventoryLotId == null">
+            AND inventory_lot_id IS NULL
+        </if>
+        AND created_at >= TRUNC(SYSDATE)
+    </select>
+    <select id="currentAlertSeq" resultType="int">
+        SELECT SEQ_ALERT.nextVal
+        FROM dual
+    </select>
+    <insert id="insertAlert" parameterType="AlertVO">
+        INSERT INTO alert (
+        alert_id,
+        product_id,
+        <if test="inventoryLotId != null">
+            inventory_lot_id,
+        </if>
+        alert_type,
+        message,
+        created_at,
+        alert_level
+        )
+        VALUES (
+        #{alertId},
+        #{productId},
+        <if test="inventoryLotId != null">
+            #{inventoryLotId},
+        </if>
+        #{alertType},
+        #{message},
+        SYSTIMESTAMP,
+        #{alertLevel}
+        )
+    </insert>
+    <insert id="insertAlertDetail">
+        INSERT INTO alert_detail (alert_id,
+        dept_id,
+        emp_id,
+        role_code,
+        is_read,
+        is_delivered)
+        SELECT #{alertId},
+        e.dept_id,
+        e.emp_id,
+        e.role_code,
+        'N',
+        'N'
+        FROM employee e
+        <if test="deptCode != null and deptCode != ''">
+            JOIN department d
+            ON d.dept_id=e.dept_id
+        </if>
+        <where>
+            <if test="deptCode != null and deptCode != ''">
+                AND d.dept_code=#{deptCode}
+            </if>
+            <if test="roleCode != null and roleCode != ''">
+                AND e.role_code=#{roleCode}
+            </if>
+            AND NOT EXISTS(
+            SELECT 1
+            FROM alert_detail ad
+            WHERE ad.alert_id=#{alertId}
+            AND ad.emp_id=e.emp_id
+            )
+        </where>
+    </insert>
+    <select id="findTargetReceiverList" resultType="AlertVO">
+        SELECT e.emp_id, e.role_code, d.dept_id, d.dept_code
+        FROM employee e
+        JOIN department d
+        ON e.dept_id = d.dept_id
+        WHERE d.dept_code=#{deptCode}
+        <if test="roleCode != null">
+            AND e.role_code=#{roleCode}
+        </if>
+    </select>
+    <select id="findAlertItemList" resultType="AlertVO">
+        SELECT a.alert_id,
+               a.product_id,
+               p.product_name,
+               a.inventory_lot_id,
+               il.lot_no,
+               a.alert_type,
+               a.alert_level,
+               a.message,
+               a.created_at
+        FROM alert a
+                 JOIN product p
+                      ON a.product_id = p.product_id
+                 LEFT JOIN inventory_lot il
+                           ON a.inventory_lot_id = il.inventory_lot_id
+        ORDER BY a.created_at DESC
+    </select>
+    <select id="findUserAlertList" resultType="AlertVO">
+        SELECT a.alert_id,
+               a.product_id,
+               p.product_name,
+               a.inventory_lot_id,
+               il.lot_no,
+               a.alert_type,
+               a.alert_level,
+               a.message,
+               a.created_at,
+               ad.emp_id,
+               ad.dept_id,
+               d.dept_code,
+               ad.role_code,
+               ad.is_read,
+               ad.is_delivered
+        FROM alert_detail ad
+                 JOIN alert a
+                      ON ad.alert_id = a.alert_id
+                 JOIN product p
+                      ON a.product_id = p.product_id
+                 JOIN department d
+                      ON d.dept_id = ad.dept_id
+                 LEFT JOIN inventory_lot il
+                           ON a.inventory_lot_id = il.inventory_lot_id
+        WHERE ad.emp_id = #{empId}
+        ORDER BY a.created_at DESC
+    </select>
+    <update id="markRead">
+        UPDATE alert_detail
+        SET is_read='Y'
+        WHERE alert_id = #{alertId}
+          AND emp_id = #{empId}
+    </update>
+    <update id="markAlertDelivered">
+        UPDATE alert_detail
+        SET is_delivered='Y'
+        WHERE alert_id = #{alertId}
+          AND emp_id = #{empId}
+    </update>
+    <select id="findUndeliveredAlertList" resultType="AlertVO">
+        SELECT a.alert_id,
+               a.product_id,
+               p.product_name,
+               a.inventory_lot_id,
+               il.lot_no,
+               a.alert_type,
+               a.alert_level,
+               a.message,
+               a.created_at,
+               ad.emp_id,
+               ad.dept_id,
+               ad.role_code,
+               ad.is_read,
+               ad.is_delivered
+        FROM alert_detail ad
+                 JOIN alert a
+                      ON ad.alert_id = a.alert_id
+                 JOIN product p
+                      ON a.product_id = p.product_id
+                 LEFT JOIN inventory_lot il
+                           ON a.inventory_lot_id = il.inventory_lot_id
+        WHERE ad.is_delivered = 'N'
+        ORDER BY a.created_at
+    </select>
+    <select id="countUnreadAlert" resultType="int">
+        SELECT COUNT(*)
+        FROM alert_detail
+        WHERE emp_id = #{empId}
+          AND is_read = 'N'
+    </select>
+</mapper>

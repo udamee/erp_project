@@ -142,3 +142,5 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
 /backend/src/main/resources/Wallet/docker-compose.yml
+
+**/k8s/

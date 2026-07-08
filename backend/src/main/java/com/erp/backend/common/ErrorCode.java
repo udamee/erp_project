@@ -1,0 +1,106 @@
+package com.erp.backend.common;
+
+import lombok.Getter;
+import org.springframework.http.HttpStatus;
+
+@Getter
+public enum ErrorCode {
+
+    // 공통
+    INVALID_INPUT(HttpStatus.BAD_REQUEST, "잘못된 입력값입니다."),
+    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다."),
+    FORBIDDEN(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
+    NOT_FOUND(HttpStatus.NOT_FOUND, "데이터를 찾을 수 없습니다."),
+    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다."),
+
+    // 인증
+    LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "아이디 또는 비밀번호가 올바르지 않습니다."),
+    TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "토큰이 만료되었습니다."),
+    TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "유효하지 않은 토큰입니다."),
+    REFRESH_TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "Refresh Token이 유효하지 않습니다."),
+    ACCOUNT_PENDING(HttpStatus.FORBIDDEN, "승인 대기 중인 계정입니다."),
+    ACCOUNT_REJECTED(HttpStatus.FORBIDDEN, "등록이 거절된 계정입니다."),
+    ACCOUNT_INACTIVE(HttpStatus.FORBIDDEN, "비활성화된 계정입니다."),
+    ACCOUNT_TERMINATED(HttpStatus.FORBIDDEN, "퇴사 처리된 계정입니다."),
+    PASSWORD_MISMATCH(HttpStatus.BAD_REQUEST, "현재 비밀번호가 일치하지 않습니다."),
+    PASSWORD_CONFIRM_MISMATCH(HttpStatus.BAD_REQUEST, "새 비밀번호와 확인이 일치하지 않습니다."),
+    SAME_AS_CURRENT_PASSWORD(HttpStatus.BAD_REQUEST, "새 비밀번호가 기존 비밀번호와 동일합니다."),
+
+    // 사원
+    EMPLOYEE_NOT_FOUND(HttpStatus.NOT_FOUND, "사원을 찾을 수 없습니다."),
+    EMPLOYEE_ALREADY_EXISTS(HttpStatus.BAD_REQUEST, "이미 존재하는 사원입니다."),
+    INVALID_ROLE(HttpStatus.BAD_REQUEST, "유효하지 않은 역할입니다."),
+    INVALID_STATUS(HttpStatus.BAD_REQUEST, "유효하지 않은 계정 상태입니다."),
+
+    // 근태
+    ATTENDANCE_NOT_FOUND(HttpStatus.NOT_FOUND, "근태 기록을 찾을 수 없습니다."),
+    ALREADY_CHECKED_IN(HttpStatus.BAD_REQUEST, "이미 출근 처리되었습니다."),
+    NOT_CHECKED_IN(HttpStatus.BAD_REQUEST, "출근 기록이 없습니다."),
+    ALREADY_CHECKED_OUT(HttpStatus.BAD_REQUEST, "이미 퇴근 처리되었습니다."),
+
+    // 부서
+    DEPARTMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "부서를 찾을 수 없습니다."),
+
+    // 발주 관련
+    SUPPLIER_NOT_FOUND(HttpStatus.NOT_FOUND, "공급처를 찾을 수 없습니다."),
+    PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "의약품을 찾을 수 없습니다."),
+    ALREADY_PROCESSED(HttpStatus.BAD_REQUEST, "이미 처리된 발주입니다."),
+    DUPLICATE_ORDER(HttpStatus.BAD_REQUEST, "이미 승인 대기 중인 발주가 있습니다."),
+
+    PURCHASE_ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "발주를 찾을 수 없습니다."),
+    INVALID_ORDER_STATUS(HttpStatus.BAD_REQUEST, "처리할 수 없는 발주 상태입니다."),
+    SELF_APPROVE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "본인이 기안한 발주는 승인 할 수 없습니다."),
+
+    ALREADY_RECEIVED(HttpStatus.BAD_REQUEST,"이미 입고 처리된 발주입니다."),
+    INVALID_EXPIRY_DATE(HttpStatus.BAD_REQUEST, "유효기간이 만료된 의약품입니다."),
+
+    // 주문
+    SALES_ORDER_REQUEST_INVALID(HttpStatus.BAD_REQUEST,"주문 요청이 유효하지 않습니다"),
+    SALES_ORDER_FAILED(HttpStatus.BAD_REQUEST,"주문을 요청할 수 없습니다"),
+    SALES_NOT_AVAILABLE_STOCK(HttpStatus.BAD_REQUEST,"재고가 부족합니다."),
+    SALES_NOT_AMOUNT_MATCHED(HttpStatus.BAD_REQUEST,"금액이 일치하지 않습니다"),
+    SALES_APPROVE_FAILED(HttpStatus.BAD_REQUEST,"승인이 되지 않았습니다"),
+    SALES_ALREADY_APPROVED(HttpStatus.BAD_REQUEST,"승인이 이미 되었습니다"),
+    SALES_LOT_ALLOCATE_FAILED(HttpStatus.CONFLICT,"로트번호 배정 작업이 실패했습니다"),
+    SALES_INSUFFICIENT_STOCK(HttpStatus.BAD_REQUEST, "재고가 충분하지 않습니다"),
+    SALES_CREDIT_LIMIT_EXCEED(HttpStatus.BAD_REQUEST, "여신 한도를 초과하여 주문 등록 불가합니다"),
+
+    // 거래처 관련
+    DUPLICATE_BUSINESS_NO(HttpStatus.CONFLICT, "이미 등록된 사업자번호입니다."),
+    CUSTOMER_NOT_FOUND(HttpStatus.NOT_FOUND, "거래처를 찾을 수 없습니다."),
+    BUSINESS_NOT_REGISTERED(HttpStatus.BAD_REQUEST, "국세청에 등록되지 않은 사업자번호입니다."),
+    BUSINESS_NOT_ACTIVE(HttpStatus.BAD_REQUEST, "휴업 또는 폐업 상태인 사업자는 등록할 수 없습니다."),
+    BUSINESS_NO_REQUIRED(HttpStatus.BAD_REQUEST, "사업자번호는 필수입니다."),
+
+    // 배송
+    SHIPMENT_ALREADY_EXISTS(HttpStatus.CONFLICT,"이미 배정된 배송이 있습니다."),
+    SHIPMENT_NOT_FOUND(HttpStatus.NOT_FOUND,"배송중인 주문이 없습니다."),
+    SHIPMENT_DETAIL_FAILED(HttpStatus.BAD_REQUEST,"배송 세부내역 생성에 실패했습니다"),
+
+    // 재고
+    STOCK_MOVEMENT_FAILED(HttpStatus.BAD_REQUEST, "재고변동이력 생성에 실패했습니다."),
+    // 환불
+    RETURN_REQUEST_FAILED(HttpStatus.BAD_REQUEST, "반품 요청 품목이 없습니다."),
+    RETURN_SALES_ORDER_NOT_FOUND(HttpStatus.NOT_FOUND, "주문을 찾을 수 없습니다."),
+    RETURN_TARGET_NOT_FOUND(HttpStatus.NOT_FOUND, "반품 가능한 출고 품목을 찾을 수 없습니다."),
+    RETURN_QTY_ERROR(HttpStatus.BAD_REQUEST, "반품 수량이 잘못되었습니다."),
+    RETURN_DIFFERENT_SALES_ORDER_INCLUDED(HttpStatus.BAD_REQUEST, "서로 다른 주문의 품목을 함께 반품할 수 없습니다."),
+    RETURN_PROCESS_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "반품 재고변동에 실패했습니다."),
+    RETURN_QUANTITY_MISMATCH(HttpStatus.CONFLICT, "출고 수량과 반품 수량이 일치하지 않습니다."),
+    RETURN_INVALID_REFUND_AMOUNT(HttpStatus.CONFLICT, "반품 금액을 계산할 수 없습니다."),
+    RETURN_SALES_ORDER_BALANCE_UPDATE_FAILED(HttpStatus.CONFLICT, "주문 금액 차감에 실패했습니다."),
+    RETURN_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "반품 요청을 찾을 수 없습니다."),
+    RETURN_REQUEST_NOT_REQUESTED(HttpStatus.CONFLICT, "요청 상태의 반품만 승인하거나 반려할 수 있습니다."),
+    RETURN_REQUEST_NOT_APPROVED(HttpStatus.CONFLICT, "승인된 반품만 완료 처리할 수 있습니다."),
+    RETURN_APPROVAL_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "반품 승인 처리에 실패했습니다."),
+    RETURN_REJECTION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "반품 반려 처리에 실패했습니다."),
+    REJECT_REASON_REQUIRED(HttpStatus.BAD_REQUEST, "반려 사유를 입력해야 합니다.");
+
+    private final HttpStatus status;
+    private final String message;
+
+    ErrorCode(HttpStatus status, String message) {
+        this.status = status;
+        this.message = message;
+    }
+}
