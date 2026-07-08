@@ -4,16 +4,18 @@ import { useState } from "react";
 import ErpLayout from "@/components/ErpLayout";
 import { useRole } from "@/lib/hooks";
 import MyAttendance from "./MyAttendance";
+import MyCalendar from "./MyCalendar";
 import AdminAttendance from "./AdminAttendance";
 
 export default function AttendancePage() {
   const role = useRole();
   const isManager = role === "MANAGER" || role === "ADMIN";
-  const [tab, setTab] = useState<"my" | "admin">("my");
+  const [tab, setTab] = useState<"my" | "calendar" | "admin">("my");
   const [absenceOpen, setAbsenceOpen] = useState(false);
 
   const tabs = [
     { key: "my" as const, label: "내 근태", show: true },
+    { key: "calendar" as const, label: "월별 캘린더", show: true },
     { key: "admin" as const, label: "전체 근태", show: isManager },
   ].filter((t) => t.show);
 
@@ -54,6 +56,8 @@ export default function AttendancePage() {
 
       {tab === "admin" && isManager ? (
         <AdminAttendance absenceOpen={absenceOpen} onAbsenceClose={() => setAbsenceOpen(false)} />
+      ) : tab === "calendar" ? (
+        <MyCalendar />
       ) : (
         <MyAttendance />
       )}
