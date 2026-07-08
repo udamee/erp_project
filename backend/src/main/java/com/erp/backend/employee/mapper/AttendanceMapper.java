@@ -21,6 +21,8 @@ public interface AttendanceMapper {
 
     AttendanceVO findVoByEmpIdAndDate(@Param("empId") Long empId, @Param("workDate") LocalDate workDate);
 
+    AttendanceVO findVoById(@Param("attendanceId") Long attendanceId);
+
     AttendanceResponseDto findByEmpIdAndDate(@Param("empId") Long empId, @Param("workDate") LocalDate workDate);
 
     AttendanceResponseDto findById(@Param("attendanceId") Long attendanceId);

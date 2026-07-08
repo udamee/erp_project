@@ -90,24 +90,40 @@
         WHERE EMP_ID = #{empId} AND WORK_DATE = #{workDate}
     </select>
 
+    <select id="findVoById" resultType="com.erp.backend.employee.vo.AttendanceVO">
+        SELECT ATTENDANCE_ID AS attendanceId,
+        EMP_ID        AS empId,
+        WORK_DATE     AS workDate,
+        CHECK_IN      AS checkIn,
+        CHECK_OUT     AS checkOut,
+        WORK_HOURS    AS workHours,
+        STATUS        AS status,
+        MEMO          AS memo
+        FROM ATTENDANCE
+        WHERE ATTENDANCE_ID = #{attendanceId}
+    </select>
+
     <select id="findByEmpIdAndDate" resultMap="responseMap">
-        SELECT a.*, e.EMP_NAME
+        SELECT a.*, e.EMP_NAME, e.DEPT_ID, d.DEPT_NAME
         FROM ATTENDANCE a
         JOIN EMPLOYEE e ON a.EMP_ID = e.EMP_ID
+        LEFT JOIN DEPARTMENT d ON e.DEPT_ID = d.DEPT_ID
         WHERE a.EMP_ID = #{empId} AND a.WORK_DATE = #{workDate}
     </select>
 
     <select id="findById" resultMap="responseMap">
-        SELECT a.*, e.EMP_NAME
+        SELECT a.*, e.EMP_NAME, e.DEPT_ID, d.DEPT_NAME
         FROM ATTENDANCE a
         JOIN EMPLOYEE e ON a.EMP_ID = e.EMP_ID
+        LEFT JOIN DEPARTMENT d ON e.DEPT_ID = d.DEPT_ID
         WHERE a.ATTENDANCE_ID = #{attendanceId}
     </select>
 
     <select id="findByEmpIdAndPeriod" resultMap="responseMap">
-        SELECT a.*, e.EMP_NAME
+        SELECT a.*, e.EMP_NAME, e.DEPT_ID, d.DEPT_NAME
         FROM ATTENDANCE a
         JOIN EMPLOYEE e ON a.EMP_ID = e.EMP_ID
+        LEFT JOIN DEPARTMENT d ON e.DEPT_ID = d.DEPT_ID
         WHERE a.EMP_ID = #{empId}
         AND a.WORK_DATE BETWEEN #{from} AND #{to}
         ORDER BY a.WORK_DATE DESC
