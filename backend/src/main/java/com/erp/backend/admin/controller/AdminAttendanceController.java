@@ -5,6 +5,7 @@ import com.erp.backend.common.ApiResponse;
 import com.erp.backend.employee.dto.AbsenceCreateRequestDto;
 import com.erp.backend.employee.dto.AttendanceResponseDto;
 import com.erp.backend.employee.dto.AttendanceSearchCondition;
+import com.erp.backend.employee.dto.AttendanceSummaryDto;
 import com.erp.backend.employee.dto.AttendanceUpdateRequestDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,6 +28,12 @@ public class AdminAttendanceController {
     @GetMapping
     public ApiResponse<List<AttendanceResponseDto>> adminAttendanceSearch(AttendanceSearchCondition condition) {
         return ApiResponse.success(adminAttendanceService.search(condition));
+    }
+
+    @Operation(summary = "근태 집계 (직원별, 기간/부서 조건)")
+    @GetMapping("/summary")
+    public ApiResponse<List<AttendanceSummaryDto>> adminAttendanceSummary(AttendanceSearchCondition condition) {
+        return ApiResponse.success(adminAttendanceService.summarize(condition));
     }
 
     @Operation(summary = "근태 단건 조회")

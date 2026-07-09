@@ -145,4 +145,57 @@
         ORDER BY a.WORK_DATE DESC, e.EMP_NAME
     </select>
 
+    <resultMap id="summaryMap" type="com.erp.backend.employee.dto.AttendanceSummaryDto">
+        <result property="empId"           column="EMP_ID"/>
+        <result property="empName"         column="EMP_NAME"/>
+        <result property="deptId"          column="DEPT_ID"/>
+        <result property="deptName"        column="DEPT_NAME"/>
+        <result property="totalDays"       column="TOTAL_DAYS"/>
+        <result property="normalCount"     column="NORMAL_COUNT"/>
+        <result property="lateCount"       column="LATE_COUNT"/>
+        <result property="earlyLeaveCount" column="EARLY_LEAVE_COUNT"/>
+        <result property="absentCount"     column="ABSENT_COUNT"/>
+        <result property="leaveCount"      column="LEAVE_COUNT"/>
+        <result property="totalWorkHours"  column="TOTAL_WORK_HOURS"/>
+    </resultMap>
+
+    <sql id="statusCounts">
+        COUNT(*)                                                        AS TOTAL_DAYS,
+        SUM(CASE WHEN a.STATUS = 'NORMAL'      THEN 1 ELSE 0 END)       AS NORMAL_COUNT,
+        SUM(CASE WHEN a.STATUS = 'LATE'        THEN 1 ELSE 0 END)       AS LATE_COUNT,
+        SUM(CASE WHEN a.STATUS = 'EARLY_LEAVE' THEN 1 ELSE 0 END)       AS EARLY_LEAVE_COUNT,
+        SUM(CASE WHEN a.STATUS = 'ABSENT'      THEN 1 ELSE 0 END)       AS ABSENT_COUNT,
+        SUM(CASE WHEN a.STATUS = 'LEAVE'       THEN 1 ELSE 0 END)       AS LEAVE_COUNT,
+        NVL(SUM(a.WORK_HOURS), 0)                                       AS TOTAL_WORK_HOURS
+    </sql>
+
+    <select id="summarizeByEmpIdAndPeriod" resultMap="summaryMap">
+        SELECT e.EMP_ID, e.EMP_NAME, e.DEPT_ID, d.DEPT_NAME,
+        <include refid="statusCounts"/>
+        FROM ATTENDANCE a
+        JOIN EMPLOYEE e ON a.EMP_ID = e.EMP_ID
+        LEFT JOIN DEPARTMENT d ON e.DEPT_ID = d.DEPT_ID
+        WHERE a.EMP_ID = #{empId}
+        AND a.WORK_DATE BETWEEN #{from} AND #{to}
+        GROUP BY e.EMP_ID, e.EMP_NAME, e.DEPT_ID, d.DEPT_NAME
+    </select>
+
+    <select id="summarize" parameterType="com.erp.backend.employee.dto.AttendanceSearchCondition"
+            resultMap="summaryMap">
+        SELECT e.EMP_ID, e.EMP_NAME, e.DEPT_ID, d.DEPT_NAME,
+        <include refid="statusCounts"/>
+        FROM ATTENDANCE a
+        JOIN EMPLOYEE e ON a.EMP_ID = e.EMP_ID
+        LEFT JOIN DEPARTMENT d ON e.DEPT_ID = d.DEPT_ID
+        <where>
+            <if test="empId != null">  AND a.EMP_ID = #{empId} </if>
+            <if test="deptId != null"> AND e.DEPT_ID = #{deptId} </if>
+            <if test="status != null"> AND a.STATUS = #{status} </if>
+            <if test="from != null">   AND a.WORK_DATE &gt;= #{from} </if>
+            <if test="to != null">     AND a.WORK_DATE &lt;= #{to} </if>
+        </where>
+        GROUP BY e.EMP_ID, e.EMP_NAME, e.DEPT_ID, d.DEPT_NAME
+        ORDER BY e.EMP_NAME
+    </select>
+
 </mapper>

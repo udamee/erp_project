@@ -2,6 +2,7 @@ package com.erp.backend.employee.controller;
 
 import com.erp.backend.common.ApiResponse;
 import com.erp.backend.employee.dto.AttendanceResponseDto;
+import com.erp.backend.employee.dto.AttendanceSummaryDto;
 import com.erp.backend.employee.service.AttendanceService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -49,6 +50,17 @@ public class AttendanceController {
             @RequestParam LocalDate to
     ) {
         return ApiResponse.success(attendanceService.getMyAttendances(empId, from, to));
+    }
+
+    @Operation(summary = "직원의 월별 근태 집계 (year/month 미지정 시 이번 달)")
+    @GetMapping("/me/summary")
+    @PreAuthorize("isAuthenticated()")
+    public ApiResponse<AttendanceSummaryDto> getMySummary(
+            @AuthenticationPrincipal Long empId,
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Integer month
+    ) {
+        return ApiResponse.success(attendanceService.getMySummary(empId, year, month));
     }
 
 }

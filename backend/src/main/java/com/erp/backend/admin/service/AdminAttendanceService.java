@@ -5,6 +5,7 @@ import com.erp.backend.common.ErrorCode;
 import com.erp.backend.employee.dto.AbsenceCreateRequestDto;
 import com.erp.backend.employee.dto.AttendanceResponseDto;
 import com.erp.backend.employee.dto.AttendanceSearchCondition;
+import com.erp.backend.employee.dto.AttendanceSummaryDto;
 import com.erp.backend.employee.dto.AttendanceUpdateRequestDto;
 import com.erp.backend.employee.mapper.AttendanceMapper;
 import com.erp.backend.employee.mapper.EmployeeMapper;
@@ -32,6 +33,18 @@ public class AdminAttendanceService {
     @Transactional(readOnly = true)
     public List<AttendanceResponseDto> search(AttendanceSearchCondition condition) {
         return attendanceMapper.search(condition);
+    }
+
+    @Transactional(readOnly = true)
+    public List<AttendanceSummaryDto> summarize(AttendanceSearchCondition condition) {
+        List<AttendanceSummaryDto> summaries = attendanceMapper.summarize(condition);
+        if (condition != null) {
+            summaries.forEach(s -> {
+                s.setFrom(condition.getFrom());
+                s.setTo(condition.getTo());
+            });
+        }
+        return summaries;
     }
 
     @Transactional(readOnly = true)

@@ -4,6 +4,7 @@ import com.erp.backend.employee.util.AttendanceStatus;
 import com.erp.backend.common.CustomException;
 import com.erp.backend.common.ErrorCode;
 import com.erp.backend.employee.dto.AttendanceResponseDto;
+import com.erp.backend.employee.dto.AttendanceSummaryDto;
 import com.erp.backend.employee.mapper.AttendanceMapper;
 import com.erp.backend.employee.vo.AttendanceVO;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.YearMonth;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -94,6 +96,27 @@ public class AttendanceService {
     @Transactional(readOnly = true)
     public List<AttendanceResponseDto> getMyAttendances(Long empId, LocalDate from, LocalDate to) {
         return attendanceMapper.findByEmpIdAndPeriod(empId, from, to);
+    }
+
+    // 본인 월별 근태 집계 (year/month 미지정 시 이번 달)
+    @Transactional(readOnly = true)
+    public AttendanceSummaryDto getMySummary(Long empId, Integer year, Integer month) {
+        YearMonth ym = (year != null && month != null)
+                ? YearMonth.of(year, month)
+                : YearMonth.now();
+        LocalDate from = ym.atDay(1);
+        LocalDate to = ym.atEndOfMonth();
+
+        AttendanceSummaryDto summary = attendanceMapper.summarizeByEmpIdAndPeriod(empId, from, to);
+        if (summary == null) {
+            // 해당 기간 기록이 없으면 0으로 채운 집계 반환
+            summary = new AttendanceSummaryDto();
+            summary.setEmpId(empId);
+            summary.setTotalWorkHours(BigDecimal.ZERO);
+        }
+        summary.setFrom(from);
+        summary.setTo(to);
+        return summary;
     }
 
     // 근무시간 = 퇴근 - 출근, 시간 단위=소수 2자리까지
